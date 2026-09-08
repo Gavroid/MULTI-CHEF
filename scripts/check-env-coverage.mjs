@@ -106,40 +106,46 @@ function collectReferencedKeys() {
 
 // 3) Diff and report.
 function main() {
-  const declared = readEnvExample();
-  const { referenced, usages } = collectReferencedKeys();
+  try {
+    const declared = readEnvExample();
+    const { referenced, usages } = collectReferencedKeys();
 
-  const missing = [...referenced].filter((key) => !declared.has(key)).sort();
-  const orphan = [...declared].filter((key) => !referenced.has(key)).sort();
+    const missing = [...referenced].filter((key) => !declared.has(key)).sort();
+    const orphan = [...declared].filter((key) => !referenced.has(key)).sort();
 
-  const lines = [];
-  lines.push('env-coverage check (MC-002):');
-  lines.push(`  .env.example declares: ${declared.size} keys`);
-  lines.push(`  code references:       ${referenced.size} keys`);
-  lines.push(`  missing from example:  ${missing.length}`);
-  lines.push(`  orphan (declared but unused): ${orphan.length}`);
+    const lines = [];
+    lines.push('env-coverage check (MC-002):');
+    lines.push(`  .env.example declares: ${declared.size} keys`);
+    lines.push(`  code references:       ${referenced.size} keys`);
+    lines.push(`  missing from example:  ${missing.length}`);
+    lines.push(`  orphan (declared but unused): ${orphan.length}`);
 
-  if (missing.length > 0) {
-    lines.push('');
-    lines.push('FAIL: the following keys are read by the code but missing from .env.example:');
-    for (const key of missing) {
-      const where = usages.find((u) => u.key === key);
-      lines.push(`  - ${key}  (used in ${where ? where.file : 'unknown'})`);
+    if (missing.length > 0) {
+      lines.push('');
+      lines.push('FAIL: the following keys are read by the code but missing from .env.example:');
+      for (const key of missing) {
+        const where = usages.find((u) => u.key === key);
+        lines.push(`  - ${key}  (used in ${where ? where.file : 'unknown'})`);
+      }
+      lines.push('');
+      lines.push('Add them to .env.example with placeholder values.');
+      process.stdout.write(lines.join('\n') + '\n');
+      process.exit(1);
     }
+
+    if (orphan.length > 0) {
+      lines.push('');
+      lines.push('Note: declared but currently unread (will not fail the check):');
+      for (const key of orphan) lines.push(`  - ${key}`);
+    }
+
     lines.push('');
-    lines.push('Add them to .env.example with placeholder values.');
+    lines.push('OK: 100% of process.env.* references are covered by .env.example.');
+    process.stdout.write(lines.join('\n') + '\n');
+  } catch (err) {
+    process.stderr.write(`env-coverage check failed: ${err && err.stack ? err.stack : err}\n`);
     process.exit(1);
   }
-
-  if (orphan.length > 0) {
-    lines.push('');
-    lines.push('Note: declared but currently unread (will not fail the check):');
-    for (const key of orphan) lines.push(`  - ${key}`);
-  }
-
-  lines.push('');
-  lines.push('OK: 100% of process.env.* references are covered by .env.example.');
-  process.stdout.write(lines.join('\n') + '\n');
 }
 
 main();
