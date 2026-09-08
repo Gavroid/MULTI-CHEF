@@ -1,3 +1,4 @@
+# Prettier ignore
 node_modules/
 .next/
 dist/
@@ -5,3 +6,8 @@ coverage/
 .turbo/
 pnpm-lock.yaml
 *.log
+
+# Canonical docs are checked by review, not prettier
+docs/MULTICHEF-ARCHITECTURE-PRD.md
+docs/MULTICHEF-DEVELOPMENT-PLAN.md
+docs/MULTICHEF-TESTING-STRATEGY.md

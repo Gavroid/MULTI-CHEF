@@ -4,7 +4,7 @@ Prisma schema + generated client for MULTI-CHEF.
 
 ## Layout
 
-```text
+````text
 prisma/
   schema.prisma                          # 21 models, see PRD §3.2
   migrations/
@@ -92,3 +92,4 @@ them green.
 The package reads `DATABASE_URL` exclusively through `@multichef/config`
 (see `src/index.ts`). Do not add direct `process.env.DATABASE_URL`
 reads; the env-coverage script in the repo root will fail if you do.
+````

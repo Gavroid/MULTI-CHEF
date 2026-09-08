@@ -12,11 +12,12 @@
     "dev": "turbo run dev --parallel",
     "build": "turbo run build",
     "lint": "turbo run lint",
-    "format:check": "prettier --check --log-level warn \"apps/**/*.{ts,tsx,js,json,md}\" \"packages/**/*.{ts,tsx,js,json,md}\" \"*.{ts,tsx,js,json,md,yaml,yml}\"",
-    "format": "prettier --write \"apps/**/*.{ts,tsx,js,json,md}\" \"packages/**/*.{ts,tsx,js,json,md}\" \"*.{ts,tsx,js,json,md,yaml,yml}\"",
-    "typecheck": "pnpm run check:env-coverage && turbo run typecheck",
+    "format:check": "prettier --check --log-level warn \"apps/**/*.{ts,tsx,js,json,md}\" \"packages/**/*.{ts,tsx,js,json,md}\" \"*.{ts,tsx,js,json,md,yaml,yml}\" \"docs/CONTRIBUTING.md\"",
+    "format": "prettier --write \"apps/**/*.{ts,tsx,js,json,md}\" \"packages/**/*.{ts,tsx,js,json,md}\" \"*.{ts,tsx,js,json,md,yaml,yml}\" \"docs/CONTRIBUTING.md\"",
+    "typecheck": "pnpm run check:env-coverage && pnpm run check:adr-coverage && turbo run typecheck",
     "test": "turbo run test",
     "check:env-coverage": "node scripts/check-env-coverage.mjs",
+    "check:adr-coverage": "node scripts/check-adr-coverage.mjs",
     "clean": "turbo run clean && rm -rf node_modules"
   },
   "devDependencies": {
