@@ -4,17 +4,15 @@ MULTI-CHEF monorepo. This repository hosts the production code for the
 project described in `docs/MULTICHEF-ARCHITECTURE-PRD.md`,
 `docs/MULTICHEF-DEVELOPMENT-PLAN.md`, and `docs/MULTICHEF-TESTING-STRATEGY.md`.
 
-> Full documentation — including setup, conventions, ADRs, and runbooks — is
-> scheduled for `MC-004 (Documentation and regulations)` in Phase 0. Until
-> then, this file lists only the commands needed to bootstrap the monorepo
-> and run the smoke checks.
+See `docs/CONTRIBUTING.md` for the working agreement (mandatory checks, scope
+rules, commit conventions) and `docs/api/conventions.md` for the HTTP API
+contract. Architecture decisions live in `docs/decisions/`.
 
 ## Status
 
-- Phase: **0 — scaffold (MC-001 done)**
-- Next: `MC-002 — dev infrastructure and env`
-- Deployment model: systemd bare-metal (see ADR-0006, added in MC-004)
-- CI: minimal `hello CI` workflow only (full pipeline in MC-005)
+- Phase: **0 — scaffold (MC-001, MC-002, MC-003, MC-004 merged; MC-005 next)**
+- Deployment model: systemd bare-metal (ADR-0006)
+- CI: minimal `hello CI` workflow only; full pipeline lands with MC-005
 
 ## Repository layout
 
@@ -90,3 +88,41 @@ After `pnpm install && pnpm dev`, the scaffold should respond:
   values live in `/etc/multichef/*.env` on the production host and
   `~/.deploy-secrets/multichef/INVENTORY.md` on the manager host.
 - gitleaks will be wired in MC-005 (pre-commit + CI).
+
+## Documentation
+
+- `docs/MULTICHEF-ARCHITECTURE-PRD.md` — product, UI/UX, schema, API contracts,
+  infrastructure (§6). Canonical for "what we're building".
+- `docs/MULTICHEF-DEVELOPMENT-PLAN.md` — 34 MC-tasks with DoD, estimates,
+  dependency graph. Canonical for "when we're building".
+- `docs/MULTICHEF-TESTING-STRATEGY.md` — testing pyramid, fixture-tests,
+  G1–G8 release gates. Canonical for "how we verify".
+- `docs/api/conventions.md` — HTTP API contract (errors, pagination,
+  idempotency, IDs, money).
+- `docs/decisions/ADR-NNNN-*.md` — 13 architectural decisions (Phase 0).
+  Every deviation from a decision requires a new ADR.
+
+## Known issues
+
+- `apps/web/next.config.mjs` has `devIndicators: false` — workaround for an
+  upstream bug in Next.js 15.5 devtools under pnpm workspaces. Production
+  build is clean. Re-evaluate when upgrading to Next 15.6+.
+- `packages/config` and `packages/database` build to `dist/` (ADR-0010,
+  ADR-0013). Next.js and the workspace TS resolver do not read `.ts`
+  directly, so we ship built artefacts. `turbo run build` orders them
+  correctly via `dependsOn: ['^build']`.
+
+## Contributing
+
+Read `docs/CONTRIBUTING.md` first. It covers:
+
+- mandatory pre-commit checks (`pnpm lint && format:check && typecheck &&
+test && build`);
+- the ban on `db push` in production (only `prisma migrate deploy`);
+- the no-secrets rule across chat, logs, commits, screenshots;
+- the rule that scope expansion or library changes require an ADR plus
+  operator approval;
+- Conventional Commits + Conventional PR titles;
+- how to run CI locally (and why Docker is required for `test:integration`).
+
+Issues and PRs follow the templates in `.github/` (added in MC-005).
