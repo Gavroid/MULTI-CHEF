@@ -1,0 +1,58 @@
+#!/usr/bin/env sh
+# Husky pre-commit hook for MULTI-CHEF (MC-005).
+#
+# Order matters:
+#   1. lint-staged runs first (fast; formats staged files only —
+#      prettier for ts/json/md/yaml, prisma format for .prisma).
+#      ESLint is intentionally NOT in lint-staged: the project root
+#      has no eslint.config.js (each package has its own), so running
+#      `eslint --fix` from the root always fails. Full ESLint runs in
+#      `pnpm lint` (a typecheck-time gate) and in CI.
+#   2. gitleaks runs after lint-staged. We use `gitleaks detect --no-git`
+#      against each staged file path — `gitleaks protect --staged` has
+#      been observed to miss staged diffs on certain file types in
+#      8.18.4, while `detect --no-git --source <path>` reliably picks
+#      up new secrets in staged files. Any leak blocks the commit.
+#      (CI uses `gitleaks-action` which runs `gitleaks detect` over
+#      the full git history — broader scope, same end result.)
+#   3. commitlint is a separate hook (commit-msg) wired in the
+#      sibling `.husky/commit-msg` file.
+#
+# If gitleaks isn't installed locally we fall back to `npx --yes`
+# which downloads a one-shot binary. Either path blocks the commit
+# on any leak — exit code != 0.
+
+set -e
+
+pnpm exec lint-staged
+
+# Collect staged file paths (skip deletions) and run gitleaks per-file.
+# We avoid staging-area weirdness by reading the file paths from the
+# index, not from the working tree.
+STAGED=$(git diff --cached --name-only --diff-filter=ACM 2>/dev/null)
+if [ -z "$STAGED" ]; then
+  echo "[pre-commit] gitleaks: no staged files to scan"
+  exit 0
+fi
+
+if command -v gitleaks >/dev/null 2>&1; then
+  GITLEAKS_BIN="gitleaks"
+else
+  echo "[pre-commit] gitleaks not on PATH, falling back to npx"
+  GITLEAKS_BIN="npx --yes gitleaks@8.18.4"
+fi
+
+FAIL=0
+for FILE in $STAGED; do
+  if [ -f "$FILE" ]; then
+    echo "[pre-commit] gitleaks detect --no-git --source $FILE"
+    $GITLEAKS_BIN detect --no-git --source "$FILE" --redact --no-banner --exit-code 1 || FAIL=1
+  fi
+done
+
+if [ "$FAIL" -ne 0 ]; then
+  echo ""
+  echo "[pre-commit] gitleaks blocked the commit: secret(s) detected in staged files."
+  echo "[pre-commit] Remove the secret, rotate it if it was ever real, and try again."
+  exit 1
+fi

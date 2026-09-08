@@ -1,0 +1,8 @@
+#!/usr/bin/env sh
+# Husky commit-msg hook for MULTI-CHEF (MC-005).
+#
+# Validates Conventional Commits via @commitlint/config-conventional.
+# Fails the commit if the message does not match the rules in
+# .commitlintrc.json (allowed types, header length, etc.).
+
+pnpm exec commitlint --edit "$1"

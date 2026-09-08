@@ -2,7 +2,7 @@
   "name": "multichef",
   "version": "0.0.0",
   "private": true,
-  "description": "MULTI-CHEF monorepo (Phase 0 scaffold, MC-001; dev infra MC-002)",
+  "description": "MULTI-CHEF monorepo (Phase 0 scaffold MC-001..MC-005)",
   "engines": {
     "node": "^24",
     "pnpm": ">=9"
@@ -16,11 +16,18 @@
     "format": "prettier --write \"apps/**/*.{ts,tsx,js,json,md}\" \"packages/**/*.{ts,tsx,js,json,md}\" \"*.{ts,tsx,js,json,md,yaml,yml}\" \"docs/CONTRIBUTING.md\"",
     "typecheck": "pnpm run check:env-coverage && pnpm run check:adr-coverage && turbo run typecheck",
     "test": "turbo run test",
+    "check": "pnpm lint && pnpm format:check && pnpm typecheck && pnpm test && pnpm build",
     "check:env-coverage": "node scripts/check-env-coverage.mjs",
     "check:adr-coverage": "node scripts/check-adr-coverage.mjs",
+    "commitlint": "commitlint --edit",
+    "prepare": "husky",
     "clean": "turbo run clean && rm -rf node_modules"
   },
   "devDependencies": {
+    "@commitlint/cli": "^19.6.0",
+    "@commitlint/config-conventional": "^19.6.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.2.10",
     "turbo": "^2.3.3",
     "prettier": "^3.4.2",
     "typescript": "^5.7.2"

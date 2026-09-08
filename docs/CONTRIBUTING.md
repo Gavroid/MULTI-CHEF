@@ -174,17 +174,34 @@ PR title повторяет commit subject.
 
 ## 9. Как запускать CI локально
 
-| Задача                      | Команда                                                                       | Что проверяет                                 |
-| --------------------------- | ----------------------------------------------------------------------------- | --------------------------------------------- |
-| Все проверки                | `pnpm lint && pnpm format:check && pnpm typecheck && pnpm test && pnpm build` | Полный pipeline без Docker                    |
-| Только интеграционные тесты | `pnpm --filter @multichef/database test:integration`                          | Testcontainers, требует Docker                |
-| env-coverage                | `pnpm run check:env-coverage`                                                 | 100% покрытие env                             |
-| ADR-coverage                | `pnpm run check:adr-coverage`                                                 | Наличие всех 13 ADR + покрытие conventions.md |
-| Prisma validate             | `pnpm --filter @multichef/database prisma validate`                           | Схема валидна                                 |
-| Prisma format               | `pnpm --filter @multichef/database prisma format`                             | Схема отформатирована                         |
-| Prisma diff                 | `pnpm --filter @multichef/database prisma:diff`                               | Сгенерировать SQL без применения              |
+| Задача                      | Команда                                                                                                | Что проверяет                                 |
+| --------------------------- | ------------------------------------------------------------------------------------------------------ | --------------------------------------------- |
+| Все проверки                | `pnpm check` (алиас) или `pnpm lint && pnpm format:check && pnpm typecheck && pnpm test && pnpm build` | Полный pipeline без Docker                    |
+| Только интеграционные тесты | `pnpm --filter @multichef/database test:integration`                                                   | Testcontainers, требует Docker                |
+| env-coverage                | `pnpm run check:env-coverage`                                                                          | 100% покрытие env                             |
+| ADR-coverage                | `pnpm run check:adr-coverage`                                                                          | Наличие всех 13 ADR + покрытие conventions.md |
+| Prisma validate             | `pnpm --filter @multichef/database prisma validate`                                                    | Схема валидна                                 |
+| Prisma format               | `pnpm --filter @multichef database prisma format`                                                      | Схема отформатирована                         |
+| Prisma diff                 | `pnpm --filter @multichef/database prisma:diff`                                                        | Сгенерировать SQL без применения              |
+| Commit message              | `pnpm exec commitlint --from HEAD~1 --to HEAD`                                                         | Conventional Commits на последнем коммите     |
 
-Если `test:integration` падает с «Testcontainers unavailable» — это норма для машин без Docker. В CI (MC-005) Docker будет.
+Если `test:integration` падает с «Testcontainers unavailable» — это норма для машин без Docker. В CI Docker есть (см. §11).
+
+Pre-commit и commit-msg хуки (Husky 9, MC-005) срабатывают автоматически после `pnpm install`:
+
+- `.husky/pre-commit` запускает `pnpm exec lint-staged` (prettier только для staged файлов) и затем `gitleaks detect --no-git --source <staged-file>` для каждого staged файла. Если gitleaks не установлен локально — fallback на `npx --yes gitleaks@8.18.4`.
+- `.husky/commit-msg` запускает `pnpm exec commitlint --edit` против сообщения коммита.
+
+Чтобы прогнать хуки вручную (например, после `git commit --no-verify`), используйте:
+
+```bash
+pnpm exec lint-staged --diff="HEAD"   # применить staged-правки
+for FILE in $(git diff --cached --name-only --diff-filter=ACM); do
+  gitleaks detect --no-git --source "$FILE" --redact --no-banner
+done
+```
+
+Если хуки отключили по ошибке (`git commit --no-verify`) — зафиксируйте это в PR description и не повторяйте без одобрения оператора.
 
 ---
 
@@ -196,9 +213,36 @@ PR title повторяет commit subject.
 
 ---
 
-## Что НЕ охвачено этим документом
+## 11. CI pipeline и branch protection (MC-005)
 
-- **CI/CD пайплайн** — Husky, commitlint, gitleaks, branch protection — MC-005
-- **Playwright E2E** — MC-073
-- **Playbook ротации секретов** — MC-090
-- **PWA, hardening, deploy на multichef** — Фаза 7 (MC-070..MC-075, MC-080, MC-082)
+`.github/workflows/ci.yml` запускает пять jobs на каждый push в `main` и каждый PR:
+
+| Job           | Что делает                                                                        | Кеширует |
+| ------------- | --------------------------------------------------------------------------------- | -------- |
+| `lint`        | `pnpm lint` + `pnpm format:check`                                                 | pnpm     |
+| `typecheck`   | `pnpm typecheck` (= `check:env-coverage` + `check:adr-coverage` + `tsc --noEmit`) | pnpm     |
+| `test`        | `pnpm test` + integration против Postgres 16 / Redis 7 services                   | pnpm     |
+| `build`       | `pnpm build`                                                                      | pnpm     |
+| `secret-scan` | `gitleaks/gitleaks-action@v2` (full git history)                                  | нет      |
+
+PR не может быть смёржен в `main`, пока все пять jobs зелёные. Branch protection:
+
+- `enforce_admins: true` — даже владельцу репо нужен зелёный PR.
+- `required_pull_request_reviews.required_approving_review_count: 1`,
+  `dismiss_stale_reviews: true` — один approval, старые approvals
+  сбрасываются при push в PR.
+- `restrictions: null` — пушить в `main` может любой, но только через PR.
+- `required_status_checks` — те же пять jobs перечислены в `Contexts`.
+
+Список контекстов, которые CI пишет: `lint`, `typecheck`, `test`, `build`, `secret-scan`. При добавлении нового required job в `ci.yml` — добавьте его имя в branch protection.
+
+Для проверки текущего состояния branch protection:
+
+```bash
+gh api repos/Gavroid/MULTI-CHEF/branches/main/protection
+# или
+curl -H "Authorization: token $GITHUB_TOKEN" \
+     https://api.github.com/repos/Gavroid/MULTI-CHEF/branches/main/protection
+```
+
+Если у вас нет PAT с правом `repo:administration` — откройте Settings → Branches → main → Edit rule в web UI; см. раздел «branch protection» в [CONTRIBUTING.md](#).
