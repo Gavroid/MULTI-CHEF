@@ -1,0 +1,82 @@
+# MULTI-CHEF — dev-only infrastructure.
+#
+# This file is consumed by `docker compose` for local development. It is
+# NOT used in production — production runs against host Postgres + Redis
+# via systemd units multichef-{web,api,worker} (see ADR-0006).
+#
+# Services:
+#   postgres — primary store for the API
+#   redis    — BullMQ queue backend + rate-limit counters
+#
+# Healthchecks are wired so `depends_on: { service_healthy }` can gate
+# the API and worker once they read DATABASE_URL / REDIS_URL.
+#
+# Env values come from the host's `.env` (gitignored). Use `.env.example`
+# (committed) as the template.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: multichef-postgres
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      # Dev only — production binds to the host loopback.
+      - '127.0.0.1:5432:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+  redis:
+    image: redis:7-alpine
+    container_name: multichef-redis
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      # Optional auth — only enabled when REDIS_PASSWORD is set in .env.
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+    command:
+      - sh
+      - -c
+      - |
+        if [ -n "$$REDIS_PASSWORD" ]; then
+          exec redis-server --appendonly yes --requirepass "$$REDIS_PASSWORD"
+        else
+          exec redis-server --appendonly yes
+        fi
+    ports:
+      - '127.0.0.1:6379:6379'
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - |
+          if [ -n "$$REDIS_PASSWORD" ]; then
+            redis-cli -a "$$REDIS_PASSWORD" ping | grep -q PONG
+          else
+            redis-cli ping | grep -q PONG
+          fi
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+volumes:
+  postgres-data:
+    name: multichef-postgres-data
+  redis-data:
+    name: multichef-redis-data
