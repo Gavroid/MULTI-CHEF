@@ -1,0 +1,27 @@
+# Env / secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+
+# Node (на будущее, если подключим monorepo из PRD)
+node_modules/
+.pnpm-store/
+dist/
+.next/
+.turbo/
+
+# Logs
+*.log
+logs/
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
+*.swp
+
+# Local-only
+/tmp/

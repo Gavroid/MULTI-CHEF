@@ -1,0 +1,39 @@
+name: hello CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  hello:
+    name: hello
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Announce
+        run: |
+          echo "::group::Repo state"
+          git log --oneline -n 5 || true
+          echo "Files at root:"
+          ls -la
+          echo "::endgroup::"
+
+      - name: markdownlint
+        uses: DavidAnson/markdownlint-cli2-action@v19
+        with:
+          globs: |
+            **/*.md
+          config: |
+            {
+              "default": true,
+              "MD013": false,
+              "MD041": false
+            }
