@@ -28,12 +28,4 @@ jobs:
 
       - name: markdownlint
         uses: DavidAnson/markdownlint-cli2-action@v19
-        with:
-          globs: |
-            **/*.md
-          config: |
-            {
-              "default": true,
-              "MD013": false,
-              "MD041": false
-            }
+        # Config lives at .markdownlint-cli2.jsonc
