@@ -1,0 +1,14 @@
+{
+  "extends": "@multichef/typescript-config/nest.json",
+  "compilerOptions": {
+    "baseUrl": "./",
+    "paths": {
+      "@/*": ["src/*"]
+    },
+    "declaration": false,
+    "declarationMap": false,
+    "rootDir": "./src"
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
+}
