@@ -1,5 +1,54 @@
-// Database client wrapper.
-// MC-001: empty scaffold only. Real Prisma client + schema land in MC-003
-// (see ADR-0007 / DEVELOPMENT-PLAN §0).
+// @multichef/database — Prisma client wrapper.
+//
+// MC-003 source of truth for the database schema and the singleton
+// PrismaClient used by apps/api and apps/worker. The client is built
+// lazily on first `getPrisma()` so that importing this package is
+// cheap (tests, lint, build, etc.).
+//
+// All consumers should pull DATABASE_URL from @multichef/config — we
+// never read process.env directly here.
 
-export {};
+import { PrismaClient } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { loadServerEnv } from '@multichef/config';
+
+// Re-export the typed client + adapter so consumers can `import type`
+// from a single place.
+export type { PrismaClient } from '@prisma/client';
+export { PrismaPg } from '@prisma/adapter-pg';
+
+let cached: PrismaClient | undefined;
+
+/**
+ * Returns a process-wide PrismaClient. The first call validates env
+ * and opens the pool; subsequent calls reuse it.
+ */
+export function getPrisma(): PrismaClient {
+  if (cached) return cached;
+  const env = loadServerEnv();
+  const adapter = new PrismaPg({ connectionString: env.DATABASE_URL });
+  cached = new PrismaClient({
+    adapter,
+    log: env.LOG_LEVEL === 'debug' ? ['query', 'warn', 'error'] : ['warn', 'error'],
+  });
+  return cached;
+}
+
+/**
+ * Closes the cached client. Safe to call when no client has been
+ * created. Used by health checks and shutdown hooks.
+ */
+export async function closePrisma(): Promise<void> {
+  if (!cached) return;
+  await cached.$disconnect();
+  cached = undefined;
+}
+
+/**
+ * Cheap liveness probe — `SELECT 1`. Throws on connection failure so
+ * callers (health endpoints) can surface a 503.
+ */
+export async function pingDatabase(): Promise<void> {
+  const client = getPrisma();
+  await client.$queryRaw`SELECT 1`;
+}
