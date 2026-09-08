@@ -1,0 +1,4 @@
+{
+  "extends": "@multichef/typescript-config/library.json",
+  "include": ["src/**/*.ts"]
+}
