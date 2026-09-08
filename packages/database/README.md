@@ -4,7 +4,7 @@ Prisma schema + generated client for MULTI-CHEF.
 
 ## Layout
 
-```
+```text
 prisma/
   schema.prisma                          # 21 models, see PRD §3.2
   migrations/
@@ -18,7 +18,7 @@ src/
   __tests__/
     index.test.ts                        # MC-001 smoke (scaffold still loads)
     integration.test.ts                  # MC-003 Testcontainers (Docker required)
-```
+```text
 
 ## Requirements
 
@@ -58,7 +58,7 @@ pnpm --filter @multichef/database test
 
 # Integration tests (Docker required)
 pnpm --filter @multichef/database test:integration
-```
+```text
 
 ## How to add a new field or model
 
