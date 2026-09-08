@@ -19,6 +19,7 @@
 > «Мульти Шеф — решает, что приготовить сегодня и что купить, чтобы ничего не пропало завтра».
 
 **Ключевой дифференциатор — «продуктовая цепочка»:** система подбирает блюда так, чтобы:
+
 1. один продукт использовался в нескольких рецептах;
 2. упаковки расходовались максимально полно;
 3. скоропортящиеся продукты использовались первыми;
@@ -30,7 +31,7 @@
 ## 1.2. Роли пользователей
 
 | Роль | Описание | Права |
-|---|---|---|
+| --- | --- | --- |
 | `GUEST` | Пользователь без регистрации | Анкета предпочтений, ввод продуктов, 1 генерация рекомендаций «на сегодня». Данные хранятся локально (localStorage) с предложением регистрации для сохранения |
 | `USER` | Зарегистрированный пользователь | Все функции MVP в рамках своего household |
 | `HOUSEHOLD_OWNER` | Владелец домохозяйства | USER + управление участниками, общий список покупок, настройки household |
@@ -40,10 +41,13 @@
 ## 1.3. Основные юзкейсы (use cases)
 
 ### UC-01. Быстрый старт (онбординг)
+
 Пользователь отвечает на 7 вопросов: количество человек, бюджет, ограничения/аллергии, любимые/нелюбимые продукты, кухонная техника, уровень навыков, обычное время на готовку. Регистрация необязательна.
 
 ### UC-02. «Что приготовить сегодня»
+
 Пользователь настраивает 3 параметра (настроение / усилия / бюджет), жмёт «Придумай мне еду» → получает **ровно 3 карточки**:
+
 - **«Из того, что есть»** — почти без покупок;
 - **«Лучший вариант»** — оптимальное блюдо с минимальной докупкой;
 - **«Выгодная цепочка»** — план из 2–4 связанных блюд с общими ингредиентами.
@@ -51,33 +55,43 @@
 Каждая карточка показывает: фото, время, примерную стоимость, сложность, что есть / что докупить / что останется, **объяснение выбора** (например: «сливки скоро испортятся, а оставшиеся грибы завтра пойдут в омлет»).
 
 ### UC-03. Управление холодильником (Pantry)
+
 Ручной ввод продуктов с автодополнением из справочника, состояния: `много` / `немного` / `использовать срочно` / `всегда есть дома`. Сроки годности, место хранения (кладовая/холодильник/морозилка).
 
 ### UC-04. «Спаси продукт»
+
 Пользователь указывает продукт с истекающим сроком → система строит рекомендации вокруг него с максимальным приоритетом `expirationBenefit`.
 
 ### UC-05. «Преображение остатков»
+
 Пользователь указывает остатки (пюре, котлеты, варёный рис) → система предлагает новые блюда-трансформации (пюре → лепёшки, котлеты → начинка для лаваша).
 
 ### UC-06. «Антирецепт»
+
 Сессионные запреты: «не хочу мыть посуду», «без духовки», «не хочу снова курицу», «без остатков». Применяются как жёсткие фильтры на текущую генерацию, не сохраняются в профиль.
 
 ### UC-07. «Кулинарная рулетка»
+
 Пользователь задаёт бюджет+время → закрытая карточка → свайп открывает блюдо → можно отказаться **максимум 2 раза** → после принятия автоматически создаётся список покупок.
 
 ### UC-08. Умный список покупок
+
 Группировка по отделам магазина (не по рецептам), объединение одинаковых ингредиентов, округление до реальных упаковок, вычитание того, что есть дома, оценка стоимости, отметка купленного, **индекс полезности покупки** (0–10) для каждого товара.
 
 ### UC-09. Режим «Уложиться в бюджет»
+
 При превышении лимита система предлагает замены: лосось→курица, имеющаяся крупа вместо покупной, исключение optional-ингредиента, слияние блюд.
 
 ### UC-10. Недельный план (3–7 дней)
+
 Входные параметры: люди, бюджет, целевые КБЖУ, приёмы пищи/день, продукты дома, время заготовки, морозилка, контейнеры, «неготовящие» дни, частота повторов. Результат: календарь меню + КБЖУ по блюду/приёму/дню/неделе + список покупок + план заготовки + схема хранения + календарь разморозки.
 
 ### UC-11. «Закупиться и приготовить заранее» (Meal Prep)
+
 Сценарий выходного дня: единая корзина → оптимизированный порядок готовки (параллельные задачи) → распределение по контейнерам с подписями → что заморозить / что в холодильник / что добавить перед подачей → календарь разморозки и разогрева.
 
 ### UC-12. Замена блюда в плане
+
 Любое блюдо в недельном плане заменяется на альтернативу с близкими: стоимостью, КБЖУ, временем, набором продуктов.
 
 ## 1.4. Границы MVP (что ВХОДИТ)
@@ -115,7 +129,7 @@
 ## 1.6. Нефункциональные требования
 
 | Категория | Требование |
-|---|---|
+| --- | --- |
 | Платформа | Один unprivileged LXC в Proxmox (Debian 12), Docker Compose, `nesting=1,keyctl=1` |
 | Внешний доступ | Nginx Proxy Manager на отдельной машине → единственный порт `8080` внутреннего Nginx gateway |
 | Домен | Один домен для web+API (`https://chef.example.ru`, API под `/api/v1`), без CORS-проблем, cookie-авторизация |
@@ -130,7 +144,7 @@
 ## 1.7. Узкие места и риски
 
 | Риск | Митигация |
-|---|---|
+| --- | --- |
 | Нормализация ингредиентов («помидор/томат/помидоры») | `IngredientAlias` + `pg_trgm` нечёткий поиск; seed-словарь синонимов |
 | Нереалистичные упаковки при округлении списка покупок | Таблица стандартных упаковок на ингредиент (`packageSize`, `packageUnit`) |
 | Холодный старт: рецептов < 150 — цепочки вырождаются | Минимум 200 seed-рецептов с пересекающимися ингредиентами; метрика «среднее число общих ингредиентов в плане» |
@@ -189,7 +203,7 @@
 Wizard с прогресс-баром сверху, одна карточка-вопрос на экран, кнопки «Назад»/«Далее» внизу (липкая панель). Каждый шаг пропускаем («Пропустить» в правом верхнем углу), дефолты подставлены.
 
 | Шаг | Вопрос | UI-контрол | Дефолт |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | 1 | Сколько человек? | Stepper 1–8 | 2 |
 | 2 | Бюджет на неделю? | Слайдер 2000–20000 ₽ + поле ввода | 6000 ₽ |
 | 3 | Аллергии и ограничения? | Чипы-мультиселект (орехи, глютен, лактоза, рыба, яйца, мясо, острое + «свой вариант») | — |
@@ -203,6 +217,7 @@ Wizard с прогресс-баром сверху, одна карточка-в
 ### 2.3.2. Таб «Сегодня» (`/today`) — главный экран
 
 Сверху вниз:
+
 1. **Хедер**: приветствие («Добрый вечер, Игорь») + аватар-иконка → /profile.
 2. **Блок «Использовать срочно»** (если есть продукты с `expiresAt ≤ 2 дня` или статусом `USE_FIRST`): горизонтальный скролл чипов продуктов, красная/оранжевая индикация срока. Тап → `/fridge/rescue` с предвыбранным продуктом.
 3. **Hero-кнопка** «Придумать, что приготовить» — во всю ширину, `h-14`, primary-цвет, ведёт на `/today/generate`.
@@ -228,6 +243,7 @@ Wizard с прогресс-баром сверху, одна карточка-в
 ### 2.3.4. Результат (`/today/result`) — 3 карточки
 
 Вертикальный стек трёх карточек в порядке: «Из того, что есть» → «Лучший вариант» → «Выгодная цепочка». Каждая карточка:
+
 - бейдж типа (цветной, см. дизайн-токены);
 - фото 16:9, название, время, сложность (1–3 иконки), стоимость докупки;
 - строка «Есть дома: 7 из 9» (зелёный) / «Докупить: 2 позиции ≈ 180 ₽» (оранжевый) / «Останется: половина лаваша → завтра в кесадилью»;
@@ -337,6 +353,7 @@ Wizard с прогресс-баром сверху, одна карточка-в
 ### 2.5.1. Цветовая палитра
 
 Светлая тема:
+
 ```
 --color-bg:            #FFFDF9   /* тёплый белый фон */
 --color-surface:       #FFFFFF   /* карточки */
@@ -358,6 +375,7 @@ Wizard с прогресс-баром сверху, одна карточка-в
 ```
 
 Тёмная тема (те же токены):
+
 ```
 --color-bg:            #1A1713
 --color-surface:       #242019
@@ -387,7 +405,7 @@ Wizard с прогресс-баром сверху, одна карточка-в
 Шрифт: `Inter, system-ui, -apple-system, sans-serif`. Числа/цены: `font-variant-numeric: tabular-nums`.
 
 | Токен | Размер/межстрочный | Вес | Применение |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `--text-display` | 28/34 | 700 | Заголовки экранов |
 | `--text-title` | 22/28 | 700 | Заголовки карточек-героев |
 | `--text-heading` | 18/24 | 600 | Заголовки секций, карточек |
@@ -415,6 +433,7 @@ Wizard с прогресс-баром сверху, одна карточка-в
 ### 2.5.4. Компонентные состояния
 
 **Кнопка Primary** (`h-14`, `radius-md`, текст 16/600):
+
 - default: `bg-primary`, текст белый;
 - hover (desktop) / pressed: `bg-primary-press`, `transform: scale(.98)`, transition 120ms;
 - disabled: `opacity: .45`, `pointer-events: none`;
@@ -500,8 +519,9 @@ erDiagram
 ## 3.2. Сущности и поля
 
 ### User
+
 | Поле | Тип | Ограничения |
-|---|---|---|
+| --- | --- | --- |
 | id | String @id | ULID |
 | email | String @unique | lowercase, trim |
 | passwordHash | String | Argon2id |
@@ -512,8 +532,9 @@ erDiagram
 | createdAt / updatedAt | DateTime | @updatedAt |
 
 ### Session
+
 | Поле | Тип | Ограничения |
-|---|---|---|
+| --- | --- | --- |
 | id | String @id | ULID |
 | userId | String FK → User | onDelete: Cascade |
 | tokenHash | String @unique | SHA-256 от refresh-токена, токен в БД не хранится |
@@ -524,8 +545,9 @@ erDiagram
 Индекс: `(userId)`.
 
 ### Household
+
 | Поле | Тип | Ограничения |
-|---|---|---|
+| --- | --- | --- |
 | id | String @id | |
 | name | String | default "Моя семья" |
 | ownerId | String FK → User | |
@@ -535,15 +557,17 @@ erDiagram
 | createdAt / updatedAt | DateTime | |
 
 ### HouseholdMember
+
 | Поле | Тип | Ограничения |
-|---|---|---|
+| --- | --- | --- |
 | householdId / userId | String FK | @@id([householdId, userId]) |
 | role | Enum: OWNER, MEMBER | |
 | joinedAt | DateTime | |
 
 ### NutritionProfile (1:1 с User)
+
 | Поле | Тип | Ограничения |
-|---|---|---|
+| --- | --- | --- |
 | userId | String @id FK | |
 | targetCalories | Int? | ккал/день |
 | targetProteinG / targetFatG / targetCarbsG | Int? | г/день |
@@ -555,8 +579,9 @@ erDiagram
 | activityNotes | String? | |
 
 ### Preference (дизлайки/лайки/аллергии)
+
 | Поле | Тип | Ограничения |
-|---|---|---|
+| --- | --- | --- |
 | id | String @id | |
 | userId | String FK → User | |
 | ingredientId | String? FK → Ingredient | null, если запрет текстовый |
@@ -565,15 +590,17 @@ erDiagram
 Индекс: `(userId, kind)`. **ALLERGY и EXCLUDE — жёсткие фильтры** в рекомендациях.
 
 ### IngredientCategory
+
 | Поле | Тип | Ограничения |
-|---|---|---|
+| --- | --- | --- |
 | id | String @id | |
 | name | String | «Овощи и фрукты», «Мясо и рыба», «Молочные», «Бакалея», «Хлеб и выпечка», «Заморозка», «Специи и соусы», «Прочее» |
 | sortOrder | Int | порядок отделов в списке покупок |
 
 ### Ingredient
+
 | Поле | Тип | Ограничения |
-|---|---|---|
+| --- | --- | --- |
 | id | String @id | |
 | canonicalName | String @unique | нормализованное имя, lowercase |
 | categoryId | String FK | |
@@ -587,22 +614,25 @@ erDiagram
 | status | Enum: ACTIVE, ARCHIVED | |
 
 ### IngredientAlias
+
 | Поле | Тип | Ограничения |
 |---|---|---|
 | ingredientId / alias / locale | String | @@id([alias, locale]) |
 Индекс: `alias` (GIN trigram через миграцию: `CREATE INDEX ... USING gin (alias gin_trgm_ops)`).
 
 ### IngredientNutrition (1:1 с Ingredient)
+
 | Поле | Тип | Ограничения |
-|---|---|---|
+| --- | --- | --- |
 | ingredientId | String @id FK | |
 | caloriesPer100g / proteinPer100g / fatPer100g / carbsPer100g / fiberPer100g | Decimal(7,2) | Decimal, не Float |
 | source | String | «USDA», «Скурихин», «manual» |
 | calculationVersion | Int | default 1 |
 
 ### PantryItem
+
 | Поле | Тип | Ограничения |
-|---|---|---|
+| --- | --- | --- |
 | id | String @id | |
 | householdId | String FK | |
 | ingredientId | String FK | |
@@ -619,8 +649,9 @@ erDiagram
 Индексы: `(householdId)`, `(householdId, expiresAt)`, `(ingredientId)`.
 
 ### Recipe
+
 | Поле | Тип | Ограничения |
-|---|---|---|
+| --- | --- | --- |
 | id | String @id | |
 | title | String | |
 | description | String? | |
@@ -640,8 +671,9 @@ erDiagram
 Индекс: `(status, mealTypes)` (GIN на массив), `(tags)` GIN.
 
 ### RecipeIngredient
+
 | Поле | Тип | Ограничения |
-|---|---|---|
+| --- | --- | --- |
 | recipeId / ingredientId | String FK | @@id([recipeId, ingredientId]) |
 | quantity | Decimal(10,2) | |
 | unit | Enum: G, ML, PIECE | |
@@ -652,16 +684,18 @@ erDiagram
 Индекс: `(ingredientId)`.
 
 ### RecipeNutrition (1:1 с Recipe)
+
 | Поле | Тип | Ограничения |
-|---|---|---|
+| --- | --- | --- |
 | recipeId | String @id FK | |
 | servingCalories / servingProteinG / servingFatG / servingCarbsG | Decimal(8,2) | на 1 порцию базового servings |
 | servingGrams | Decimal(8,2) | вес порции |
 | calculationVersion | Int | пересчёт при смене алгоритма |
 
 ### StorageRule
+
 | Поле | Тип | Ограничения |
-|---|---|---|
+| --- | --- | --- |
 | id | String @id | |
 | ingredientId | String? FK | null → правило для категории рецептов |
 | recipeTag | String? | например «супы» |
@@ -672,8 +706,9 @@ erDiagram
 | notes | String? | |
 
 ### MealPlan
+
 | Поле | Тип | Ограничения |
-|---|---|---|
+| --- | --- | --- |
 | id | String @id | |
 | householdId | String FK | |
 | startDate / endDate | Date | 3–7 дней |
@@ -687,16 +722,18 @@ erDiagram
 Индекс: `(householdId, startDate)`; частичный уникальный индекс: один ACTIVE на household.
 
 ### MealPlanDay
+
 | Поле | Тип | Ограничения |
-|---|---|---|
+| --- | --- | --- |
 | id | String @id | |
 | mealPlanId | String FK | onDelete: Cascade |
 | date | Date | @@unique([mealPlanId, date]) |
 | totalCalories / totalProteinG / totalFatG / totalCarbsG | Decimal(8,2) | денормализованные итоги, пересчитываются при замене блюда |
 
 ### MealPlanEntry
+
 | Поле | Тип | Ограничения |
-|---|---|---|
+| --- | --- | --- |
 | id | String @id | |
 | dayId | String FK | onDelete: Cascade |
 | mealType | Enum: BREAKFAST, LUNCH, DINNER, SNACK | |
@@ -708,8 +745,9 @@ erDiagram
 Индекс: `(dayId, mealType)`.
 
 ### ShoppingList
+
 | Поле | Тип | Ограничения |
-|---|---|---|
+| --- | --- | --- |
 | id | String @id | |
 | mealPlanId | String? FK | null для ручного списка |
 | householdId | String FK | |
@@ -720,8 +758,9 @@ erDiagram
 | createdAt / updatedAt | DateTime | |
 
 ### ShoppingListItem
+
 | Поле | Тип | Ограничения |
-|---|---|---|
+| --- | --- | --- |
 | id | String @id | |
 | shoppingListId | String FK | onDelete: Cascade |
 | ingredientId | String FK | |
@@ -737,8 +776,9 @@ erDiagram
 Индекс: `(shoppingListId, purchased)`.
 
 ### PrepSession
+
 | Поле | Тип | Ограничения |
-|---|---|---|
+| --- | --- | --- |
 | id | String @id | |
 | mealPlanId | String FK | |
 | scheduledAt | DateTime | обычно суббота |
@@ -747,8 +787,9 @@ erDiagram
 | status | Enum: PLANNED, IN_PROGRESS, DONE | |
 
 ### PrepTask
+
 | Поле | Тип | Ограничения |
-|---|---|---|
+| --- | --- | --- |
 | id | String @id | |
 | prepSessionId | String FK | onDelete: Cascade |
 | title | String | «Сварить булгур» |
@@ -759,8 +800,9 @@ erDiagram
 | done | Boolean | default false |
 
 ### PreparedPortion
+
 | Поле | Тип | Ограничения |
-|---|---|---|
+| --- | --- | --- |
 | id | String @id | |
 | mealPlanEntryId | String FK | |
 | containerNumber | Int | |
@@ -771,8 +813,9 @@ erDiagram
 | servingInstructions | String? | «разогреть 3 мин, добавить зелень» |
 
 ### Job (зеркало статусов BullMQ для polling)
+
 | Поле | Тип | Ограничения |
-|---|---|---|
+| --- | --- | --- |
 | id | String @id | = BullMQ jobId |
 | userId | String FK | |
 | type | Enum: GENERATE_TODAY, GENERATE_PLAN, RESCUE, LEFTOVERS, ROULETTE, REGENERATE, BUILD_SHOPPING_LIST | |
@@ -838,6 +881,7 @@ REST, префикс `/api/v1`, JSON, UTF-8. Аутентификация — co
 ## 4.1. Форматы
 
 **Успех:** данные напрямую. **Ошибка:**
+
 ```json
 {
   "error": {
@@ -848,6 +892,7 @@ REST, префикс `/api/v1`, JSON, UTF-8. Аутентификация — co
   }
 }
 ```
+
 Коды: `VALIDATION_ERROR` (400), `UNAUTHORIZED` (401), `FORBIDDEN` (403), `NOT_FOUND` (404), `CONFLICT` (409), `RATE_LIMITED` (429), `JOB_FAILED` (422 для генераций), `INTERNAL` (500). Валидация полей — `details.fields: {field: [messages]}`.
 
 Пагинация списков: `?cursor=...&limit=20` → `{ "items": [...], "nextCursor": "..." }`.
@@ -883,6 +928,7 @@ DELETE /api/v1/pantry-items/:id     → 204
 ```
 
 Пример POST pantry-items (201):
+
 ```json
 {
   "id": "01J8XQ...",
@@ -907,6 +953,7 @@ POST /api/v1/recommendations/roulette      { budgetMode, maxMinutes }
 Все recommendations-эндпоинты **синхронные для «today/rescue/leftovers/roulette»** (каталог ≤ 300 рецептов, scoring < 500 мс) и **асинхронные для недельного плана** (через Job).
 
 `POST /recommendations/today` request:
+
 ```json
 {
   "mood": "COZY",
@@ -916,7 +963,9 @@ POST /api/v1/recommendations/roulette      { budgetMode, maxMinutes }
   "peopleCount": 2
 }
 ```
+
 Response 200:
+
 ```json
 {
   "options": [
@@ -966,6 +1015,7 @@ POST /api/v1/meal-plans/:id/complete → 200 (архивирует план, с�
 ```
 
 Пример фрагмента GET /meal-plans/:id:
+
 ```json
 {
   "id": "mp_01J...",
@@ -1028,6 +1078,7 @@ interface AiProvider {
   normalizeRecipe(text: string): Promise<RecipeDraft>;
 }
 ```
+
 - Реализация по умолчанию: `TemplateAiProvider` (объяснения собираются шаблонами из факторов scoring — полностью детерминированно).
 - `LlmAiProvider` — опционально за feature flag `AI_LLM_ENABLED`, OpenAI-compatible endpoint, timeout 5s, fallback на Template при ошибке/таймауте.
 - LLM-вывод валидируется Zod-схемой; невалидный вывод → fallback, инцидент логируется.
@@ -1118,7 +1169,7 @@ interface AiProvider {
 ## 6.1. Целевой хост
 
 | Параметр | Значение |
-|---|---|
+| --- | --- |
 | Hostname | `multichef` |
 | IP (LAN) | `192.168.1.95` |
 | ОС | Ubuntu 24.04.4 LTS (Noble Numbat) |
@@ -1137,7 +1188,7 @@ interface AiProvider {
 ## 6.2. Учётные записи на хосте
 
 | Учётка | Назначение | Sudo | Аутентификация |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `root` | первоначальная настройка ОС и sshd | — | по паролю (до MC-080) |
 | `deploy` | деплой, рутинные операции на сервере | `NOPASSWD: ALL` (sudoers drop-in `/etc/sudoers.d/deploy`) | по SSH-ключу |
 | `multichef_app` | запуск приложения и worker-ов (MC-082) | без sudo, член группы `docker` | по SSH-ключу |
@@ -1159,6 +1210,7 @@ Host multichef
 ```
 
 Сокращения:
+
 - `ssh multichef 'команда'` — выполнить одну команду;
 - `scp ... multichef:/path/` — копировать артефакты;
 - `ssh multichef sudo systemctl restart multichef-api` — после того как MC-082 поднимет systemd-юниты.
@@ -1183,6 +1235,7 @@ Host multichef
 ```
 
 Правила:
+
 - Порты `3000` и `3001` слушают только на `127.0.0.1` внутри multichef; наружу торчит только `:80`/`:443` через Nginx.
 - Postgres и Redis не открываются во внешнюю сеть, доступ — только через локальный unix-socket или `127.0.0.1`.
 - DMZ между manager и multichef не нужна — обе машины в одной LAN `192.168.1.0/24`.
@@ -1190,7 +1243,7 @@ Host multichef
 ## 6.5. Где лежат приложения и данные
 
 | Что | Путь на multichef | Владелец | Права |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | Репозиторий (код) | `/opt/multichef/` | `deploy:deploy` | `755` на каталоги, `644` на файлы |
 | `.env` файлы приложения | `/etc/multichef/` | `root:multichef_app` | `640` |
 | Артефакты сборки (Next.js standalone) | `/var/lib/multichef/web/` | `multichef_app:multichef_app` | `750` |
@@ -1219,7 +1272,7 @@ Host multichef
 ## 6.7. Что входит в MC-072 (расширение)
 
 | Подзадача | Содержание | DoD |
-|---|---|---|
+| --- | --- | --- |
 | MC-072.1 | `bootstrap-lxc.sh` — идемпотентная настройка чистого LXC: пакеты, swap при RAM<4Gi, sysctl (`vm.swappiness=10`, `net.core.somaxconn=1024`), timezone `UTC`, `chrony`, `fail2ban` для SSH, создание `multichef_app`, группы `docker`, `adm`, `backup`. | скрипт можно прогнать дважды без изменений (`diff` пустой) |
 | MC-072.2 | `deploy.sh` — последовательность `preflight → backup → pull → build → migrate → restart → smoke → health → rollback on fail`. Параметры берёт из `/etc/multichef/deploy.env`. | первый успешный прогон + один успешный rollback после сломанной миграции |
 | MC-072.3 | `backup-postgres.sh` — `pg_dump -Fc` в `/var/backups/multichef/postgres/YYYY-MM-DD/HH-MM.dump`, ротация 7 ежедневных / 4 еженедельных / 6 ежемесячных. | восстановление из дампа 24-часовой давности на чистой БД проходит без ошибок |
@@ -1248,7 +1301,7 @@ Host multichef
 В этом файле:
 
 | Раздел | Что внутри |
-|---|---|
+| --- | --- |
 | §1. Хост `multichef` | hostname, IP, SSH-юзер, путь к приватному ключу на manager, fingerprint, sshd hardening, sudoers drop-in |
 | §2. Репозиторий | GitHub owner/repo, SSH-remote, имя SSH-ключа, его fingerprint, scopes ключа |
 | §3. Процедура восстановления | пошаговые инструкции для трёх сценариев (потеря SSH к multichef / потеря GitHub-доступа / потеря самого INVENTORY) |
@@ -1267,16 +1320,16 @@ Host multichef
 ### 6.9.3. Сценарии восстановления
 
 | Сценарий | Краткий план | Полная инструкция |
-|---|---|---|
+| --- | --- | --- |
 | Потерян SSH-доступ к multichef | Proxmox UI → LXC console → root по паролю → `passwd deploy` или замена `authorized_keys` | INVENTORY §3.1 |
-| Потерян GitHub PAT | https://github.com/settings/tokens → revoke + new → положить в `~/.config/gh/host.yml` | INVENTORY §3.2 |
-| Потерян GitHub SSH-ключ | `ssh-keygen` → добавить в https://github.com/settings/keys → отозвать старый | INVENTORY §3.2 |
+| Потерян GitHub PAT | <https://github.com/settings/tokens> → revoke + new → положить в `~/.config/gh/host.yml` | INVENTORY §3.2 |
+| Потерян GitHub SSH-ключ | `ssh-keygen` → добавить в <https://github.com/settings/keys> → отозвать старый | INVENTORY §3.2 |
 | Потерян сам INVENTORY.md | Восстановление из age-encrypted бэкапа (см. INVENTORY §3.3) | INVENTORY §3.3 |
 
 ### 6.9.4. Каналы, ЗАПРЕЩЁННЫЕ для передачи секретов
 
 | Канал | Почему запрещён |
-|---|---|
+| --- | --- |
 | Чат / мессенджер / email | Логируется, бэкапится, индексируется, потенциально шарится |
 | Скриншоты | То же + нечитаемо для grep-фильтров в логах |
 | Комментарии в git | Попадает в историю навсегда, очищается только через `git filter-repo` |
@@ -1286,10 +1339,10 @@ Host multichef
 ### 6.9.5. Каналы, РАЗРЕШЁННЫЕ для секретов
 
 | Канал | Условия |
-|---|---|
+| --- | --- |
 | Файлы с chmod 600 в `~/.deploy-secrets/multichef/` | На manager-хосте, root-only |
 | Файлы с chmod 640 в `/etc/multichef/` | На multichef, owner `root:multichef_app` |
-| GitHub Secrets (для CI) | Через web-интерфейс https://github.com/Gavroid/MULTI-CHEF/settings/secrets/actions |
+| GitHub Secrets (для CI) | Через web-интерфейс <https://github.com/Gavroid/MULTI-CHEF/settings/secrets/actions> |
 | Environment-переменные systemd-юнитов | На multichef, через `EnvironmentFile=` |
 | age-encrypted бэкап INVENTORY | В личном облаке Gavroid, ключ age отдельно |
 

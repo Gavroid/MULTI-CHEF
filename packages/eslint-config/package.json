@@ -1,0 +1,29 @@
+{
+  "name": "@multichef/eslint-config",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Shared ESLint v9 flat-config for the monorepo (MC-001 scaffold)",
+  "type": "module",
+  "main": "./base.js",
+  "exports": {
+    "./base": "./base.js",
+    "./nest": "./nest.js",
+    "./next": "./next.js",
+    "./node": "./node.js"
+  },
+  "files": [
+    "base.js",
+    "nest.js",
+    "next.js",
+    "node.js"
+  ],
+  "dependencies": {
+    "@eslint/js": "^9.17.0",
+    "typescript-eslint": "^8.18.2",
+    "eslint-config-prettier": "^9.1.0",
+    "globals": "^15.14.0"
+  },
+  "peerDependencies": {
+    "eslint": "^9.0.0"
+  }
+}

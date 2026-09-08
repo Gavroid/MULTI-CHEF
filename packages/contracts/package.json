@@ -1,0 +1,28 @@
+{
+  "name": "@multichef/contracts",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Cross-package TypeScript contracts (types, DTOs, schemas). Scaffold only in MC-001.",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "format:check": "prettier --check \"src/**/*.ts\"",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test --import tsx src/__tests__/index.test.ts",
+    "build": "echo 'contracts: nothing to build in scaffold (MC-001)'",
+    "clean": "rm -rf dist .turbo *.tsbuildinfo"
+  },
+  "devDependencies": {
+    "@multichef/eslint-config": "workspace:*",
+    "@multichef/typescript-config": "workspace:*",
+    "eslint": "^9.17.0",
+    "prettier": "^3.4.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

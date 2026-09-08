@@ -8,7 +8,7 @@
 ## 1. Пирамида и инструменты
 
 | Уровень | Инструмент | Что покрывает | Где запускается |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | Unit | Vitest | чистые функции: nutrition, recommendation, shopping, prep-планировщик, мапперы, DTO-схемы | каждый PR (CI) |
 | Component | Vitest + Testing Library | UI-компоненты и их состояния (default/hover/disabled/loading/error) | каждый PR (CI) |
 | Integration | NestJS testing + Testcontainers (postgres:16, redis:7) | эндпоинты, транзакции, изоляция household, auth-flow, jobs | каждый PR (CI) |
@@ -25,7 +25,7 @@
 Все вычислительные модули тестируются против **зафиксированных ожиданий**, а не пересчитанных «тем же кодом» значений.
 
 | Fixture | Вход | Зафиксированное ожидание |
-|---|---|---|
+| --- | --- | --- |
 | `nutrition-basic` | 100 г куриного филе (110 ккал/23/2/0 на 100 г) | 110 ккал, Б 23, Ж 2, У 0 |
 | `nutrition-recipe` | рецепт: филе 200 г + рис сухой 80 г + масло 10 г, servings=2 | точные значения на порцию, вычисленные вручную и записанные в файл |
 | `nutrition-edible` | 1000 г картофеля, ediblePartRatio=0.85 | расчёт от 850 г |
@@ -50,7 +50,7 @@
 Каждый сценарий — независим, с собственным seed-пользователем, viewport 390×844 (iPhone 14), второй прогон — WebKit.
 
 | # | Сценарий | Ключевые assert-ы |
-|---|---|---|
+| --- | --- | --- |
 | E1 | Регистрация | cookie установлена (HttpOnly), редирект на /today |
 | E2 | Онбординг 7 шагов | данные сохранены, видны в /profile |
 | E3 | Добавление продуктов | поиск «помидор» → добавлен, бейдж срока корректного цвета |
@@ -67,12 +67,14 @@
 ## 5. Нефункциональная верификация
 
 ### 5.1. Производительность
+
 - `POST /recommendations/today` < 500 мс (p95, seed-каталог 300 рецептов).
 - Генерация недельного плана < 60 сек (job, 7×3).
 - `GET /recipes`, `GET /pantry-items` — p95 < 300 мс при 20 RPS / 60 сек, 0 ошибок 5xx.
 - Lighthouse на /today: Performance ≥ 80, Accessibility ≥ 95, Best Practices ≥ 90.
 
 ### 5.2. Безопасность (чек-лист на релиз)
+
 - [ ] gitleaks чист по всей истории.
 - [ ] Все мутации требуют CSRF-заголовок (тест 403 без него).
 - [ ] Все ресурсы проверяют householdId из сессии (integration: чужой id → 404).
@@ -81,16 +83,18 @@
 - [ ] 3000/3001/5432/6379 не слушают внешний интерфейс (`ss -tlnp`).
 - [ ] Пароли — Argon2id; токены сессий в БД — только хеши.
 - [ ] Sentry-scrubbing: в событиях нет cookie/Authorization/email.
+
 - [ ] npm audit: 0 critical/high без documented-исключения.
 
 ### 5.3. Доступность (a11y)
+
 - Контрасты ≥ 4.5:1 (отчёт в PR для MC-012, далее — при изменении токенов).
 - Клавиатурная навигация по 5 табам и wizard (Tab/Shift+Tab/Enter/Escape).
 - Видимый focus-ring; touch-target ≥ 44px; axe-core в e2e на /today и /plan — 0 critical-нарушений.
 
 ## 6. CI/CD-гейты
 
-```
+```text
 PR pipeline (блокирующий):
   install → lint → format:check → typecheck → unit+component → integration → build → gitleaks
 Nightly (неблокирующий, алерт в канал):

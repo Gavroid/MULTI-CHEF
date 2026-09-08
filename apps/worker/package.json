@@ -1,0 +1,27 @@
+{
+  "name": "@multichef/worker",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Background worker process stub (MC-001). Real jobs land in MC-050.",
+  "type": "module",
+  "main": "dist/main.js",
+  "scripts": {
+    "dev": "tsx watch src/main.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/main.js",
+    "lint": "eslint .",
+    "format:check": "prettier --check \"src/**/*.ts\" \"*.{js,json,md}\"",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test --import tsx src/__tests__/loop.test.ts",
+    "clean": "rm -rf dist .turbo *.tsbuildinfo"
+  },
+  "devDependencies": {
+    "@multichef/eslint-config": "workspace:*",
+    "@multichef/typescript-config": "workspace:*",
+    "@types/node": "^22.10.2",
+    "eslint": "^9.17.0",
+    "prettier": "^3.4.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}
