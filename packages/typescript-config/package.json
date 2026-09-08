@@ -1,0 +1,12 @@
+{
+  "name": "@multichef/typescript-config",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Base TypeScript configuration shared across the monorepo (MC-001 scaffold)",
+  "files": [
+    "base.json",
+    "library.json",
+    "next.json",
+    "nest.json"
+  ]
+}
