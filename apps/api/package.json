@@ -2,7 +2,7 @@
   "name": "@multichef/api",
   "version": "0.0.0",
   "private": true,
-  "description": "NestJS API (Fastify driver) with /api/v1 prefix. MC-001 scaffold; MC-002 env, MC-003 prisma readiness.",
+  "description": "NestJS API (Fastify driver) with /api/v1 prefix. MC-001 scaffold; MC-002 env; MC-003 prisma; MC-010 auth.",
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/main.ts",
@@ -12,27 +12,40 @@
     "lint": "eslint .",
     "format:check": "prettier --check \"src/**/*.ts\" \"*.{js,json,md}\"",
     "typecheck": "tsc --noEmit",
-    "test": "node --test --import tsx --test-reporter=spec src/__tests__/health.test.ts",
+    "test": "RUN_DB_INTEGRATION= node --test --import tsx --test-reporter=spec src/__tests__/auth.test.ts src/__tests__/dto.test.ts src/__tests__/error-envelope.test.ts src/__tests__/idempotency.test.ts src/__tests__/health.test.ts",
+    "test:integration": "RUN_DB_INTEGRATION=1 node --test --import tsx --test-reporter=spec src/__tests__/integration.test.ts",
     "clean": "rm -rf dist .turbo *.tsbuildinfo"
   },
   "dependencies": {
+    "@fastify/cookie": "^11.0.2",
+    "@fastify/helmet": "^13.0.1",
+    "@fastify/static": "^10.1.2",
     "@multichef/config": "workspace:*",
     "@multichef/database": "workspace:*",
     "@nestjs/common": "^11.1.0",
     "@nestjs/core": "^11.1.0",
     "@nestjs/platform-fastify": "^11.1.0",
+    "@nestjs/swagger": "^11.2.1",
+    "@nestjs/throttler": "^6.4.0",
+    "argon2": "^0.41.1",
+    "@prisma/client": "^6.19.3",
+    "@prisma/adapter-pg": "^6.19.3",
     "fastify": "^5.7.0",
+    "nestjs-zod": "^4.0.0",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "zod": "^3.24.1"
   },
   "devDependencies": {
     "@multichef/eslint-config": "workspace:*",
     "@multichef/typescript-config": "workspace:*",
     "@nestjs/cli": "^11.0.0",
     "@nestjs/schematics": "^11.0.0",
+    "@types/cookie": "^0.6.0",
     "@types/node": "^22.10.2",
     "eslint": "^9.17.0",
     "prettier": "^3.4.2",
+    "supertest": "^7.0.0",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2"
   }
