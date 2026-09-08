@@ -68,12 +68,10 @@
 
 ### 5.1. Производительность
 
-
 - `POST /recommendations/today` < 500 мс (p95, seed-каталог 300 рецептов).
 - Генерация недельного плана < 60 сек (job, 7×3).
 - `GET /recipes`, `GET /pantry-items` — p95 < 300 мс при 20 RPS / 60 сек, 0 ошибок 5xx.
 - Lighthouse на /today: Performance ≥ 80, Accessibility ≥ 95, Best Practices ≥ 90.
-
 
 ### 5.2. Безопасность (чек-лист на релиз)
 
@@ -87,7 +85,6 @@
 - [ ] Sentry-scrubbing: в событиях нет cookie/Authorization/email.
 
 - [ ] npm audit: 0 critical/high без documented-исключения.
-
 
 ### 5.3. Доступность (a11y)
 
