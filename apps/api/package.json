@@ -2,7 +2,7 @@
   "name": "@multichef/api",
   "version": "0.0.0",
   "private": true,
-  "description": "NestJS API (Fastify driver) with /api/v1 prefix. MC-001 scaffold; MC-002 wires env config.",
+  "description": "NestJS API (Fastify driver) with /api/v1 prefix. MC-001 scaffold; MC-002 env, MC-003 prisma readiness.",
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/main.ts",
@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@multichef/config": "workspace:*",
+    "@multichef/database": "workspace:*",
     "@nestjs/common": "^11.1.0",
     "@nestjs/core": "^11.1.0",
     "@nestjs/platform-fastify": "^11.1.0",

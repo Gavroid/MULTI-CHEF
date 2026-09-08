@@ -27,7 +27,8 @@
   "pnpm": {
     "overrides": {
       "postcss": "^8.5.23",
-      "fastify": "^5.12.1"
+      "fastify": "^5.12.1",
+      "deepmerge-ts": "^8.0.0"
     }
   }
 }

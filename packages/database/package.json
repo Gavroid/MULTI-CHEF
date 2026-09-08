@@ -2,27 +2,50 @@
   "name": "@multichef/database",
   "version": "0.0.0",
   "private": true,
-  "description": "Database client wrapper (Prisma). Empty scaffold in MC-001; real schema in MC-003.",
+  "description": "Database package: Prisma client + schema (MC-003). Single source of truth for process.env.DATABASE_URL via @multichef/config.",
   "type": "module",
-  "main": "./src/index.ts",
-  "types": "./src/index.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
   },
   "scripts": {
     "lint": "eslint .",
-    "format:check": "prettier --check \"src/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\" \"prisma/**/*.prisma\"",
     "typecheck": "tsc --noEmit",
-    "test": "node --test --import tsx src/__tests__/index.test.ts",
-    "build": "echo 'database: nothing to build in scaffold (MC-001); Prisma in MC-003'",
+    "test": "node --test --import tsx --test-reporter=spec src/__tests__/index.test.ts",
+    "test:integration": "RUN_DB_INTEGRATION=1 node --test --import tsx --test-reporter=spec src/__tests__/integration.test.ts",
+    "prisma": "prisma",
+    "prisma:generate": "prisma generate",
+    "prisma:validate": "prisma validate",
+    "prisma:format": "prisma format",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:deploy": "prisma migrate deploy",
+    "prisma:diff": "prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script",
+    "build": "tsc -p tsconfig.build.json",
     "clean": "rm -rf dist .turbo *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@multichef/config": "workspace:*",
+    "@prisma/adapter-pg": "^6.2.1",
+    "@prisma/client": "^6.2.1"
   },
   "devDependencies": {
     "@multichef/eslint-config": "workspace:*",
     "@multichef/typescript-config": "workspace:*",
+    "@testcontainers/postgresql": "^11.5.1",
+    "@types/node": "^22.10.2",
+    "@types/pg": "^8.11.10",
     "eslint": "^9.17.0",
     "prettier": "^3.4.2",
+    "prisma": "^6.2.1",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed/index.ts"
   }
 }
