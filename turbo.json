@@ -29,6 +29,10 @@
     "check:env-coverage": {
       "cache": false,
       "outputs": []
+    },
+    "check:adr-coverage": {
+      "cache": false,
+      "outputs": []
     }
   }
 }
