@@ -1,0 +1,32 @@
+{
+  "name": "multichef",
+  "version": "0.0.0",
+  "private": true,
+  "description": "MULTI-CHEF monorepo (Phase 0 scaffold, MC-001)",
+  "engines": {
+    "node": "^24",
+    "pnpm": ">=9"
+  },
+  "packageManager": "pnpm@9.15.9",
+  "scripts": {
+    "dev": "turbo run dev --parallel",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "format:check": "prettier --check --log-level warn \"apps/**/*.{ts,tsx,js,json,md}\" \"packages/**/*.{ts,tsx,js,json,md}\" \"*.{ts,tsx,js,json,md,yaml,yml}\"",
+    "format": "prettier --write \"apps/**/*.{ts,tsx,js,json,md}\" \"packages/**/*.{ts,tsx,js,json,md}\" \"*.{ts,tsx,js,json,md,yaml,yml}\"",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "clean": "turbo run clean && rm -rf node_modules"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.3",
+    "prettier": "^3.4.2",
+    "typescript": "^5.7.2"
+  },
+  "pnpm": {
+    "overrides": {
+      "postcss": "^8.5.23",
+      "fastify": "^5.12.1"
+    }
+  }
+}
