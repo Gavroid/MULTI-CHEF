@@ -2,7 +2,7 @@
   "name": "multichef",
   "version": "0.0.0",
   "private": true,
-  "description": "MULTI-CHEF monorepo (Phase 0 scaffold, MC-001)",
+  "description": "MULTI-CHEF monorepo (Phase 0 scaffold, MC-001; dev infra MC-002)",
   "engines": {
     "node": "^24",
     "pnpm": ">=9"
@@ -14,8 +14,9 @@
     "lint": "turbo run lint",
     "format:check": "prettier --check --log-level warn \"apps/**/*.{ts,tsx,js,json,md}\" \"packages/**/*.{ts,tsx,js,json,md}\" \"*.{ts,tsx,js,json,md,yaml,yml}\"",
     "format": "prettier --write \"apps/**/*.{ts,tsx,js,json,md}\" \"packages/**/*.{ts,tsx,js,json,md}\" \"*.{ts,tsx,js,json,md,yaml,yml}\"",
-    "typecheck": "turbo run typecheck",
+    "typecheck": "pnpm run check:env-coverage && turbo run typecheck",
     "test": "turbo run test",
+    "check:env-coverage": "node scripts/check-env-coverage.mjs",
     "clean": "turbo run clean && rm -rf node_modules"
   },
   "devDependencies": {

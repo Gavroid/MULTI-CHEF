@@ -25,6 +25,10 @@
     "dev": {
       "cache": false,
       "persistent": true
+    },
+    "check:env-coverage": {
+      "cache": false,
+      "outputs": []
     }
   }
 }

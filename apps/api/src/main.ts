@@ -1,11 +1,23 @@
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
-import { AppModule } from './app.module';
+import { AppModule } from './app.module.js';
+import { loadServerEnv, EnvValidationError } from '@multichef/config';
 
-// MC-001 scaffold: global /api/v1 prefix and trust proxy enabled for the
-// future Nginx gateway (MC-071). Real config (env, logging, CORS) lands
-// in MC-002 alongside the Zod env schema (see ADR-0007).
+// MC-002: load + validate env before NestFactory boots. The API must
+// fail fast at startup if anything is missing or malformed — we never
+// want to reach `app.listen()` with a half-configured environment.
+
+let env: ReturnType<typeof loadServerEnv>;
+try {
+  env = loadServerEnv();
+} catch (err) {
+  if (err instanceof EnvValidationError) {
+    console.error(err.message);
+    process.exit(1);
+  }
+  throw err;
+}
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -16,9 +28,9 @@ async function bootstrap(): Promise<void> {
   app.setGlobalPrefix('api/v1');
   app.enableShutdownHooks();
 
-  const port = Number(process.env['PORT'] ?? 3001);
-  await app.listen(port, '0.0.0.0');
-  console.log(`api listening on http://localhost:${port}/api/v1`);
+  await app.listen(env.API_PORT, '0.0.0.0');
+  console.log(`env: ok (NODE_ENV=${env.NODE_ENV}, CORS=${env.CORS_ORIGINS.length} origins)`);
+  console.log(`api listening on http://localhost:${env.API_PORT}/api/v1`);
 }
 
 void bootstrap();

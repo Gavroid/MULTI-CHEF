@@ -2,19 +2,20 @@
   "name": "@multichef/web",
   "version": "0.0.0",
   "private": true,
-  "description": "Next.js 15 web app (App Router, TS strict, mobile-first). MC-001 scaffold only.",
+  "description": "Next.js 15 web app (App Router, TS strict, mobile-first). MC-001 scaffold; MC-002 wires env config.",
   "type": "module",
   "scripts": {
-    "dev": "next dev -p 3000",
+    "dev": "next dev -p ${WEB_PORT:-3000}",
     "build": "next build",
-    "start": "next start -p 3000",
+    "start": "next start -p ${WEB_PORT:-3000}",
     "lint": "eslint .",
     "format:check": "prettier --check \"src/**/*.{ts,tsx}\" \"*.{js,json,md}\"",
     "typecheck": "tsc --noEmit",
-    "test": "node --test --import tsx src/__tests__/smoke.test.tsx",
+    "test": "node --test --import tsx --test-reporter=spec src/__tests__/smoke.test.tsx",
     "clean": "rm -rf .next .turbo *.tsbuildinfo"
   },
   "dependencies": {
+    "@multichef/config": "workspace:*",
     "next": "^15.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
