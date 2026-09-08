@@ -1,0 +1,9 @@
+# Gitleaks config for MULTI-CHEF (MC-005).
+#
+# Built-in rules cover most common patterns (AWS keys, GitHub PATs,
+# Slack tokens, generic high-entropy strings). We do NOT add a
+# canary allowlist entry — the negative-test branch `test/gitleaks-canary`
+# is created, used, and then deleted as part of the MC-005 DoD.
+
+[allowlist]
+  paths = []

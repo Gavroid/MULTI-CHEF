@@ -1,4 +1,26 @@
-name: hello CI
+name: ci
+
+# MC-005: full pipeline replacing the MC-001 hello-CI smoke. Five
+# jobs run in parallel where possible:
+#   - lint       (ESLint + Prettier)
+#   - typecheck  (tsc --noEmit for every workspace package, gated on
+#                 check:env-coverage and check:adr-coverage)
+#   - test       (unit tests; integration tests stay behind
+#                 `pnpm --filter @multichef/database test:integration`
+#                 because they require Docker)
+#   - build      (turbo run build)
+#   - secret-scan (gitleaks-action, runs in parallel with the others)
+#
+# Concurrency:
+#   - push to main is informational (the merge gate is the PR checks).
+#   - pull_request runs the same matrix; in-progress runs on the same
+#     PR cancel themselves so we don't burn CI minutes.
+#
+# Postgres service:
+#   - Provided for future tests that need it. The current unit suite
+#     does not hit Postgres; the integration suite does and is run
+#     via `pnpm --filter @multichef/database test:integration` on
+#     Docker-capable hosts only (see CONTRIBUTING.md §9).
 
 on:
   push:
@@ -6,26 +28,192 @@ on:
   pull_request:
     branches: [main]
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
+  pull-requests: read
+
+env:
+  # Pin Node + pnpm versions for reproducibility. CI does NOT use
+  # engine-strict because pnpm itself is the gate; .nvmrc at the repo
+  # root is the source of truth for the LTS version.
+  NODE_VERSION: '24'
+  PNPM_VERSION: '9.15.9'
 
 jobs:
-  hello:
-    name: hello
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm --filter @multichef/database prisma generate
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Format check
+        run: pnpm format:check
+
+  typecheck:
+    name: typecheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm --filter @multichef/database prisma generate
+
+      - name: Typecheck
+        # Includes check:env-coverage + check:adr-coverage.
+        run: pnpm typecheck
+
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: multichef
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: multichef_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U multichef -d multichef_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      # Testcontainers + a manual DATABASE_URL fall back. The unit
+      # suite only needs env-coverage + adr-coverage; the integration
+      # suite (gated behind RUN_DB_INTEGRATION) uses the real
+      # Postgres + Redis started above.
+      RUN_DB_INTEGRATION: '1'
+      DATABASE_URL: postgresql://multichef:test_password@127.0.0.1:5432/multichef_test
+      INTEGRATION_DATABASE_URL: postgresql://multichef:test_password@127.0.0.1:5432/multichef_test
+      REDIS_URL: redis://127.0.0.1:6379
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm --filter @multichef/database prisma generate
+
+      - name: Apply migrations
+        run: pnpm --filter @multichef/database prisma migrate deploy
+
+      - name: Unit tests
+        run: pnpm test
+
+      - name: Integration tests (packages/database)
+        if: success()
+        run: pnpm --filter @multichef/database test:integration
+
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [lint, typecheck]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm --filter @multichef/database prisma generate
+
+      - name: Build
+        run: pnpm build
+
+  secret-scan:
+    name: secret-scan
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # gitleaks needs the full history to detect secrets that
+          # were added in earlier commits and later moved around.
+          fetch-depth: 0
 
-      - name: Announce
-        run: |
-          echo "::group::Repo state"
-          git log --oneline -n 5 || true
-          echo "Files at root:"
-          ls -la
-          echo "::endgroup::"
-
-      - name: markdownlint
-        uses: DavidAnson/markdownlint-cli2-action@v19
-        # Config lives at .markdownlint-cli2.jsonc
+      - name: Run gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

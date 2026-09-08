@@ -1,5 +1,7 @@
 # MULTI-CHEF
 
+[![CI](https://github.com/Gavroid/MULTI-CHEF/actions/workflows/ci.yml/badge.svg)](https://github.com/Gavroid/MULTI-CHEF/actions/workflows/ci.yml)
+
 MULTI-CHEF monorepo. This repository hosts the production code for the
 project described in `docs/MULTICHEF-ARCHITECTURE-PRD.md`,
 `docs/MULTICHEF-DEVELOPMENT-PLAN.md`, and `docs/MULTICHEF-TESTING-STRATEGY.md`.

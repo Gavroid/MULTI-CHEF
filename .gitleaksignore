@@ -1,0 +1,15 @@
+# Gitleaks ignore patterns for MULTI-CHEF (MC-005).
+#
+# Each line is a regex matched against the finding file:line. Findings
+# whose file+line matches a regex below are silenced with a WARN, not a
+# hard FAIL, and the gitleaks-action treats them as allowlisted.
+#
+# Use this only for documentation examples that genuinely look like
+# secrets (ULIDs, fake API keys, etc.). Real secrets must NEVER be
+# allowlisted — rotate them and remove from history (git filter-repo
+# or BFG) instead.
+
+# Idempotency-Key example in docs/api/conventions.md: a synthetic
+# ULID-shaped string used to illustrate the Idempotency-Key HTTP
+# header (PRD §4.1). It is NOT a real GitHub PAT.
+docs/api/conventions\.md:.*

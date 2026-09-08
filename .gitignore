@@ -37,3 +37,6 @@ logs/
 # Local secrets (NEVER commit)
 .deploy-secrets/
 *.age
+
+# Husky: track the hook scripts, ignore the runtime shim dir.
+.husky/_
