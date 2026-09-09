@@ -6,16 +6,15 @@ import { dirname, resolve } from 'node:path';
 
 const here = dirname(fileURLToPath(import.meta.url));
 
-// When the test is run from source (`src/__tests__/`) the target is at
-// `src/app/page.tsx`. When it is run from a built `dist/__tests__/`
-// location, the target is at `../src/app/page.tsx`. Walk up from `here`
-// until we find the file.
+// Walk up from this file's directory until we find `apps/web/src/`. The
+// `node --test --import tsx` invocation can land in either the source
+// tree or a built `dist/` copy, so we discover the project root
+// dynamically.
 function findProjectRoot(start: string): string {
   let cursor = start;
   for (let i = 0; i < 8; i += 1) {
-    const candidate = resolve(cursor, 'src/app/page.tsx');
     try {
-      readFileSync(candidate, 'utf8');
+      readFileSync(resolve(cursor, 'src/app/page.tsx'), 'utf8');
       return cursor;
     } catch {
       const parent = resolve(cursor, '..');
@@ -29,13 +28,64 @@ function findProjectRoot(start: string): string {
 const root = findProjectRoot(here);
 const pageSource = readFileSync(resolve(root, 'src/app/page.tsx'), 'utf8');
 const layoutSource = readFileSync(resolve(root, 'src/app/layout.tsx'), 'utf8');
+const globalsCss = readFileSync(resolve(root, 'src/app/globals.css'), 'utf8');
+const tailwindConfig = readFileSync(resolve(root, 'tailwind.config.ts'), 'utf8');
 
-test('home page renders MULTI-CHEF scaffold heading (MC-001)', () => {
+test('landing page renders MULTI-CHEF heading (MC-012)', () => {
   assert.match(pageSource, /MULTI-CHEF/);
-  assert.match(pageSource, /scaffold/);
+  // Renders Button + Card from @multichef/ui — proves the design system
+  // primitives are wired into the landing.
+  assert.match(pageSource, /@multichef\/ui/);
+  assert.match(pageSource, /<Button\b/);
+  assert.match(pageSource, /<Card\b/);
 });
 
-test('layout declares mobile-first viewport (MC-001)', () => {
+test('landing page uses the theme toggle (light/dark)', () => {
+  assert.match(pageSource, /ThemeToggle/);
+});
+
+test('layout declares mobile-first viewport + lang=ru (MC-012)', () => {
   assert.match(layoutSource, /viewport/);
   assert.match(layoutSource, /device-width/);
+  assert.match(layoutSource, /lang="ru"/);
+});
+
+test('layout applies data-theme="light" baseline (MC-012)', () => {
+  assert.match(layoutSource, /data-theme="light"/);
+});
+
+test('globals.css declares PRD §2.5 color tokens', () => {
+  for (const token of [
+    '--color-bg',
+    '--color-surface',
+    '--color-primary',
+    '--color-fresh',
+    '--color-warning',
+    '--color-danger',
+    '--color-info',
+  ]) {
+    assert.match(globalsCss, new RegExp(`${token}:`), `globals.css should define ${token}`);
+  }
+});
+
+test('globals.css provides a [data-theme="dark"] override block', () => {
+  assert.match(globalsCss, /\[data-theme=['"]dark['"]\]/);
+});
+
+test('tailwind.config.ts maps the color tokens into the theme', () => {
+  // Every CSS variable listed in tailwind.config.ts should resolve to
+  // the `var(--color-…)` form so light/dark swaps work.
+  for (const token of ['primary', 'bg', 'surface', 'fresh', 'danger']) {
+    assert.match(
+      tailwindConfig,
+      new RegExp(`${token}:\\s*['"]var\\(--color-${token}\\)['"]`),
+      `tailwind theme.colors.${token} should reference var(--color-${token})`,
+    );
+  }
+});
+
+test('tailwind.config.ts configures mobile-first content scan', () => {
+  assert.match(tailwindConfig, /content:/);
+  assert.match(tailwindConfig, /apps\/web\/src/);
+  assert.match(tailwindConfig, /packages\/ui\/src/);
 });
