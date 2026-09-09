@@ -278,6 +278,9 @@ importers:
       '@multichef/config':
         specifier: workspace:*
         version: link:../config
+      '@multichef/nutrition':
+        specifier: workspace:*
+        version: link:../nutrition
       '@prisma/adapter-pg':
         specifier: ^6.2.1
         version: 6.19.3
