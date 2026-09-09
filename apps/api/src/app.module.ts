@@ -9,6 +9,7 @@ import { AuthModule } from './auth/auth.module.js';
 import { ProfileModule } from './profile/profile.module.js';
 import { HouseholdModule } from './household/household.module.js';
 import { IngredientsModule } from './ingredients/ingredients.module.js';
+import { PantryModule } from './pantry/pantry.module.js';
 
 // MC-010 — global app wiring.
 //
@@ -27,6 +28,7 @@ import { IngredientsModule } from './ingredients/ingredients.module.js';
     ProfileModule,
     HouseholdModule,
     IngredientsModule,
+    PantryModule,
   ],
   providers: [
     // Global exception filter — converts every thrown error into the

@@ -1,5 +1,5 @@
 {
   "*.{ts,tsx,js,mjs,cjs}": ["prettier --write"],
   "*.{json,md,yaml,yml}": ["prettier --write"],
-  "*.prisma": ["pnpm exec prisma format --schema=packages/database/prisma/schema.prisma"]
+  "*.prisma": ["pnpm --filter @multichef/database exec prisma format --schema=prisma/schema.prisma"]
 }

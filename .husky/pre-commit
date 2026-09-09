@@ -22,6 +22,16 @@
 # which downloads a one-shot binary. Either path blocks the commit
 # on any leak — exit code != 0.
 
+# Ensure pnpm uses the Node 24 toolchain (engines.node = ^24). When
+# the hook inherits PATH from a parent that has /usr/bin/node first,
+# pnpm's "Unsupported environment" check trips because pnpm runs on
+# system Node v22. Prepend the Node 24 install path so pnpm + node
+# are picked up before the system ones. No-op on hosts that don't
+# have this exact path (CI uses container-managed Node 24).
+if [ -d /root/local/node24/node-v24.0.0-linux-x64/bin ]; then
+  export PATH="/root/local/node24/node-v24.0.0-linux-x64/bin:$PATH"
+fi
+
 set -e
 
 pnpm exec lint-staged

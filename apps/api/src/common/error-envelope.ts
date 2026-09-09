@@ -12,8 +12,10 @@ export type ErrorCode =
   | 'CONFLICT'
   | 'RATE_LIMITED'
   | 'JOB_FAILED'
-  | 'INTERNAL_ERROR' // Domain-specific 404s — share HTTP 404 with NOT_FOUND but let
-  // the client disambiguate which resource is missing.
+  | 'INTERNAL_ERROR'
+  | 'BAD_REQUEST' // Domain-specific 400/404 — share HTTP status with the generic
+  // code but let the client disambiguate which resource is missing
+  // or which business invariant was violated.
   | 'INGREDIENT_NOT_FOUND'
   | 'RECIPE_NOT_FOUND'
   | 'MEAL_PLAN_NOT_FOUND'
@@ -23,10 +25,12 @@ export type ErrorCode =
   | 'PANTRY_ITEM_NOT_FOUND'
   | 'SHOPPING_LIST_NOT_FOUND'
   | 'PREFERENCE_NOT_FOUND'
-  | 'NUTRITION_PROFILE_NOT_FOUND';
+  | 'NUTRITION_PROFILE_NOT_FOUND'
+  | 'ITEM_NOT_ARCHIVED';
 
 const STATUS_BY_CODE: Record<ErrorCode, number> = {
   VALIDATION_ERROR: 400,
+  BAD_REQUEST: 400,
   UNAUTHORIZED: 401,
   FORBIDDEN: 403,
   NOT_FOUND: 404,
@@ -43,6 +47,11 @@ const STATUS_BY_CODE: Record<ErrorCode, number> = {
   CONFLICT: 409,
   RATE_LIMITED: 429,
   JOB_FAILED: 422,
+  // ITEM_NOT_ARCHIVED is intentionally 400 (not 404) — the row
+  // exists; the caller tried an operation that requires a state it
+  // doesn't currently have. Future variants of this code (e.g.
+  // ITEM_ALREADY_ARCHIVED) can share the 400 mapping.
+  ITEM_NOT_ARCHIVED: 400,
   INTERNAL_ERROR: 500,
 };
 
@@ -114,6 +123,7 @@ export function toErrorBody(input: ErrorInput): ErrorBody {
 function defaultMessageFor(code: ErrorCode): string {
   switch (code) {
     case 'VALIDATION_ERROR':
+    case 'BAD_REQUEST':
       return 'Request validation failed';
     case 'UNAUTHORIZED':
       return 'Authentication required';
@@ -137,6 +147,8 @@ function defaultMessageFor(code: ErrorCode): string {
       return 'Too many requests';
     case 'JOB_FAILED':
       return 'Job failed';
+    case 'ITEM_NOT_ARCHIVED':
+      return 'Item is not archived';
     case 'INTERNAL_ERROR':
       return 'Internal server error';
   }
