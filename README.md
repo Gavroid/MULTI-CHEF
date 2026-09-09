@@ -12,7 +12,7 @@ contract. Architecture decisions live in `docs/decisions/`.
 
 ## Status
 
-- Phase: **1 — backend auth (MC-010) and frontend design system (MC-012) merged; MC-011 profile merging; MC-013 next**
+- Phase: **1 — web frontend (MC-010 auth, MC-011 profile, MC-012 design system, MC-013 app-shell merged; MC-014 auth screens next)**
 - Deployment model: systemd bare-metal (ADR-0006)
 - CI: 5-job pipeline (lint / typecheck / test / build / secret-scan) with pgvector for integration tests
 
@@ -70,7 +70,14 @@ pnpm clean
 
 After `pnpm install && pnpm dev`, the scaffold should respond:
 
-- `http://localhost:3000/` — Next.js landing page (`MULTI-CHEF`).
+- `http://localhost:3000/` — Public landing (Войти / Создать аккаунт CTAs).
+- `http://localhost:3000/today` (and `/fridge`, `/plan`, `/shopping`, `/profile`) —
+  App shell with fixed BottomTabBar (5 tabs, 64px + iOS safe-area). Guests
+  can browse; `/profile` redirects to `/auth/login` without `mc_session`.
+- `http://localhost:3000/auth/login` (and `/auth/register`) — Auth screens
+  (stubs in MC-013; full flow in MC-014).
+- `http://localhost:3000/design` — Design-system demo: every UI primitive
+  in every state.
 - `http://localhost:3001/api/v1/health/live` — `{"status":"ok"}`.
 - `apps/worker` — logs `worker ready` to stdout.
 

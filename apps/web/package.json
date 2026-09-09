@@ -11,13 +11,14 @@
     "lint": "eslint .",
     "format:check": "prettier --check \"src/**/*.{ts,tsx}\" \"*.{js,json,md}\"",
     "typecheck": "tsc --noEmit",
-    "test": "node --test --import tsx --test-reporter=spec src/__tests__/smoke.test.tsx src/__tests__/design-system.test.tsx",
+    "test": "node --test --import tsx --test-reporter=spec src/__tests__/smoke.test.tsx src/__tests__/design-system.test.tsx src/__tests__/active-tab.test.ts src/__tests__/BottomTabBar.test.tsx src/__tests__/app-shell.test.tsx",
     "clean": "rm -rf .next .turbo *.tsbuildinfo"
   },
   "dependencies": {
     "@multichef/config": "workspace:*",
     "@multichef/ui": "workspace:*",
     "clsx": "^2.1.1",
+    "lucide-react": "^0.469.0",
     "next": "^15.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
