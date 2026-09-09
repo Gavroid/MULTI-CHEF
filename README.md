@@ -12,9 +12,9 @@ contract. Architecture decisions live in `docs/decisions/`.
 
 ## Status
 
-- Phase: **0 — scaffold (MC-001, MC-002, MC-003, MC-004 merged; MC-005 next)**
+- Phase: **1 — backend auth (MC-010) and frontend design system (MC-012) merged; MC-011 profile merging; MC-013 next**
 - Deployment model: systemd bare-metal (ADR-0006)
-- CI: minimal `hello CI` workflow only; full pipeline lands with MC-005
+- CI: 5-job pipeline (lint / typecheck / test / build / secret-scan) with pgvector for integration tests
 
 ## Repository layout
 
