@@ -8,6 +8,11 @@
 // The wire envelope is `{ data, error }` per docs/api/conventions.md §2.
 // `error` is `{ code, message, details?, requestId? }`. `details` for
 // VALIDATION_ERROR carries `{ fields: { [fieldName]: string[] } }`.
+//
+// This module also exports the low-level `request<T>(url, method, ...)`
+// so sibling clients (pantry, ingredients, …) can reuse the same
+// envelope decoding + Idempotency-Key + AbortSignal plumbing without
+// duplicating it.
 
 import { getApiBaseUrl } from './env';
 
@@ -61,12 +66,6 @@ export interface FetchOptions {
   headers?: Record<string, string>;
 }
 
-function authUrl(path: string): string {
-  // path is e.g. '/auth/login'; strip a leading slash to avoid '//'.
-  const trimmed = path.replace(/^\/+/, '');
-  return `${getApiBaseUrl()}/api/v1/${trimmed}`;
-}
-
 /**
  * Generate a UUID v4 Idempotency-Key. Uses crypto.randomUUID() when
  * available (Node 19+, all modern browsers), falls back to a manual
@@ -89,9 +88,44 @@ export function generateIdempotencyKey(): string {
   return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
 }
 
-async function request<T>(
-  path: string,
-  method: 'POST' | 'GET',
+export function login(
+  body: { email: string; password: string },
+  options: FetchOptions = {},
+): Promise<ApiResponse<AuthSuccess>> {
+  return request<AuthSuccess>(authUrl('/auth/login'), 'POST', body, options);
+}
+
+export function register(
+  body: { email: string; password: string; householdName?: string },
+  options: FetchOptions = {},
+): Promise<ApiResponse<AuthSuccess>> {
+  return request<AuthSuccess>(authUrl('/auth/register'), 'POST', body, options);
+}
+
+export function logout(options: FetchOptions = {}): Promise<ApiResponse<void>> {
+  return request<void>(authUrl('/auth/logout'), 'POST', {}, options);
+}
+
+export function getSession(
+  options: FetchOptions = {},
+): Promise<ApiResponse<{ user: AuthUser; household: AuthHousehold }>> {
+  return request<{ user: AuthUser; household: AuthHousehold }>(
+    authUrl('/auth/session'),
+    'GET',
+    undefined,
+    options,
+  );
+}
+
+/**
+ * Low-level fetch wrapper exported for sibling clients (pantry,
+ * ingredients, …) that need the same envelope decoding +
+ * Idempotency-Key + AbortSignal plumbing. Callers are responsible
+ * for passing a fully-qualified URL.
+ */
+export async function request<T>(
+  url: string,
+  method: 'POST' | 'GET' | 'PATCH' | 'DELETE' | 'PUT',
   body: unknown,
   options: FetchOptions,
 ): Promise<ApiResponse<T>> {
@@ -117,12 +151,11 @@ async function request<T>(
 
   let response: Response;
   try {
-    response = await fetch(authUrl(path), init);
+    response = await fetch(url, init);
   } catch (err) {
     if (err instanceof DOMException && err.name === 'AbortError') {
       throw err;
     }
-    // Network / CORS / DNS failure. Surface as a synthetic 0-status error.
     return {
       error: {
         status: 0,
@@ -149,14 +182,9 @@ async function request<T>(
     if (envelope && typeof envelope === 'object' && 'data' in envelope) {
       return { data: envelope.data as T };
     }
-    // Some endpoints (e.g. logout) return 204 with no body.
     return { data: undefined as unknown as T };
   }
 
-  // Error path: server returns { status, error: { code, message, ... } }.
-  // We return the WHOLE envelope (including top-level `status`) so the
-  // caller can branch on HTTP status without having to map code→status
-  // themselves.
   const envelope = payload as { status?: number; error?: ErrorEnvelope['error'] } | null;
   if (envelope && envelope.error) {
     return {
@@ -177,33 +205,10 @@ async function request<T>(
   };
 }
 
-export function login(
-  body: { email: string; password: string },
-  options: FetchOptions = {},
-): Promise<ApiResponse<AuthSuccess>> {
-  return request<AuthSuccess>('/auth/login', 'POST', body, options);
-}
-
-export function register(
-  body: { email: string; password: string; householdName?: string },
-  options: FetchOptions = {},
-): Promise<ApiResponse<AuthSuccess>> {
-  return request<AuthSuccess>('/auth/register', 'POST', body, options);
-}
-
-export function logout(options: FetchOptions = {}): Promise<ApiResponse<void>> {
-  return request<void>('/auth/logout', 'POST', {}, options);
-}
-
-export function getSession(
-  options: FetchOptions = {},
-): Promise<ApiResponse<{ user: AuthUser; household: AuthHousehold }>> {
-  return request<{ user: AuthUser; household: AuthHousehold }>(
-    '/auth/session',
-    'GET',
-    undefined,
-    options,
-  );
+function authUrl(path: string): string {
+  // path is e.g. '/auth/login'; strip a leading slash to avoid '//'.
+  const trimmed = path.replace(/^\/+/, '');
+  return `${getApiBaseUrl()}/api/v1/${trimmed}`;
 }
 
 export { SESSION_COOKIE };

@@ -1,23 +1,12 @@
-// /fridge — список продуктов пользователя (PRD §2.3.3). MC-013: empty
-// state. Полный CRUD + сроки годности появятся в MC-023.
+// /fridge — список продуктов пользователя (PRD §2.3.3).
+//
+// MC-023: full CRUD (list + create + edit + soft-delete + restore).
+// The orchestrator lives in FridgeClient.tsx so the unit tests can
+// import it directly with stub `deps`. This file is the Next.js
+// page entrypoint and intentionally has no logic of its own.
 
-import { Button, Card } from '@multichef/ui';
-import { TabTitle } from '@/components/TabTitle';
+import { FridgeClient } from './FridgeClient';
 
-export default function FridgePage(): React.ReactElement {
-  return (
-    <>
-      <TabTitle sublabel="Ваши продукты">Холодильник</TabTitle>
-      <Card>
-        <h2 className="text-heading mb-2">Пусто</h2>
-        <p className="text-body mb-3">
-          Добавьте продукты — мы подскажем, что из них приготовить, и предупредим за 2 дня до
-          истечения срока.
-        </p>
-        <Button variant="secondary" disabled>
-          Добавить продукт (TODO: MC-023)
-        </Button>
-      </Card>
-    </>
-  );
+export default function FridgePage(): React.JSX.Element {
+  return <FridgeClient />;
 }

@@ -52,19 +52,32 @@ test('(app) layout wraps every page with AuthGuard', () => {
   assert.match(layout, /AuthGuard/);
 });
 
-test('every (app) page renders the documented Russian h1', () => {
+test('every (app) page renders the documented Russian h1 (directly or via Client)', () => {
   for (const { path, title } of APP_PAGES) {
     const src = read(path);
-    // Each page passes the Russian label as TabTitle's JSX child.
-    const re = new RegExp(`<TabTitle\\b[^>]*>${title}<\\/TabTitle>`);
-    assert.ok(re.test(src), `${path} should render <TabTitle>${title}</TabTitle>`);
+    // Each page passes the Russian label as TabTitle's JSX child, OR
+    // delegates to a Client component that owns the TabTitle (MC-023
+    // /fridge → FridgeClient).
+    const direct = new RegExp(`<TabTitle\\b[^>]*>\\s*${title}\\s*</TabTitle>`);
+    const delegatesToClient = /<FridgeClient\b/.test(src) && path.endsWith('fridge/page.tsx');
+    assert.ok(
+      direct.test(src) || delegatesToClient,
+      `${path} should render <TabTitle>${title}</TabTitle> directly or delegate to FridgeClient (MC-023)`,
+    );
   }
 });
 
-test('every (app) page shows an empty-state Card with TODO marker (except /profile)', () => {
-  // /profile is the redirect target — its CTA points to /auth/login instead of
-  // being a disabled "TODO" button. The other 4 pages are stubs.
+test('every (app) page shows an empty-state Card with TODO marker (except /profile, /fridge)', () => {
+  // /profile redirects to /auth/login via CTA.
+  // /fridge (MC-023) is no longer a stub — it delegates to FridgeClient
+  // which renders the empty state inside a Card, not in the page file.
+  // The other 3 pages are still stubs.
   for (const { path } of APP_PAGES) {
+    if (path.endsWith('fridge/page.tsx')) {
+      const src = read(path);
+      assert.match(src, /<FridgeClient\b/, 'fridge page delegates to FridgeClient');
+      continue;
+    }
     const src = read(path);
     assert.match(src, /<Card\b/, `${path} should render a Card`);
     if (path.endsWith('profile/page.tsx')) continue;
