@@ -12,13 +12,34 @@ export type ErrorCode =
   | 'CONFLICT'
   | 'RATE_LIMITED'
   | 'JOB_FAILED'
-  | 'INTERNAL_ERROR';
+  | 'INTERNAL_ERROR' // Domain-specific 404s — share HTTP 404 with NOT_FOUND but let
+  // the client disambiguate which resource is missing.
+  | 'INGREDIENT_NOT_FOUND'
+  | 'RECIPE_NOT_FOUND'
+  | 'MEAL_PLAN_NOT_FOUND'
+  | 'HOUSEHOLD_NOT_FOUND'
+  | 'USER_NOT_FOUND'
+  | 'SESSION_NOT_FOUND'
+  | 'PANTRY_ITEM_NOT_FOUND'
+  | 'SHOPPING_LIST_NOT_FOUND'
+  | 'PREFERENCE_NOT_FOUND'
+  | 'NUTRITION_PROFILE_NOT_FOUND';
 
 const STATUS_BY_CODE: Record<ErrorCode, number> = {
   VALIDATION_ERROR: 400,
   UNAUTHORIZED: 401,
   FORBIDDEN: 403,
   NOT_FOUND: 404,
+  INGREDIENT_NOT_FOUND: 404,
+  RECIPE_NOT_FOUND: 404,
+  MEAL_PLAN_NOT_FOUND: 404,
+  HOUSEHOLD_NOT_FOUND: 404,
+  USER_NOT_FOUND: 404,
+  SESSION_NOT_FOUND: 404,
+  PANTRY_ITEM_NOT_FOUND: 404,
+  SHOPPING_LIST_NOT_FOUND: 404,
+  PREFERENCE_NOT_FOUND: 404,
+  NUTRITION_PROFILE_NOT_FOUND: 404,
   CONFLICT: 409,
   RATE_LIMITED: 429,
   JOB_FAILED: 422,
@@ -99,6 +120,16 @@ function defaultMessageFor(code: ErrorCode): string {
     case 'FORBIDDEN':
       return 'Access denied';
     case 'NOT_FOUND':
+    case 'INGREDIENT_NOT_FOUND':
+    case 'RECIPE_NOT_FOUND':
+    case 'MEAL_PLAN_NOT_FOUND':
+    case 'HOUSEHOLD_NOT_FOUND':
+    case 'USER_NOT_FOUND':
+    case 'SESSION_NOT_FOUND':
+    case 'PANTRY_ITEM_NOT_FOUND':
+    case 'SHOPPING_LIST_NOT_FOUND':
+    case 'PREFERENCE_NOT_FOUND':
+    case 'NUTRITION_PROFILE_NOT_FOUND':
       return 'Resource not found';
     case 'CONFLICT':
       return 'Resource conflict';
