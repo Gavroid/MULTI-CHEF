@@ -352,6 +352,9 @@ model PantryItem {
   opened          Boolean         @default(false)
   purchaseDate    DateTime?       @db.Date
   expiresAt       DateTime?       @db.Date
+  // ADR-0021: soft-delete tombstone + user notes (≤ 500 chars enforced in DTO).
+  archivedAt      DateTime?       @db.Timestamptz(6)
+  notes           String?
   createdAt       DateTime        @default(now()) @db.Timestamptz(6)
   updatedAt       DateTime        @updatedAt @db.Timestamptz(6)
 
@@ -360,6 +363,7 @@ model PantryItem {
 
   @@index([householdId])
   @@index([householdId, expiresAt])
+  @@index([householdId, archivedAt])
   @@index([ingredientId])
   @@map("PantryItem")
 }

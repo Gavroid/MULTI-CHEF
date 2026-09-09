@@ -412,7 +412,7 @@ test('PATCH /pantry/items/:id for another household → 404', async (t) => {
   assert.equal(res.statusCode, 404);
 });
 
-test('DELETE /pantry/items/:id for own item → 204 + row is gone (hard delete — schema has no archivedAt)', async (t) => {
+test('DELETE /pantry/items/:id for own item → 204 + soft-delete (archivedAt is set)', async (t) => {
   if (!process.env['RUN_DB_INTEGRATION']) {
     t.skip('RUN_DB_INTEGRATION not set');
     return;
@@ -430,9 +430,11 @@ test('DELETE /pantry/items/:id for own item → 204 + row is gone (hard delete �
     idemKey: 'mc022-del-key-0002',
   });
   assert.equal(res.statusCode, 204);
-  // Verify it's actually gone (hard delete).
+  // Verify the row STILL EXISTS but with archivedAt set (soft delete).
   const row = await db().pantryItem.findUnique({ where: { id: itemId } });
-  assert.equal(row, null);
+  assert.ok(row);
+  assert.ok(row.archivedAt);
+  assert.ok(row.archivedAt instanceof Date);
 });
 
 test('DELETE /pantry/items/:id for another household → 404', async (t) => {
@@ -456,7 +458,171 @@ test('DELETE /pantry/items/:id for another household → 404', async (t) => {
   assert.equal(res.statusCode, 404);
 });
 
-test('POST /pantry/items/:id/restore → 400 ITEM_NOT_ARCHIVED (schema has no archivedAt)', async (t) => {
+test('Soft-delete + restore round-trip: DELETE → 204, restore → 200, archivedAt=null', async (t) => {
+  if (!process.env['RUN_DB_INTEGRATION']) {
+    t.skip('RUN_DB_INTEGRATION not set');
+    return;
+  }
+  const jar = await registerAndLogin();
+  const ingId = await firstIngredientId();
+  // Idempotency keys use a long random suffix to satisfy the
+  // IdempotencyKeyGuard's min-length check (16+ chars), but we keep
+  // the value recognisably a test placeholder so gitleaks's generic
+  // api-key rule does not flag it.
+  const created = await inject('POST', '/api/v1/pantry/items', {
+    token: jar.token,
+    idemKey: 'mc022-rt-001-zzz-test-id',
+    body: { ingredientId: ingId, quantityG: 100 },
+  });
+  const itemId = (created.body as { data: { id: string; archivedAt: string | null } }).data.id;
+
+  // Soft-delete
+  const delRes = await inject('DELETE', `/api/v1/pantry/items/${itemId}`, {
+    token: jar.token,
+    idemKey: 'mc022-rt-002-zzz-test-id',
+  });
+  assert.equal(delRes.statusCode, 204);
+  let row = await db().pantryItem.findUnique({ where: { id: itemId } });
+  assert.ok(row?.archivedAt);
+
+  // Restore
+  const restoreRes = await inject('POST', `/api/v1/pantry/items/${itemId}/restore`, {
+    token: jar.token,
+    idemKey: 'mc022-rt-003-zzz-test-id',
+  });
+  assert.equal(restoreRes.statusCode, 200);
+  const restoreBody = restoreRes.body as { data: { id: string; archivedAt: string | null } };
+  assert.equal(restoreBody.data.id, itemId);
+  assert.equal(restoreBody.data.archivedAt, null);
+
+  // DB state
+  row = await db().pantryItem.findUnique({ where: { id: itemId } });
+  assert.equal(row?.archivedAt, null);
+});
+
+test('GET /pantry/items (default) excludes archived items', async (t) => {
+  if (!process.env['RUN_DB_INTEGRATION']) {
+    t.skip('RUN_DB_INTEGRATION not set');
+    return;
+  }
+  const jar = await registerAndLogin();
+  const ingId = await firstIngredientId();
+  // Create + soft-delete one
+  const created = await inject('POST', '/api/v1/pantry/items', {
+    token: jar.token,
+    idemKey: 'mc022-listfilter-key-01',
+    body: { ingredientId: ingId, quantityG: 100 },
+  });
+  const itemId = (created.body as { data: { id: string } }).data.id;
+  await inject('DELETE', `/api/v1/pantry/items/${itemId}`, {
+    token: jar.token,
+    idemKey: 'mc022-listfilter-key-02',
+  });
+  // Create another active one
+  await inject('POST', '/api/v1/pantry/items', {
+    token: jar.token,
+    idemKey: 'mc022-listfilter-key-03',
+    body: { ingredientId: ingId, quantityG: 200 },
+  });
+  const listRes = await inject('GET', '/api/v1/pantry/items', {
+    token: jar.token,
+  });
+  assert.equal(listRes.statusCode, 200);
+  const listBody = listRes.body as { data: { id: string }[] };
+  // Only the active one should appear.
+  assert.equal(listBody.data.length, 1);
+  assert.notEqual(listBody.data[0]?.id, itemId);
+});
+
+test('GET /pantry/items?includeArchived=true includes archived items', async (t) => {
+  if (!process.env['RUN_DB_INTEGRATION']) {
+    t.skip('RUN_DB_INTEGRATION not set');
+    return;
+  }
+  const jar = await registerAndLogin();
+  const ingId = await firstIngredientId();
+  const created = await inject('POST', '/api/v1/pantry/items', {
+    token: jar.token,
+    idemKey: 'mc022-incarch-key-01',
+    body: { ingredientId: ingId, quantityG: 100 },
+  });
+  const itemId = (created.body as { data: { id: string } }).data.id;
+  await inject('DELETE', `/api/v1/pantry/items/${itemId}`, {
+    token: jar.token,
+    idemKey: 'mc022-incarch-key-02',
+  });
+  const listRes = await inject('GET', '/api/v1/pantry/items?includeArchived=true', {
+    token: jar.token,
+  });
+  assert.equal(listRes.statusCode, 200);
+  const listBody = listRes.body as { data: { id: string; archivedAt: string | null }[] };
+  assert.equal(listBody.data.length, 1);
+  assert.equal(listBody.data[0]?.id, itemId);
+  assert.ok(listBody.data[0]?.archivedAt);
+});
+
+test('POST /pantry/items with notes → stored + returned', async (t) => {
+  if (!process.env['RUN_DB_INTEGRATION']) {
+    t.skip('RUN_DB_INTEGRATION not set');
+    return;
+  }
+  const jar = await registerAndLogin();
+  const ingId = await firstIngredientId();
+  const res = await inject('POST', '/api/v1/pantry/items', {
+    token: jar.token,
+    idemKey: 'mc022-notes-key-01',
+    body: {
+      ingredientId: ingId,
+      quantityG: 250,
+      notes: 'bought at the market, organic',
+    },
+  });
+  assert.equal(res.statusCode, 201);
+  const body = res.body as { data: { notes: string | null } };
+  assert.equal(body.data.notes, 'bought at the market, organic');
+});
+
+test('PATCH /pantry/items/:id can update notes', async (t) => {
+  if (!process.env['RUN_DB_INTEGRATION']) {
+    t.skip('RUN_DB_INTEGRATION not set');
+    return;
+  }
+  const jar = await registerAndLogin();
+  const ingId = await firstIngredientId();
+  const created = await inject('POST', '/api/v1/pantry/items', {
+    token: jar.token,
+    idemKey: 'mc022-patchnotes-key-01',
+    body: { ingredientId: ingId, quantityG: 100, notes: 'first' },
+  });
+  const itemId = (created.body as { data: { id: string } }).data.id;
+  const res = await inject('PATCH', `/api/v1/pantry/items/${itemId}`, {
+    token: jar.token,
+    idemKey: 'mc022-patchnotes-key-02',
+    body: { notes: 'second' },
+  });
+  assert.equal(res.statusCode, 200);
+  const body = res.body as { data: { notes: string | null } };
+  assert.equal(body.data.notes, 'second');
+});
+
+test('POST /pantry/items with notes length 501 → 400 VALIDATION_ERROR', async (t) => {
+  if (!process.env['RUN_DB_INTEGRATION']) {
+    t.skip('RUN_DB_INTEGRATION not set');
+    return;
+  }
+  const jar = await registerAndLogin();
+  const ingId = await firstIngredientId();
+  const res = await inject('POST', '/api/v1/pantry/items', {
+    token: jar.token,
+    idemKey: 'mc022-longnotes-key-01',
+    body: { ingredientId: ingId, quantityG: 100, notes: 'x'.repeat(501) },
+  });
+  assert.equal(res.statusCode, 400);
+  const body = res.body as { error: { code: string } };
+  assert.equal(body.error.code, 'VALIDATION_ERROR');
+});
+
+test('POST /pantry/items/:id/restore on a not-archived item → 400 ITEM_NOT_ARCHIVED', async (t) => {
   if (!process.env['RUN_DB_INTEGRATION']) {
     t.skip('RUN_DB_INTEGRATION not set');
     return;
@@ -476,4 +642,33 @@ test('POST /pantry/items/:id/restore → 400 ITEM_NOT_ARCHIVED (schema has no ar
   assert.equal(res.statusCode, 400);
   const body = res.body as { error: { code: string } };
   assert.equal(body.error.code, 'ITEM_NOT_ARCHIVED');
+});
+
+test('Cross-household restore → 404 PANTRY_ITEM_NOT_FOUND', async (t) => {
+  if (!process.env['RUN_DB_INTEGRATION']) {
+    t.skip('RUN_DB_INTEGRATION not set');
+    return;
+  }
+  const jarA = await registerAndLogin();
+  const jarB = await registerAndLogin();
+  const ingId = await firstIngredientId();
+  const created = await inject('POST', '/api/v1/pantry/items', {
+    token: jarA.token,
+    idemKey: 'mc022-restcross-key-01',
+    body: { ingredientId: ingId, quantityG: 100 },
+  });
+  const itemId = (created.body as { data: { id: string } }).data.id;
+  // A archives the item
+  await inject('DELETE', `/api/v1/pantry/items/${itemId}`, {
+    token: jarA.token,
+    idemKey: 'mc022-restcross-key-02',
+  });
+  // B tries to restore
+  const res = await inject('POST', `/api/v1/pantry/items/${itemId}/restore`, {
+    token: jarB.token,
+    idemKey: 'mc022-restcross-key-03',
+  });
+  assert.equal(res.statusCode, 404);
+  const body = res.body as { error: { code: string } };
+  assert.equal(body.error.code, 'PANTRY_ITEM_NOT_FOUND');
 });

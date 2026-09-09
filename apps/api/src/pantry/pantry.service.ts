@@ -3,12 +3,14 @@
 // the authenticated session — clients cannot pass a different
 // householdId via query or body (PM-prompt #3).
 //
-// Schema reality (MC-003, not modified in MC-022):
-//   PantryItem has no `archivedAt`, no `notes`, no `addedAt`.
-//   DELETE is hard delete (no soft-delete state exists).
-//   ?includeArchived is a no-op (always returns all rows since none
-//   can be archived). The restore endpoint exists for forward
-//   compatibility but always returns 400 ITEM_NOT_ARCHIVED.
+// Schema (MC-003 + ADR-0021 fix-forward):
+//   - PantryItem has `archivedAt` (nullable, soft-delete tombstone)
+//     and `notes` (nullable, user annotation, ≤ 500 chars enforced
+//     in DTO).
+//   - DELETE = soft delete (sets `archivedAt = now()`).
+//   - restore = clears `archivedAt` to null; 400 ITEM_NOT_ARCHIVED
+//     if the row was already active.
+//   - ?includeArchived filters the list query.
 //
 // Cross-household behavior: every per-id lookup adds householdId
 // to the WHERE clause. If the row exists but belongs to another
@@ -38,6 +40,8 @@ export interface PantryItemView {
   opened: boolean;
   expiresAt: string | null; // ISO date YYYY-MM-DD or null
   purchaseDate: string | null;
+  archivedAt: string | null; // ISO timestamp or null
+  notes: string | null;
   createdAt: string; // ISO timestamp
   updatedAt: string;
 }
@@ -56,6 +60,8 @@ function toView(row: PantryItemRow): PantryItemView {
     opened: row.opened,
     expiresAt: row.expiresAt ? toIsoDate(row.expiresAt) : null,
     purchaseDate: row.purchaseDate ? toIsoDate(row.purchaseDate) : null,
+    archivedAt: row.archivedAt ? row.archivedAt.toISOString() : null,
+    notes: row.notes,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
@@ -106,6 +112,7 @@ export class PantryService {
         opened: body.opened,
         ...(body.expiresAt ? { expiresAt: new Date(body.expiresAt) } : {}),
         ...(body.purchaseDate ? { purchaseDate: new Date(body.purchaseDate) } : {}),
+        ...(body.notes !== undefined ? { notes: body.notes } : {}),
       },
     });
     return toView(row);
@@ -113,8 +120,12 @@ export class PantryService {
 
   async listItems(userId: string, query: ListPantryQuery): Promise<PantryItemView[]> {
     const householdId = await this.requireOwnedHouseholdId(userId);
-    // The schema has no archivedAt column; includeArchived is a no-op
-    // — we always return all rows for the household.
+    // ADR-0021: includeArchived=false (default) hides soft-deleted rows.
+    const where: Prisma.PantryItemWhereInput = {
+      householdId,
+      ...(query.includeArchived ? {} : { archivedAt: null }),
+      ...(query.ingredientId ? { ingredientId: query.ingredientId } : {}),
+    };
     const orderBy: Prisma.PantryItemOrderByWithRelationInput = (() => {
       switch (query.sort) {
         case 'expiresAt':
@@ -129,10 +140,7 @@ export class PantryService {
     })();
 
     const rows = await PRISMA.pantryItem.findMany({
-      where: {
-        householdId,
-        ...(query.ingredientId ? { ingredientId: query.ingredientId } : {}),
-      },
+      where,
       orderBy,
       take: query.limit,
       skip: query.offset,
@@ -184,6 +192,9 @@ export class PantryService {
     if (body.expiresAt !== undefined) {
       data.expiresAt = body.expiresAt === null ? null : new Date(body.expiresAt);
     }
+    if (body.notes !== undefined) {
+      data.notes = body.notes;
+    }
 
     const row = await PRISMA.pantryItem.update({
       where: { id },
@@ -194,32 +205,28 @@ export class PantryService {
 
   async deleteItem(userId: string, id: string): Promise<void> {
     const householdId = await this.requireOwnedHouseholdId(userId);
-    // Hard delete. Schema has no `archivedAt` column to flip, so we
-    // physically remove the row. (Soft delete + restore is a future
-    // ADR — see MC-022 report red flags.)
-    const existing = await PRISMA.pantryItem.findFirst({
+    // ADR-0021: soft delete — set archivedAt = now() instead of
+    // physically removing the row. Use a guarded update so we can
+    // return 404 when (id, householdId) doesn't match.
+    const result = await PRISMA.pantryItem.updateMany({
       where: { id, householdId },
-      select: { id: true },
+      data: { archivedAt: new Date() },
     });
-    if (!existing) {
+    if (result.count === 0) {
       throw new AppHttpException({
         code: 'PANTRY_ITEM_NOT_FOUND',
         message: 'Pantry item not found',
         details: { id },
       });
     }
-    await PRISMA.pantryItem.delete({ where: { id } });
   }
 
   async restoreItem(userId: string, id: string): Promise<PantryItemView> {
     const householdId = await this.requireOwnedHouseholdId(userId);
-    // The schema has no `archivedAt` column — there is no archived
-    // state possible. We always 400 ITEM_NOT_ARCHIVED for forward
-    // compatibility: when the column is added, this same code path
-    // returns the row with archivedAt cleared.
+    // ADR-0021: restore only makes sense if the row is currently
+    // archived. If archivedAt is null we return 400 ITEM_NOT_ARCHIVED.
     const existing = await PRISMA.pantryItem.findFirst({
       where: { id, householdId },
-      select: { id: true },
     });
     if (!existing) {
       throw new AppHttpException({
@@ -228,11 +235,18 @@ export class PantryService {
         details: { id },
       });
     }
-    throw new AppHttpException({
-      code: 'ITEM_NOT_ARCHIVED',
-      message: 'Item is not archived (archive state is not supported in this version)',
-      details: { id },
+    if (existing.archivedAt === null) {
+      throw new AppHttpException({
+        code: 'ITEM_NOT_ARCHIVED',
+        message: 'Item is not archived',
+        details: { id },
+      });
+    }
+    const row = await PRISMA.pantryItem.update({
+      where: { id },
+      data: { archivedAt: null },
     });
+    return toView(row);
   }
 
   /**

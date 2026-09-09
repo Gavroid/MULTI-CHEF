@@ -55,6 +55,9 @@ export const CreatePantryItemSchema = z
     opened: z.boolean().default(false),
     expiresAt: isoDate.optional(),
     purchaseDate: isoDate.optional(),
+    // ADR-0021: user annotations (≤ 500 chars enforced here, schema
+    // allows any length up to Postgres TEXT).
+    notes: z.string().trim().max(500, 'notes must be at most 500 characters').optional(),
   })
   .strict()
   .refine(
@@ -72,6 +75,7 @@ export const PatchPantryItemSchema = z
     priority: z.enum(PRIORITY_VALUES).optional(),
     storageLocation: z.enum(STORAGE_LOCATION_VALUES).optional(),
     opened: z.boolean().optional(),
+    notes: z.string().trim().max(500, 'notes must be at most 500 characters').nullable().optional(),
   })
   .strict();
 export type PatchPantryItemBody = z.infer<typeof PatchPantryItemSchema>;

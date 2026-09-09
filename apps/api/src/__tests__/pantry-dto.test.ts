@@ -142,3 +142,63 @@ test('PANTRY_SORT_FIELDS exported as readonly tuple', () => {
   assert.ok(PANTRY_SORT_FIELDS.includes('expiresAt'));
   assert.ok(PANTRY_SORT_FIELDS.includes('quantityG'));
 });
+
+test('CreatePantryItemSchema: notes is optional', () => {
+  const r = CreatePantryItemSchema.safeParse({ ingredientId: ULID, quantityG: 100 });
+  assert.equal(r.success, true);
+});
+
+test('CreatePantryItemSchema: notes accepts 1..500 chars (after trim)', () => {
+  assert.equal(
+    CreatePantryItemSchema.safeParse({ ingredientId: ULID, quantityG: 100, notes: 'x' }).success,
+    true,
+  );
+  assert.equal(
+    CreatePantryItemSchema.safeParse({
+      ingredientId: ULID,
+      quantityG: 100,
+      notes: 'x'.repeat(500),
+    }).success,
+    true,
+  );
+});
+
+test('CreatePantryItemSchema: notes length 501 → reject', () => {
+  assert.equal(
+    CreatePantryItemSchema.safeParse({
+      ingredientId: ULID,
+      quantityG: 100,
+      notes: 'x'.repeat(501),
+    }).success,
+    false,
+  );
+});
+
+test('CreatePantryItemSchema: notes is trimmed', () => {
+  const r = CreatePantryItemSchema.safeParse({
+    ingredientId: ULID,
+    quantityG: 100,
+    notes: '   hello   ',
+  });
+  assert.equal(r.success, true);
+  if (r.success) {
+    assert.equal(r.data.notes, 'hello');
+  }
+});
+
+test('PatchPantryItemSchema: notes is optional + nullable', () => {
+  // All fields absent
+  assert.equal(PatchPantryItemSchema.safeParse({}).success, true);
+  // null clears notes
+  const r1 = PatchPantryItemSchema.safeParse({ notes: null });
+  assert.equal(r1.success, true);
+  if (r1.success) assert.equal(r1.data.notes, null);
+  // string sets it
+  const r2 = PatchPantryItemSchema.safeParse({ notes: 'updated' });
+  assert.equal(r2.success, true);
+  if (r2.success) assert.equal(r2.data.notes, 'updated');
+});
+
+test('PatchPantryItemSchema: notes length 501 → reject', () => {
+  assert.equal(PatchPantryItemSchema.safeParse({ notes: 'x'.repeat(501) }).success, false);
+});
