@@ -38,7 +38,15 @@ export interface SearchIngredientsOptions {
 }
 
 function ingredientUrl(path: string): string {
+  // `path` is either 'categories' or a query string like '?q=foo'.
+  // We keep the trailing slash off the bare collection path (Fastify
+  // otherwise rejects GET /ingredients/?q=… with 404 / route
+  // mismatch) and we DON'T prepend `/` before `?` (that would yield
+  // /ingredients/?q=…).
   const trimmed = path.replace(/^\/+/, '');
+  if (trimmed.startsWith('?')) {
+    return `${getApiBaseUrl()}/api/v1/ingredients${trimmed}`;
+  }
   return `${getApiBaseUrl()}/api/v1/ingredients/${trimmed}`;
 }
 

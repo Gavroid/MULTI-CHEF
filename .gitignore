@@ -25,6 +25,12 @@ apps/**/src/**/*.d.ts.map
 *.log
 logs/
 
+# Playwright (e2e)
+apps/web/playwright-report/
+apps/web/test-results/
+apps/web/blob-report/
+apps/web/playwright/.cache/
+
 # OS / editor
 .DS_Store
 .vscode/

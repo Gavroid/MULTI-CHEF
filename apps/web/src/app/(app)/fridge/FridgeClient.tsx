@@ -65,7 +65,14 @@ export interface FridgeClientProps {
 }
 
 export function FridgeClient({ deps: depsOverride, now }: FridgeClientProps): ReactElement {
-  const deps: FridgePageDeps = { ...defaultDeps, ...depsOverride };
+  // Spread once and memoize — without this every render produces a
+  // fresh `deps` object, which invalidates the refetch useCallback
+  // and triggers a runaway refetch loop (the page keeps GETting the
+  // pantry list until the global rate limiter kicks in).
+  const deps: FridgePageDeps = React.useMemo(
+    () => ({ ...defaultDeps, ...depsOverride }),
+    [depsOverride],
+  );
 
   const [items, setItems] = useState<PantryItem[] | null>(null);
   const [loading, setLoading] = useState(true);

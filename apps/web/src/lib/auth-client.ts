@@ -179,9 +179,23 @@ export async function request<T>(
 
   if (response.ok) {
     const envelope = payload as { data?: T; error?: ErrorEnvelope } | null;
+    // Most endpoints return `{ data: T, error?: never }` (the wire
+    // envelope per docs/api/conventions.md §2). Some legacy auth
+    // endpoints (login/register, MC-010) return the bare payload
+    // instead — detect by absence of the `data` / `error` keys.
     if (envelope && typeof envelope === 'object' && 'data' in envelope) {
       return { data: envelope.data as T };
     }
+    if (
+      envelope &&
+      typeof envelope === 'object' &&
+      !('data' in envelope) &&
+      !('error' in envelope)
+    ) {
+      // Bare payload — treat the whole body as the success data.
+      return { data: envelope as unknown as T };
+    }
+    // Some endpoints (e.g. logout) return 204 with no body.
     return { data: undefined as unknown as T };
   }
 

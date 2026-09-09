@@ -12,6 +12,7 @@
     "format:check": "prettier --check \"src/**/*.{ts,tsx}\" \"*.{js,json,md}\"",
     "typecheck": "tsc --noEmit",
     "test": "node --test --import tsx --test-reporter=spec src/__tests__/smoke.test.tsx src/__tests__/design-system.test.tsx src/__tests__/active-tab.test.ts src/__tests__/BottomTabBar.test.tsx src/__tests__/app-shell.test.tsx src/__tests__/auth-client.test.ts src/__tests__/auth-storage.test.ts src/__tests__/auth-pages.test.tsx src/__tests__/expiry.test.ts src/__tests__/pantry-client.test.ts src/__tests__/fridge-client.test.tsx",
+    "test:e2e": "playwright test",
     "clean": "rm -rf .next .turbo *.tsbuildinfo"
   },
   "dependencies": {
@@ -27,6 +28,7 @@
   "devDependencies": {
     "@multichef/eslint-config": "workspace:*",
     "@multichef/typescript-config": "workspace:*",
+    "@playwright/test": "1.63.0",
     "@types/node": "^22.10.2",
     "@types/react": "^19.0.2",
     "@types/react-dom": "^19.0.2",
