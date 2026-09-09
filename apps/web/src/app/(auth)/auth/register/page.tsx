@@ -1,29 +1,43 @@
-// /auth/register — заглушка. Полная форма (email + password + confirm,
-// onboarding wizard) появится в MC-014.
+'use client';
 
-import Link from 'next/link';
-import { Button, Card } from '@multichef/ui';
+// /auth/register — MC-014 real screen. Replaces the MC-013 stub.
+//
+// Wire-up mirrors /auth/login but adds a householdName field (PRD §2.3.1
+// step 1 of onboarding). After successful register we redirect to /today;
+// the remaining 6 onboarding steps land in MC-040.
+
+import React, { type ReactElement } from 'react';
+import { useRouter } from 'next/navigation';
+import { Card } from '@multichef/ui';
 import { TabTitle } from '@/components/TabTitle';
+import { register } from '@/lib/auth-client';
+import { saveLocalUser } from '@/lib/auth-storage';
+import { RegisterForm, type RegisterFormDeps } from './RegisterForm';
 
-export default function RegisterPage(): React.ReactElement {
+export default function RegisterPage(): ReactElement {
+  const router = useRouter();
+
+  const deps: RegisterFormDeps = {
+    submit: register,
+    navigate: (href) => router.push(href),
+  };
+
   return (
     <>
       <TabTitle sublabel="Создание аккаунта">Регистрация</TabTitle>
       <Card>
-        <h2 className="text-heading mb-2">Создайте аккаунт</h2>
-        <p className="text-body mb-3">
-          Форма регистрации + 7-шаговый wizard онбординга (аллергии, household, бюджет) появятся в
-          MC-014.
-        </p>
-        <Button variant="primary" disabled>
-          Создать аккаунт (TODO: MC-014)
-        </Button>
+        <RegisterForm
+          deps={deps}
+          onSuccess={(resp) => {
+            if (resp.data) saveLocalUser(resp.data.user, resp.data.household);
+          }}
+        />
       </Card>
       <p className="text-caption text-text-muted text-center mt-4">
         Уже есть аккаунт?{' '}
-        <Link href="/auth/login" className="text-[var(--color-primary)] hover:underline">
+        <a href="/auth/login" className="text-[var(--color-primary)] hover:underline">
           Войти
-        </Link>
+        </a>
       </p>
     </>
   );
