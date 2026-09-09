@@ -86,17 +86,24 @@ test('(auth) layout does NOT include the BottomTabBar', () => {
 });
 
 test('(auth) login page renders a TODO placeholder and a register link', () => {
-  const src = read('src/app/(auth)/auth/login/page.tsx');
-  assert.match(src, /<Button\b/);
-  assert.match(src, /TODO/);
-  assert.match(src, /href="\/auth\/register"/);
+  // In MC-014 the auth pages are no longer stubs — they wire real
+  // /api/v1/auth/* endpoints. We assert the wire-up contract instead
+  // (the page imports the LoginForm which calls the real fetch
+  // client). The TODO marker moved to the form internals.
+  const pageSrc = read('src/app/(auth)/auth/login/page.tsx');
+  const formSrc = read('src/app/(auth)/auth/login/LoginForm.tsx');
+  assert.match(formSrc, /<Button\b/);
+  assert.match(pageSrc, /href="\/auth\/register"/);
+  assert.match(pageSrc, /\blogin\b[\s,][^;]*?from\s*['"]@\/lib\/auth-client/);
 });
 
 test('(auth) register page renders a TODO placeholder and a login link', () => {
-  const src = read('src/app/(auth)/auth/register/page.tsx');
-  assert.match(src, /<Button\b/);
-  assert.match(src, /TODO/);
-  assert.match(src, /href="\/auth\/login"/);
+  const pageSrc = read('src/app/(auth)/auth/register/page.tsx');
+  const formSrc = read('src/app/(auth)/auth/register/RegisterForm.tsx');
+  assert.match(formSrc, /<Button\b/);
+  assert.match(pageSrc, /href="\/auth\/login"/);
+  // The page wires `register` from auth-client + delegates the form.
+  assert.match(pageSrc, /\bregister\b[\s,][^;]*?from\s*['"]@\/lib\/auth-client/);
 });
 
 test('/design still renders the design-system demo (regression guard)', () => {
