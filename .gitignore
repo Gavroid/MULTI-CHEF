@@ -31,6 +31,10 @@ apps/web/test-results/
 apps/web/blob-report/
 apps/web/playwright/.cache/
 
+# Python
+**/__pycache__/
+*.pyc
+
 # OS / editor
 .DS_Store
 .vscode/
