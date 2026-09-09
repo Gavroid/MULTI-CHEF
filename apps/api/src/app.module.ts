@@ -6,6 +6,8 @@ import { AppHttpExceptionFilter } from './common/exception-filter.js';
 import { IdempotencyKeyGuard } from './common/idempotency.js';
 import { HealthModule } from './health/health.module.js';
 import { AuthModule } from './auth/auth.module.js';
+import { ProfileModule } from './profile/profile.module.js';
+import { HouseholdModule } from './household/household.module.js';
 
 // MC-010 — global app wiring.
 //
@@ -21,6 +23,8 @@ import { AuthModule } from './auth/auth.module.js';
     ThrottlerModule.forRoot([{ name: 'auth', ttl: 60_000, limit: 10 }]),
     HealthModule,
     AuthModule,
+    ProfileModule,
+    HouseholdModule,
   ],
   providers: [
     // Global exception filter — converts every thrown error into the
