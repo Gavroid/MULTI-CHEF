@@ -3,6 +3,7 @@ import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import fastifyCookie from '@fastify/cookie';
+import fastifyCors from '@fastify/cors';
 import fastifyHelmet from '@fastify/helmet';
 import { Logger } from '@nestjs/common';
 import { loadServerEnv, EnvValidationError } from '@multichef/config';
@@ -25,6 +26,25 @@ try {
 
 async function bootstrap(): Promise<void> {
   const fastifyAdapter = new FastifyAdapter({ trustProxy: true, logger: false });
+  // @fastify/cors MUST be registered first — before any other plugin
+  // that touches the response (helmet, cookie) so the OPTIONS
+  // preflight is short-circuited with the right headers. We
+  // CORS_ORIGINS is parsed by packages/config into a string[].
+  // When credentials are true the spec forbids `*`, so we always
+  // echo the request Origin back (a per-origin allowlist).
+  await fastifyAdapter.register(fastifyCors as never, {
+    origin: (origin: string | undefined, cb: (err: Error | null, allow: boolean) => void) => {
+      // Same-origin / curl / server-to-server: no Origin header → allow.
+      if (!origin) return cb(null, true);
+      if (env.CORS_ORIGINS.includes(origin)) return cb(null, true);
+      cb(null, false);
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PATCH', 'DELETE', 'PUT', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Idempotency-Key', 'Cookie'],
+    exposedHeaders: ['x-ratelimit-limit', 'x-ratelimit-remaining', 'x-ratelimit-reset'],
+    maxAge: 86400,
+  });
   // @fastify/cookie is registered before Nest boots so req.cookies
   // is available to controllers via the type-ergonomic cast in
   // auth.controller.ts.

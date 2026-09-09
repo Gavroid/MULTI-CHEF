@@ -28,8 +28,8 @@
     "@commitlint/config-conventional": "^19.6.0",
     "husky": "^9.1.7",
     "lint-staged": "^15.2.10",
-    "turbo": "^2.3.3",
     "prettier": "^3.4.2",
+    "turbo": "^2.3.3",
     "typescript": "^5.7.2"
   },
   "pnpm": {
@@ -38,5 +38,8 @@
       "fastify": "^5.12.1",
       "deepmerge-ts": "^8.0.0"
     }
+  },
+  "dependencies": {
+    "@fastify/cors": "^11"
   }
 }
