@@ -334,6 +334,30 @@ importers:
         specifier: ^8.18.2
         version: 8.70.0(eslint@9.39.5(jiti@2.7.0))(typescript@5.9.3)
 
+  packages/nutrition:
+    devDependencies:
+      '@multichef/eslint-config':
+        specifier: workspace:*
+        version: link:../eslint-config
+      '@multichef/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      '@types/node':
+        specifier: ^22.10.2
+        version: 22.20.1
+      eslint:
+        specifier: ^9.17.0
+        version: 9.39.5(jiti@2.7.0)
+      prettier:
+        specifier: ^3.4.2
+        version: 3.9.6
+      tsx:
+        specifier: ^4.19.2
+        version: 4.23.13
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+
   packages/typescript-config: {}
 
   packages/ui:
