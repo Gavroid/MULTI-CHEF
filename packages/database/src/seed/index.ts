@@ -26,6 +26,7 @@ import { CATEGORIES } from './categories.js';
 import { INGREDIENTS } from './ingredients.js';
 import { buildAliasIndex } from './aliases.js';
 import { DEMO_HOUSEHOLD, DEMO_HOUSEHOLD_OWNER_EMAIL } from './demo-household.js';
+import { seedRecipes, RECIPES } from './recipes/index.js';
 
 const LOCALE_RU = 'ru';
 
@@ -185,10 +186,24 @@ async function main(): Promise<void> {
       );
     }
 
+    // 5. Recipes + RecipeIngredient + RecipeNutrition + StorageRule +
+    //    chain tags (MC-031 stage). Runs after ingredients so the FK
+    //    map in seedRecipes() can resolve canonicalName → id.
+    console.log(`seed: upserting ${RECIPES.length} recipes…`);
+    const recipeStats = await seedRecipes(prisma);
+    console.log(
+      `seed: recipes — ${recipeStats.recipesCreated} created, ${recipeStats.recipesUpdated} updated, ` +
+        `${recipeStats.recipeIngredients} ingredients, ${recipeStats.nutrition} nutrition, ` +
+        `${recipeStats.storageRules} storage rules`,
+    );
+
     // Summary
     const totalIngs = await prisma.ingredient.count();
     const totalAliases = await prisma.ingredientAlias.count();
-    console.log(`seed: done — ${totalIngs} ingredients, ${totalAliases} aliases total in DB`);
+    const totalRecipes = await prisma.recipe.count();
+    console.log(
+      `seed: done — ${totalIngs} ingredients, ${totalAliases} aliases, ${totalRecipes} recipes total in DB`,
+    );
   } finally {
     await prisma.$disconnect();
   }
