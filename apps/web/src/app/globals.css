@@ -1,0 +1,152 @@
+/* MULTI-CHEF design tokens.
+ *
+ * This file is the SINGLE SOURCE OF TRUTH for design values in light/dark
+ * themes. Values are referenced by:
+ *   - apps/web/src (Tailwind utilities via tailwind.config.ts)
+ *   - packages/ui/src/components (raw var() classes)
+ *
+ * Every value comes from PRD §2.5 (do not invent new tokens here — extend
+ * the PRD and update both consumers together).
+ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ---------- Light theme (default) ------------------------------------- */
+:root,
+[data-theme='light'] {
+  /* §2.5.1 colors — warm white surfaces, orange CTA. */
+  --color-bg: #fffdf9;
+  --color-surface: #ffffff;
+  --color-surface-2: #f7f3ec;
+  --color-border: #e8e0d4;
+  --color-text: #26221c;
+  --color-text-muted: #8a8177;
+  --color-primary: #e8590c;
+  --color-primary-press: #d9480f;
+  --color-primary-soft: #fff0e5;
+  --color-fresh: #2f9e44;
+  --color-fresh-soft: #e7f5ea;
+  --color-warning: #f08c00;
+  --color-warning-soft: #fff4e0;
+  --color-danger: #e03131;
+  --color-danger-soft: #fdecec;
+  --color-info: #1971c2;
+  --color-info-soft: #e7f0fa;
+
+  /* §2.5.2 typography. */
+  --font-family-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+  --font-family-mono: ui-monospace, 'SF Mono', Menlo, Monaco, Consolas,
+    'Liberation Mono', monospace;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --line-height-tight: 1.2;
+  --line-height-normal: 1.5;
+  --line-height-loose: 1.7;
+
+  /* §2.5.3 spacing / radii / shadows. */
+  --space-1: 0.25rem; /* 4px */
+  --space-2: 0.5rem; /* 8px */
+  --space-3: 0.75rem; /* 12px */
+  --space-4: 1rem; /* 16px */
+  --space-5: 1.25rem; /* 20px */
+  --space-6: 1.5rem; /* 24px */
+  --space-8: 2rem; /* 32px */
+  --radius-sm: 0.5rem; /* 8px */
+  --radius-md: 0.75rem; /* 12px */
+  --radius-lg: 1rem; /* 16px */
+  --radius-xl: 1.5rem; /* 24px */
+  --radius-full: 9999px;
+  --shadow-card: 0 1px 3px rgba(38, 34, 28, 0.08),
+    0 4px 12px rgba(38, 34, 28, 0.06);
+  --shadow-sheet: 0 -4px 24px rgba(38, 34, 28, 0.16);
+}
+
+/* ---------- Dark theme (override only the colour tokens) -------------- */
+[data-theme='dark'] {
+  --color-bg: #1a1713;
+  --color-surface: #242019;
+  --color-surface-2: #2e2820;
+  --color-border: #3e362b;
+  --color-text: #f2ede5;
+  --color-text-muted: #9a9084;
+  --color-primary: #ff7a1a;
+  --color-primary-press: #ff8f40;
+  --color-primary-soft: #3a2412;
+  --color-fresh: #51cf66;
+  --color-fresh-soft: #17301c;
+  --color-warning: #ffb01f;
+  --color-warning-soft: #35270c;
+  --color-danger: #ff6b6b;
+  --color-danger-soft: #3a1717;
+  --color-info: #4dabf7;
+  --color-info-soft: #12283a;
+  /* Radii/spacing/shadows are colour-agnostic — same in both themes. */
+}
+
+/* ---------- Auto respect OS preference when no manual choice ---------- */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --color-bg: #1a1713;
+    --color-surface: #242019;
+    --color-surface-2: #2e2820;
+    --color-border: #3e362b;
+    --color-text: #f2ede5;
+    --color-text-muted: #9a9084;
+    --color-primary: #ff7a1a;
+    --color-primary-press: #ff8f40;
+    --color-primary-soft: #3a2412;
+    --color-fresh: #51cf66;
+    --color-fresh-soft: #17301c;
+    --color-warning: #ffb01f;
+    --color-warning-soft: #35270c;
+    --color-danger: #ff6b6b;
+    --color-danger-soft: #3a1717;
+    --color-info: #4dabf7;
+    --color-info-soft: #12283a;
+  }
+}
+
+/* ---------- Base resets + defaults ------------------------------------ */
+html,
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-family-sans);
+  font-size: 16px;
+  line-height: var(--line-height-normal);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Tabular numerals for prices/sums (PRD §2.5.2). */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Reduced motion: fade-only or none (PRD §2.5.6). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 100ms !important;
+  }
+}
+
+/* Bottom-sheet slide-up keyframes (used by @multichef/ui BottomSheet). */
+@keyframes mc-slide-up {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}

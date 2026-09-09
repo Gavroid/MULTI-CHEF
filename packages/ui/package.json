@@ -2,27 +2,42 @@
   "name": "@multichef/ui",
   "version": "0.0.0",
   "private": true,
-  "description": "UI design-system package (tokens + components). Empty scaffold in MC-001; real content in MC-012.",
+  "description": "UI design-system package: tokens, primitives, Tailwind class bindings. MC-012.",
   "type": "module",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./tokens": "./src/tokens.ts",
+    "./cn": "./src/cn.ts",
+    "./components/*": "./src/components/*.tsx"
   },
   "scripts": {
     "lint": "eslint .",
     "format:check": "prettier --check \"src/**/*.ts\"",
     "typecheck": "tsc --noEmit",
-    "test": "node --test --import tsx src/__tests__/index.test.ts",
-    "build": "echo 'ui: nothing to build in scaffold (MC-001); tokens/components in MC-012'",
+    "test": "IS_REACT_ACT_ENVIRONMENT=true node --test --import tsx --test-reporter=spec 'src/__tests__/*.test.ts' 'src/__tests__/*.test.tsx'",
+    "test:coverage": "IS_REACT_ACT_ENVIRONMENT=true node --test --import tsx --test-reporter=spec --experimental-test-coverage 'src/__tests__/*.test.ts' 'src/__tests__/*.test.tsx'",
+    "build": "echo 'ui: tokens/components consumed as TS source by apps/web (Next.js bundler); no separate build artefact in MC-012'",
     "clean": "rm -rf dist .turbo *.tsbuildinfo"
+  },
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^2.6.0"
   },
   "devDependencies": {
     "@multichef/eslint-config": "workspace:*",
     "@multichef/typescript-config": "workspace:*",
+    "@types/react": "^19.0.2",
+    "@types/react-dom": "^19.0.2",
     "eslint": "^9.17.0",
+    "happy-dom": "^15.11.7",
     "prettier": "^3.4.2",
+    "react-dom": "^19.0.0",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
   }
 }

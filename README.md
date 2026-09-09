@@ -12,7 +12,7 @@ contract. Architecture decisions live in `docs/decisions/`.
 
 ## Status
 
-- Phase: **0 — scaffold (MC-001, MC-002, MC-003, MC-004 merged; MC-005 next)**
+- Phase: **1 — web frontend (MC-010 backend auth, MC-012 design system merged; MC-013 app-shell next)**
 - Deployment model: systemd bare-metal (ADR-0006)
 - CI: minimal `hello CI` workflow only; full pipeline lands with MC-005
 
@@ -29,7 +29,7 @@ packages/
   config/      Env loader + Zod validation (scaffold; real schema in MC-002)
   eslint-config/  Shared ESLint v9 flat-config
   typescript-config/  Base tsconfig presets
-  ui/          UI design-system package (scaffold; tokens in MC-012)
+  ui/          UI design-system package — tokens + components (MC-012)
 docs/          Architecture, plan, testing strategy (already imported)
 .github/       GitHub Actions
 ```
@@ -70,9 +70,32 @@ pnpm clean
 
 After `pnpm install && pnpm dev`, the scaffold should respond:
 
-- `http://localhost:3000/` — Next.js landing page (`MULTI-CHEF`).
+- `http://localhost:3000/` — Next.js landing page (`MULTI-CHEF`) with the
+  design system wired (light/dark toggle in the header).
+- `http://localhost:3000/design` — design-system demo: every UI primitive
+  in every state (Button/Card/Input/Chip/Badge/Skeleton/Toast/BottomSheet).
 - `http://localhost:3001/api/v1/health/live` — `{"status":"ok"}`.
 - `apps/worker` — logs `worker ready` to stdout.
+
+## Design system (MC-012)
+
+All visual values come from PRD §2.5. The single source of truth is
+`apps/web/src/app/globals.css` — every token is a CSS custom property
+referenced by both Tailwind utilities (`bg-primary`, `text-text`, …) and
+the `@multichef/ui` primitives.
+
+- **Light/dark themes** swap via the `data-theme="…"` attribute on `<html>`.
+  Default follows OS preference; user choice persists in `localStorage`
+  under key `mc-theme` via `apps/web/src/hooks/useTheme.ts`.
+- **Tokens** (excerpt): `--color-primary` (#E8590C), `--color-bg`,
+  `--color-surface`, `--color-fresh/warning/danger/info`, plus their
+  `-soft` companions; `--font-family-sans` (Inter), `--space-{1..8}`
+  (4px base), `--radius-{sm,md,lg,xl,full}`, `--shadow-{card,sheet}`.
+- **Components** (`packages/ui`): `Button`, `Card`, `Input`, `Chip`,
+  `Badge`, `Skeleton`, `Toast` (+ `ToastProvider`, `useToast`),
+  `BottomSheet`. Each ships TS types + tests + a11y assertions.
+- **TS access**: `import { cn, colors, space, radius, shadow } from '@multichef/ui'`
+  — values mirror the CSS variables.
 
 ## Conventions
 
