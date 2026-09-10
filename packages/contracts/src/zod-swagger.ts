@@ -25,7 +25,10 @@ function toSwagger(name: string, schema: ZodTypeAny): Record<string, unknown> {
   // resolve for our concrete ZodObject/ZodDiscriminatedUnion schemas
   // (TS2589 «Type instantiation is excessively deep»). Cast at the call
   // site to bypass inference — runtime behaviour is unaffected.
-  const json = zodToJsonSchema(schema as never, { name, target: 'openApi3' }) as Record<string, unknown>;
+  const json = zodToJsonSchema(schema as never, { name, target: 'openApi3' }) as Record<
+    string,
+    unknown
+  >;
   // zodToJsonSchema returns a $ref root pointing at definitions[name];
   // unwrap it so the result IS the named schema body.
   const defs = json['definitions'] as Record<string, Record<string, unknown>> | undefined;
@@ -39,5 +42,8 @@ export const swaggerSchemas = {
   RecipeDto: toSwagger('RecipeDto', RecipeDtoSchema as ZodTypeAny),
   RecipeDetailDto: toSwagger('RecipeDetailDto', RecipeDetailDtoSchema as ZodTypeAny),
   TodayRequestDto: toSwagger('TodayRequestDto', TodayRequestDtoSchema as ZodTypeAny),
-  TodayRecommendationDto: toSwagger('TodayRecommendationDto', TodayRecommendationDtoSchema as ZodTypeAny),
+  TodayRecommendationDto: toSwagger(
+    'TodayRecommendationDto',
+    TodayRecommendationDtoSchema as ZodTypeAny,
+  ),
 } as const;
