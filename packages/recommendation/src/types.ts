@@ -78,6 +78,12 @@ export interface Recipe {
   instructionsText: string[];
   /** Recipe-level chain links (leftover chains), may be empty. */
   leftoverSourceOf: string[];
+  /**
+   * Prep-cooking chain tags (MC-033). Optional so existing consumers
+   * (MC-032 fixtures/tests) stay valid; the API mapper fills it from
+   * Recipe.chainTags.
+   */
+  chainTags?: string[];
   /** Per-serving macros (already mapped from RecipeNutrition by the caller). */
   nutrition: {
     kcal: number;
