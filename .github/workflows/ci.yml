@@ -102,6 +102,11 @@ jobs:
 
       - name: Typecheck
         # Includes check:env-coverage + check:adr-coverage.
+        env:
+          # Bump Node heap to 4 GiB — api package typecheck (NestJS + zod
+          # schemas + Swagger) hit the 2 GiB default heap limit, OOM-killed
+          # on commit 871d3e0 (PR #23).
+          NODE_OPTIONS: '--max-old-space-size=4096'
         run: pnpm typecheck
 
   test:
