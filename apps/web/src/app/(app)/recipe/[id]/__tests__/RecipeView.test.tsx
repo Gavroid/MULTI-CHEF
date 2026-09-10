@@ -62,6 +62,26 @@ interface Mounted {
   unmount: () => void;
 }
 
+/**
+ * Poll `predicate` until it returns true — replaces fixed sleeps, which
+ * race the pantry promise on slow CI runners (a 10ms sleep was enough
+ * locally but not under turbo's parallel load; GitHub Actions run
+ * 34512503775 failed exactly this way: the checkbox had not rendered
+ * yet, querySelector returned null, getAttribute → undefined).
+ */
+async function waitFor(
+  predicate: () => boolean,
+  { intervalMs = 5, timeoutMs = 2000 }: { intervalMs?: number; timeoutMs?: number } = {},
+): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  while (!predicate()) {
+    if (Date.now() > deadline) {
+      throw new Error('waitFor: condition not met within timeout');
+    }
+    await new Promise((resolve) => setTimeout(resolve, intervalMs));
+  }
+}
+
 function render(element: React.ReactElement): Mounted {
   installDom();
   const doc = (globalThis as unknown as Record<string, unknown>)['document'] as Document;
@@ -234,8 +254,9 @@ test('checkboxes: pantry-covered ✓, insufficient ✗, toggle without network',
         pantryDeps: stubPantry() as never,
       }),
     );
-    // Let the pantry promise resolve before asserting checkbox states.
-    await new Promise((r) => setTimeout(r, 10));
+    // Wait for the pantry promise to resolve and the checkboxes to
+    // render (never a fixed sleep — races on slow CI runners).
+    await waitFor(() => m.q('[data-testid="ingredient-check-ing_pasta"]') !== null);
 
     // pasta 500 ≥ 200 needed → checked; cream 100 < 150 → unchecked.
     const pastaCheck = m.q('[data-testid="ingredient-check-ing_pasta"]');
@@ -256,7 +277,7 @@ test('checkboxes: pantry-covered ✓, insufficient ✗, toggle without network',
   }
 });
 
-test('pantry error → banner + no false ✓', () => {
+test('pantry error → banner + no false ✓', async () => {
   resetPantryCache();
   const m = render(
     React.createElement(RecipeView, {
@@ -264,22 +285,18 @@ test('pantry error → banner + no false ✓', () => {
       pantryDeps: failingPantry() as never,
     }),
   );
-  // Flush the rejected promise through the microtask queue.
-  return new Promise<void>((resolveTest) => {
-    setTimeout(() => {
-      assert.ok(m.q('[data-testid="pantry-error-banner"]'), 'error banner visible');
-      assert.equal(
-        m.q('[data-testid="ingredient-check-ing_pasta"]')?.getAttribute('aria-checked'),
-        'false',
-        'no false ✓ on pantry error',
-      );
-      m.unmount();
-      resolveTest();
-    }, 10);
-  });
+  // Wait for the rejected promise to surface the error banner.
+  await waitFor(() => m.q('[data-testid="pantry-error-banner"]') !== null);
+  assert.ok(m.q('[data-testid="pantry-error-banner"]'), 'error banner visible');
+  assert.equal(
+    m.q('[data-testid="ingredient-check-ing_pasta"]')?.getAttribute('aria-checked'),
+    'false',
+    'no false ✓ on pantry error',
+  );
+  m.unmount();
 });
 
-test('empty pantry → missing badge counts required ingredients', () => {
+test('empty pantry → missing badge counts required ingredients', async () => {
   resetPantryCache();
   const m = render(
     React.createElement(RecipeView, {
@@ -287,13 +304,10 @@ test('empty pantry → missing badge counts required ingredients', () => {
       pantryDeps: emptyPantry() as never,
     }),
   );
-  return new Promise<void>((resolveTest) => {
-    setTimeout(() => {
-      const badge = m.q('[data-testid="missing-badge"]');
-      assert.ok(badge, 'badge visible when pantry empty');
-      assert.match(badge?.textContent ?? '', /Не хватает: 3 из 3/);
-      m.unmount();
-      resolveTest();
-    }, 10);
-  });
+  // Wait for the (empty) pantry promise to resolve and the badge to render.
+  await waitFor(() => m.q('[data-testid="missing-badge"]') !== null);
+  const badge = m.q('[data-testid="missing-badge"]');
+  assert.ok(badge, 'badge visible when pantry empty');
+  assert.match(badge?.textContent ?? '', /Не хватает: 3 из 3/);
+  m.unmount();
 });
