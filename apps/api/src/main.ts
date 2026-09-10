@@ -7,6 +7,7 @@ import fastifyCors from '@fastify/cors';
 import fastifyHelmet from '@fastify/helmet';
 import { Logger } from '@nestjs/common';
 import { loadServerEnv, EnvValidationError } from '@multichef/config';
+import { swaggerSchemas } from '@multichef/contracts';
 import { AppModule } from './app.module.js';
 
 // MC-002: load + validate env before NestFactory boots. The API must
@@ -73,6 +74,13 @@ async function bootstrap(): Promise<void> {
     .addCookieAuth('mc_session', { type: 'apiKey', in: 'cookie', name: 'mc_session' })
     .build();
   const document = SwaggerModule.createDocument(app, swaggerConfig);
+  // MC-033 (QA blocker #2): register Zod-derived OpenAPI schemas so
+  // the recipes/recommendations wire DTOs appear in Swagger.
+  for (const [name, schema] of Object.entries(swaggerSchemas)) {
+    document.components ??= {};
+    document.components.schemas ??= {};
+    document.components.schemas[name] = schema as never;
+  }
   SwaggerModule.setup('api/v1/docs', app, document, {
     swaggerOptions: { persistAuthorization: false },
   });

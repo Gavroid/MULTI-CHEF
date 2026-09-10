@@ -1,5 +1,9 @@
 // Cross-package TypeScript contracts (DTOs, types, schemas).
-// MC-001: empty scaffold only. Real contracts land with the first cross-package
-// boundary in later milestones (see ADR-0007 / DEVELOPMENT-PLAN §0).
+//
+// MC-033: first real contracts — recipes catalog + recommendations/today.
+// Schemas are Zod; apps/api maps Prisma rows into these shapes, apps/web
+// (MC-034) validates responses with the same schemas.
 
-export {};
+export * from './recipes.js';
+export * from './recommendations.js';
+export * from './zod-swagger.js';

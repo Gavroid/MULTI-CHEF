@@ -11,8 +11,8 @@
     "lint": "eslint .",
     "format:check": "prettier --check \"src/**/*.ts\" \"*.{js,json,md}\"",
     "typecheck": "tsc --noEmit",
-    "test": "RUN_DB_INTEGRATION= node --test --import tsx --test-reporter=spec src/__tests__/auth.test.ts src/__tests__/dto.test.ts src/__tests__/error-envelope.test.ts src/__tests__/idempotency.test.ts src/__tests__/health.test.ts src/__tests__/profile-dto.test.ts src/__tests__/ingredients-dto.test.ts src/__tests__/pantry-dto.test.ts",
-    "test:integration": "RUN_DB_INTEGRATION=1 node --test --import tsx --test-concurrency=1 --test-reporter=spec src/__tests__/integration.test.ts src/__tests__/profile-integration.test.ts src/__tests__/ingredients-integration.test.ts src/__tests__/pantry-integration.test.ts",
+    "test": "RUN_DB_INTEGRATION= node --test --import tsx --test-reporter=spec src/__tests__/auth.test.ts src/__tests__/dto.test.ts src/__tests__/error-envelope.test.ts src/__tests__/idempotency.test.ts src/__tests__/csrf-guard.test.ts src/__tests__/health.test.ts src/__tests__/profile-dto.test.ts src/__tests__/ingredients-dto.test.ts src/__tests__/pantry-dto.test.ts src/recipes/__tests__/recipes.mappers.spec.ts src/recommendations/__tests__/pick-top3.spec.ts src/recommendations/__tests__/recommendations.mappers.spec.ts",
+    "test:integration": "RUN_DB_INTEGRATION=1 node --test --import tsx --test-concurrency=1 --test-reporter=spec src/recipes/__tests__/recipes.controller.spec.ts src/__tests__/integration.test.ts src/__tests__/profile-integration.test.ts src/__tests__/ingredients-integration.test.ts src/__tests__/pantry-integration.test.ts",
     "clean": "rm -rf dist .turbo *.tsbuildinfo"
   },
   "dependencies": {
@@ -22,6 +22,8 @@
     "@fastify/static": "^10.1.2",
     "@multichef/config": "workspace:*",
     "@multichef/database": "workspace:*",
+    "@multichef/contracts": "workspace:*",
+    "@multichef/recommendation": "workspace:*",
     "@nestjs/common": "^11.1.0",
     "@nestjs/core": "^11.1.0",
     "@nestjs/platform-fastify": "^11.1.0",

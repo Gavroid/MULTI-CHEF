@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { HealthController } from '../health/health.controller.js';
+import { closePrisma } from '@multichef/database';
 
 test('health controller live returns ok', () => {
   const controller = new HealthController();
@@ -8,43 +9,39 @@ test('health controller live returns ok', () => {
 });
 
 test('health controller ready returns ready when pingDatabase resolves', async () => {
-  // We can't mock @multichef/database's exports cleanly from here, so
-  // we monkey-patch by importing the controller module and using the
-  // pingDatabase it pulled in. The cleanest way is to set DATABASE_URL
-  // to a URL that will fail to connect — which exercises the negative
-  // path. For the positive path we set DATABASE_URL to point at a
-  // dummy URL and verify the controller attempts the ping (without
-  // caring about the outcome).
+  // Happy path requires a reachable Postgres (local dev / CI both have
+  // one). If the env has no DATABASE_URL at all, the negative path runs
+  // instead — the contract under test is the envelope, not the network.
   const controller = new HealthController();
   try {
-    await controller.readiness();
-    // If we happen to be on a host with Postgres reachable, we get
-    // ready — that's fine, the contract is "no throw".
+    const result = await controller.readiness();
+    assert.deepEqual(result, { status: 'ready' });
   } catch (err) {
-    // On a host without reachable Postgres we get the 503 HttpException
-    // with the structured `not-ready` body.
     const response = (err as { getResponse?: () => unknown }).getResponse?.();
     assert.deepEqual(response, { status: 'not-ready', reason: 'db' });
   }
 });
 
 test('health controller ready returns 503 with reason=db when pingDatabase rejects', async () => {
-  const controller = new HealthController();
-  // Force the underlying pingDatabase to throw by stripping DATABASE_URL.
-  // getPrisma() reads DATABASE_URL through @multichef/config and will
-  // throw an EnvValidationError before any network I/O — which is
-  // exactly the failure we want the readiness probe to surface.
+  // The Prisma client is cached process-wide; a warm cache would let
+  // this test reach a real DB even after deleting DATABASE_URL. Drop
+  // the cache (await — closePrisma is async) so getPrisma() must
+  // re-validate the env and throw EnvValidationError.
+  await closePrisma();
+
   const saved = process.env['DATABASE_URL'];
   delete process.env['DATABASE_URL'];
-
-  await assert.rejects(
-    () => controller.readiness(),
-    (err: unknown) => {
-      const response = (err as { getResponse?: () => unknown }).getResponse?.();
-      assert.deepEqual(response, { status: 'not-ready', reason: 'db' });
-      return true;
-    },
-  );
-
-  if (saved !== undefined) process.env['DATABASE_URL'] = saved;
+  try {
+    const controller = new HealthController();
+    await assert.rejects(
+      () => controller.readiness(),
+      (err: unknown) => {
+        const response = (err as { getResponse?: () => unknown }).getResponse?.();
+        assert.deepEqual(response, { status: 'not-ready', reason: 'db' });
+        return true;
+      },
+    );
+  } finally {
+    if (saved !== undefined) process.env['DATABASE_URL'] = saved;
+  }
 });

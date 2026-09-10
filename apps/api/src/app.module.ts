@@ -4,12 +4,15 @@ import { APP_GUARD, APP_FILTER } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AppHttpExceptionFilter } from './common/exception-filter.js';
 import { IdempotencyKeyGuard } from './common/idempotency.js';
+import { CSRF_GUARD_PROVIDER } from './common/csrf-guard.js';
 import { HealthModule } from './health/health.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { ProfileModule } from './profile/profile.module.js';
 import { HouseholdModule } from './household/household.module.js';
 import { IngredientsModule } from './ingredients/ingredients.module.js';
 import { PantryModule } from './pantry/pantry.module.js';
+import { RecipesModule } from './recipes/recipes.module.js';
+import { RecommendationsModule } from './recommendations/recommendations.module.js';
 
 // MC-010 — global app wiring.
 //
@@ -29,6 +32,8 @@ import { PantryModule } from './pantry/pantry.module.js';
     HouseholdModule,
     IngredientsModule,
     PantryModule,
+    RecipesModule,
+    RecommendationsModule,
   ],
   providers: [
     // Global exception filter — converts every thrown error into the
@@ -39,6 +44,12 @@ import { PantryModule } from './pantry/pantry.module.js';
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     // Idempotency-Key guard — enforces the header on POST/PUT/PATCH/DELETE.
     { provide: APP_GUARD, useClass: IdempotencyKeyGuard },
+    // CSRF double-submit (PRD §879, QA blocker #1): mc_csrf cookie +
+    // X-CSRF-Token header on every mutating request that carries the
+    // csrf cookie. Soft mode — requests without the csrf cookie pass
+    // (non-browser clients); hard-fail for all mutations incl. MC-010
+    // auth is deferred to a dedicated ADR (post-MC-055 tech debt).
+    CSRF_GUARD_PROVIDER,
   ],
 })
 export class AppModule {}
