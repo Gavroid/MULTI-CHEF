@@ -158,6 +158,16 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
+      - name: Build workspace deps for web
+        # CI-fix for PR #21 (MC-035): @multichef/nutrition exports ./dist,
+        # and `pnpm test` runs `turbo run test` which transitively depends
+        # on ^build. In fresh CI checkouts the dist artefact may be
+        # missing (pnpm install does not trigger workspace package builds).
+        # Force a build of @multichef/web's transitive workspace deps
+        # before running tests so nutrition/contract/config dist files
+        # exist on disk.
+        run: pnpm turbo run build --filter=@multichef/web...
+
       - name: Generate Prisma client
         run: pnpm --filter @multichef/database prisma generate
 
