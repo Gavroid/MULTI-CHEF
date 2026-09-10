@@ -175,7 +175,11 @@ jobs:
         run: pnpm --filter @multichef/database prisma migrate deploy
 
       - name: Unit tests
-        run: pnpm test
+        # CI-fix v2 for PR #21 (MC-035): turbo's default parallel scheduling
+        # causes flaky failures in node:test under heavy CPU contention
+        # (e.g. cold CI cache running all 12 tasks simultaneously). Limit
+        # concurrency to 2 to keep node:test deterministic. See decision log.
+        run: pnpm turbo run test --concurrency=2
 
       - name: Integration tests (packages/database)
         if: success()
