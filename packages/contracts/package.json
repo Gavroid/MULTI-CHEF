@@ -14,7 +14,7 @@
     "format:check": "prettier --check \"src/**/*.ts\"",
     "typecheck": "tsc --noEmit",
     "test": "node --test --import tsx src/__tests__/index.test.ts",
-    "build": "echo 'contracts: nothing to build in scaffold (MC-001)'",
+    "build": "tsc -p tsconfig.build.json",
     "clean": "rm -rf dist .turbo *.tsbuildinfo"
   },
   "devDependencies": {
