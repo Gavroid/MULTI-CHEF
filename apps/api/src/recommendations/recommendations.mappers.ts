@@ -105,8 +105,11 @@ export async function fetchYesterdayMainProtein(
   return mapYesterdayMainProtein(ingredients);
 }
 
-// Local keyword mirror (recipes.mappers keeps the canonical table) to
-// avoid a circular import for one call site.
+// Local keyword mirror to avoid a circular import for one call site.
+// Subset of GROUP_KEYWORDS in recipes.mappers.ts, intentionally limited
+// to PROTEIN_GROUPS (MEAT/FISH/DAIRY/EGG) — QA fix #5: patterns here
+// MUST stay consistent with the canonical table; drift is caught by the
+// yesterdayMainProtein keyword-match unit tests.
 const GROUPS: ReadonlyArray<[RegExp, 'MEAT' | 'FISH' | 'DAIRY' | 'EGG' | 'OTHER']> = [
   [/мясо|мясн|куриц|говяд|свин|баранин|телят|фарш|индейк|утк|кролик/i, 'MEAT'],
   [/рыб|морепрод|креветк|кальмар|лосос|тунец|селед|скумбр|треск|горбуш/i, 'FISH'],

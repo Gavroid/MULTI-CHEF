@@ -13,7 +13,15 @@ import type { RecipeDetailDto, RecipeDto, PaginatedRecipes } from './recipes.dto
 
 const LIST_INCLUDE = {
   ingredients: {
-    include: { ingredient: { include: { category: { select: { name: true } } } } },
+    include: {
+      ingredient: {
+        include: {
+          category: { select: { name: true } },
+        },
+        // avgPriceKopecks needed by estimateExtraCostKopecks (QA fix #3:
+        // typed on PrismaRecipeWithRelations, no cast at call site).
+      },
+    },
   },
   nutrition: true,
 } satisfies Prisma.RecipeInclude;

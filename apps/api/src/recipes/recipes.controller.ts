@@ -37,6 +37,9 @@ export class RecipesController {
   })
   @ApiResponse({ status: 200, description: 'Paginated recipes' })
   @ApiResponse({ status: 400, description: 'Invalid query parameters' })
+  // TODO(MC-XXX): when the schema gains array fields (tags, antiFilters),
+  // switch to the Fastify-native parser `req.query as Record<string, string | string[]>` —
+  // the current Record<string, string | undefined> type drops repeated keys.
   async list(@Query() rawQuery: Record<string, string | undefined>): Promise<PaginatedRecipes> {
     const parsed = ListRecipesQuerySchema.safeParse(rawQuery);
     if (!parsed.success) {

@@ -17,6 +17,10 @@
     "build": "tsc -p tsconfig.build.json",
     "clean": "rm -rf dist .turbo *.tsbuildinfo"
   },
+  "dependencies": {
+    "zod": "^3.24.1",
+    "zod-to-json-schema": "^3.24.1"
+  },
   "devDependencies": {
     "@multichef/eslint-config": "workspace:*",
     "@multichef/typescript-config": "workspace:*",

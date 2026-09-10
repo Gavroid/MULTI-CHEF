@@ -8,10 +8,13 @@
 
 import type { ScoredRecipe, GenerationContext } from '@multichef/recommendation';
 import type { RecipeDto } from '@multichef/contracts';
-import type { RecipeRowWithRelations, toDto } from '../recipes/recipes.service.js';
+import type { RecipeRowWithRelations } from '../recipes/recipes.service.js';
 
 export type PickDeps = {
-  toRecipeDto: (row: RecipeRowWithRelations) => ReturnType<typeof toDto>;
+  // QA fix #4: `toDto` is a VALUE imported via `import type` — replaced
+  // the `ReturnType<typeof toDto>` indirection with the real return
+  // type (RecipeDto) so the dep stays type-only.
+  toRecipeDto: (row: RecipeRowWithRelations) => RecipeDto;
   rowById: Map<string, RecipeRowWithRelations>;
 };
 

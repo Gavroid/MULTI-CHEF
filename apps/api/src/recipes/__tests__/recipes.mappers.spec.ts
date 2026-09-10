@@ -95,6 +95,7 @@ const ROW: PrismaRecipeWithRelations = {
       ingredient: {
         id: 'i_pasta',
         canonicalName: 'макароны',
+        avgPriceKopecks: 1200,
         category: { name: 'Крупы и макароны' },
       },
     },
@@ -106,6 +107,7 @@ const ROW: PrismaRecipeWithRelations = {
       ingredient: {
         id: 'i_cream',
         canonicalName: 'сливки',
+        avgPriceKopecks: null,
         category: { name: 'Молочные продукты' },
       },
     },

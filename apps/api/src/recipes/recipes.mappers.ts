@@ -104,6 +104,7 @@ export type PrismaRecipeWithRelations = {
     ingredient: {
       id: string;
       canonicalName: string;
+      avgPriceKopecks: number | null;
       category: Pick<IngredientCategory, 'name'> | null;
     } | null;
   }>;
@@ -147,7 +148,7 @@ export function mapRecipeRow(
 function estimateExtraCostKopecks(row: PrismaRecipeWithRelations): number {
   let sum = 0;
   for (const ri of row.ingredients) {
-    const price = (ri.ingredient as { avgPriceKopecks?: number | null } | null)?.avgPriceKopecks;
+    const price = ri.ingredient?.avgPriceKopecks;
     if (typeof price === 'number' && Number.isFinite(price))
       sum += Math.round(price * (ri.grams.toNumber() / 100));
   }

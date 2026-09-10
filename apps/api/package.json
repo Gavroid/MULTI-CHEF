@@ -22,6 +22,8 @@
     "@fastify/static": "^10.1.2",
     "@multichef/config": "workspace:*",
     "@multichef/database": "workspace:*",
+    "@multichef/contracts": "workspace:*",
+    "@multichef/recommendation": "workspace:*",
     "@nestjs/common": "^11.1.0",
     "@nestjs/core": "^11.1.0",
     "@nestjs/platform-fastify": "^11.1.0",
