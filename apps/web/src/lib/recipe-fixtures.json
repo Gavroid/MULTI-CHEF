@@ -1,0 +1,122 @@
+{
+  "recipes": [
+    {
+      "id": "r_pasta_grib",
+      "title": "Паста с грибами и сливками",
+      "description": "Сливочная паста с шампиньонами — быстрый ужин за 25 минут.",
+      "servings": 2,
+      "prepMinutes": 10,
+      "cookMinutes": 15,
+      "difficulty": 1,
+      "imageKey": "/images/recipes/r_pasta_grib.webp",
+      "mealTypes": ["LUNCH", "DINNER"],
+      "tags": ["быстрое", "одна сковорода"],
+      "requiredAppliances": ["STOVE"],
+      "ingredients": [
+        {
+          "ingredientId": "ing_pasta",
+          "canonicalName": "Паста",
+          "grams": 200,
+          "optional": false,
+          "substitutesFor": null
+        },
+        {
+          "ingredientId": "ing_mushrooms",
+          "canonicalName": "Шампиньоны",
+          "grams": 300,
+          "optional": false,
+          "substitutesFor": null
+        },
+        {
+          "ingredientId": "ing_cream",
+          "canonicalName": "Сливки 20%",
+          "grams": 150,
+          "optional": false,
+          "substitutesFor": null
+        },
+        {
+          "ingredientId": "ing_parsley",
+          "canonicalName": "Петрушка",
+          "grams": 20,
+          "optional": true,
+          "substitutesFor": null
+        }
+      ],
+      "instructions": [
+        { "order": 1, "text": "Отварите пасту до состояния аль денте.", "timerMinutes": 9 },
+        { "order": 2, "text": "Обжарьте грибы на сливочном масле до золотистости.", "timerMinutes": 7 },
+        { "order": 3, "text": "Добавьте сливки и пасту, прогрейте 2 минуты.", "timerMinutes": 2 }
+      ],
+      "nutrition": {
+        "servingCalories": 620,
+        "servingProteinG": 21.4,
+        "servingFatG": 26.8,
+        "servingCarbsG": 71.5,
+        "servingGrams": 350,
+        "calculationVersion": 2
+      },
+      "storageRules": [
+        { "storageMethod": "FREEZE_OK", "maxHoursFridge": 48, "maxDaysFreezer": 30, "addBeforeServing": ["зелень"] },
+        {
+          "storageMethod": "ADD_BEFORE_SERVING",
+          "maxHoursFridge": null,
+          "maxDaysFreezer": null,
+          "addBeforeServing": ["зелень", "сыр"]
+        }
+      ],
+      "nutritionAccuracy": "ESTIMATED"
+    },
+    {
+      "id": "r_salad_quinoa",
+      "title": "Салат с киноа и овощами",
+      "description": "Лёгкий салат с киноа, огурцом и помидорами черри.",
+      "servings": 4,
+      "prepMinutes": 15,
+      "cookMinutes": 15,
+      "difficulty": 1,
+      "imageKey": null,
+      "mealTypes": ["LUNCH"],
+      "tags": ["быстрое", "без духовки"],
+      "requiredAppliances": ["STOVE"],
+      "ingredients": [
+        {
+          "ingredientId": "ing_quinoa",
+          "canonicalName": "Киноа",
+          "grams": 280,
+          "optional": false,
+          "substitutesFor": null
+        },
+        {
+          "ingredientId": "ing_cucumber",
+          "canonicalName": "Огурец",
+          "grams": 200,
+          "optional": false,
+          "substitutesFor": null
+        },
+        {
+          "ingredientId": "ing_tomato",
+          "canonicalName": "Помидоры черри",
+          "grams": 150,
+          "optional": true,
+          "substitutesFor": null
+        }
+      ],
+      "instructions": [
+        { "order": 1, "text": "Отварите киноа 15 минут.", "timerMinutes": 15 },
+        { "order": 2, "text": "Нарежьте овощи и смешайте с киноа.", "timerMinutes": null }
+      ],
+      "nutrition": {
+        "servingCalories": 310,
+        "servingProteinG": 9.8,
+        "servingFatG": 11.2,
+        "servingCarbsG": 39.4,
+        "servingGrams": 300,
+        "calculationVersion": 1
+      },
+      "storageRules": [
+        { "storageMethod": "FRIDGE_ONLY", "maxHoursFridge": 24, "maxDaysFreezer": null, "addBeforeServing": [] }
+      ],
+      "nutritionAccuracy": "ESTIMATED"
+    }
+  ]
+}

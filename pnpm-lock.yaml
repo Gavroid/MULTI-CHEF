@@ -138,6 +138,9 @@ importers:
       '@multichef/config':
         specifier: workspace:*
         version: link:../../packages/config
+      '@multichef/nutrition':
+        specifier: workspace:*
+        version: link:../../packages/nutrition
       '@multichef/ui':
         specifier: workspace:*
         version: link:../../packages/ui

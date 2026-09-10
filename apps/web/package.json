@@ -11,12 +11,13 @@
     "lint": "eslint .",
     "format:check": "prettier --check \"src/**/*.{ts,tsx}\" \"*.{js,json,md}\"",
     "typecheck": "tsc --noEmit",
-    "test": "node --test --import tsx --test-reporter=spec src/__tests__/smoke.test.tsx src/__tests__/design-system.test.tsx src/__tests__/active-tab.test.ts src/__tests__/BottomTabBar.test.tsx src/__tests__/app-shell.test.tsx src/__tests__/auth-client.test.ts src/__tests__/auth-storage.test.ts src/__tests__/auth-pages.test.tsx src/__tests__/expiry.test.ts src/__tests__/pantry-client.test.ts src/__tests__/fridge-client.test.tsx",
+    "test": "node --test --import tsx --test-reporter=spec src/__tests__/smoke.test.tsx src/__tests__/design-system.test.tsx src/__tests__/active-tab.test.ts src/__tests__/BottomTabBar.test.tsx src/__tests__/app-shell.test.tsx src/__tests__/auth-client.test.ts src/__tests__/auth-storage.test.ts src/__tests__/auth-pages.test.tsx src/__tests__/expiry.test.ts src/__tests__/pantry-client.test.ts src/__tests__/fridge-client.test.tsx src/hooks/__tests__/usePantry.test.ts src/lib/__tests__/recipe-client.test.ts \"src/app/(app)/recipe/**/__tests__/*.test.ts\" \"src/app/(app)/recipe/**/__tests__/*.test.tsx\"",
     "test:e2e": "playwright test",
     "clean": "rm -rf .next .turbo *.tsbuildinfo"
   },
   "dependencies": {
     "@multichef/config": "workspace:*",
+    "@multichef/nutrition": "workspace:*",
     "@multichef/ui": "workspace:*",
     "clsx": "^2.1.1",
     "lucide-react": "^0.469.0",
