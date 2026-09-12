@@ -12,6 +12,8 @@ cd "$APP_DIR"
 echo "deploy: preflight"
 git fetch origin
 git status --porcelain | grep -q . && { echo "deploy: dirty tree, abort"; exit 1; }
+# NEXT_PUBLIC_* are inlined at BUILD time — env must be loaded first.
+set -a; source "$ENV_FILE"; set +a
 
 echo "deploy: backup"
 "$(dirname "$0")/backup.sh"
