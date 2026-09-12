@@ -13,8 +13,10 @@
 
 import { getPrisma } from '@multichef/database';
 import {
+  buildShoppingList,
   mulberry32,
   planWeek,
+  requiredGramsFromEntries,
   type GenerationContext,
   type Recipe,
   type UserPreferences,
@@ -298,17 +300,73 @@ export async function runPlanWeek(
         },
       });
     }
-    // MC-052 fills the items; the accept flow needs the list to exist.
+    // MC-052: fill the shopping list for the created plan.
+    const required = requiredGramsFromEntries(
+      result.entries.map((e) => ({
+        servings: e.servings,
+        ingredients: e.recipe.ingredients.map((i) => ({
+          ingredientId: i.ingredientId,
+          grams: i.grams,
+          optional: i.optional,
+        })),
+      })),
+    );
+    const ingredientIds = [...required.keys()];
+    const ingredientRows =
+      ingredientIds.length > 0
+        ? await tx.ingredient.findMany({
+            where: { id: { in: ingredientIds } },
+            select: {
+              id: true,
+              packageSize: true,
+              avgPriceKopecks: true,
+              categoryId: true,
+              category: { select: { sortOrder: true } },
+            },
+          })
+        : [];
+    const listDrafts = buildShoppingList({
+      requiredGrams: new Map([...required.entries()].map(([id, v]) => [id, v.grams])),
+      pantryGrams: new Map(pantryRows.map((r) => [r.ingredientId, r.estimatedGrams.toNumber()])),
+      staples: new Set(
+        pantryRows.filter((r) => r.priority === 'STAPLE').map((r) => r.ingredientId),
+      ),
+      dishCounts: new Map([...required.entries()].map(([id, v]) => [id, v.dishes])),
+      totalDishes: result.entries.length,
+      meta: ingredientRows.map((r) => ({
+        ingredientId: r.id,
+        packageSize: r.packageSize ?? 500,
+        avgPriceKopecks: r.avgPriceKopecks ?? 0,
+        categoryId: r.categoryId,
+        categorySortOrder: r.category?.sortOrder ?? 99,
+      })),
+    });
     const list = await tx.shoppingList.create({
       data: {
         id: `${plan.id}-list`,
         mealPlanId: plan.id,
         householdId: data.householdId,
-        estimatedTotalKopecks: 0,
+        estimatedTotalKopecks: listDrafts.reduce((s, d) => s + d.estimatedPriceKopecks, 0),
         status: 'ACTIVE',
       },
     });
-    void list;
+    for (const d of listDrafts) {
+      await tx.shoppingListItem.create({
+        data: {
+          id: `${list.id}-${d.ingredientId}`,
+          shoppingListId: list.id,
+          ingredientId: d.ingredientId,
+          requiredGrams: d.requiredGrams,
+          packageQuantity: d.packageQuantity,
+          packageSize: d.packageSize,
+          packageUnit: 'G',
+          estimatedPriceKopecks: d.estimatedPriceKopecks,
+          utilityScore: d.utilityScore,
+          categoryId: d.categoryId,
+          sortOrder: d.sortOrder,
+        },
+      });
+    }
     return plan.id;
   });
   return planId;
