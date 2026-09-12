@@ -10,7 +10,12 @@
 // reproducible (DoD). No I/O, no clock — the ctx carries `now`.
 
 import { rank } from './scoring/index.js';
-import type { GenerationContext, MealType, Recipe, ScoredRecipe } from './types.js';
+import type {
+  GenerationContext,
+  MealType,
+  Recipe,
+  ScoredRecipe,
+} from './types.js';
 
 export type RepeatPolicy = 'ALLOW_REPEATS' | 'NO_REPEATS';
 
@@ -96,7 +101,12 @@ function dayCaloriesPerPerson(
   return dayCalories(entries, dayIndex) / Math.max(1, peopleCount);
 }
 
-export function planWeek(input: PlannerInput, rng: () => number = Math.random): PlannerResult {
+/**
+ * Plan a week. `rng` is REQUIRED — the repo lint bans Math.random in
+ * this package because plans must be reproducible: callers pass a
+ * seeded generator (e.g. mulberry32(seedFromJobId)).
+ */
+export function planWeek(input: PlannerInput, rng: () => number): PlannerResult {
   const days = Math.max(1, Math.floor(input.days));
   const mealsPerDay = Math.min(4, Math.max(1, Math.floor(input.mealsPerDay)));
   const mealSlots = MEAL_ORDER.slice(0, mealsPerDay);
@@ -121,17 +131,6 @@ export function planWeek(input: PlannerInput, rng: () => number = Math.random): 
   const chosen: PlannerEntry[] = [];
   const takenByDay = new Map<number, Set<string>>();
   for (let d = 0; d < days; d++) takenByDay.set(d, new Set());
-
-  const candidateKey = (s: ScoredRecipe, dayIndex: number): number => {
-    let key = s.score;
-    if (sharesChain(s.recipe, chosen)) key += CHAIN_BONUS;
-    // no-cook days prefer genuinely prep-free dishes.
-    if (noCookSet.has(dayIndex) && s.recipe.prepMinutes === NO_COOK_MAX_PREP_MINUTES) {
-      key += CHAIN_BONUS;
-    }
-    // tiny rng jitter breaks score ties without hurting determinism.
-    return key + rng() * 0.001;
-  };
 
   const pickFor = (mealType: MealType, dayIndex: number): ScoredRecipe | null => {
     const pool = byMeal.get(mealType) ?? [];
@@ -176,7 +175,8 @@ export function planWeek(input: PlannerInput, rng: () => number = Math.random): 
       let worstDay = -1;
       let worstDev = 0;
       for (let d = 0; d < days; d++) {
-        const dev = Math.abs(dayCaloriesPerPerson(chosen, d, input.peopleCount) - target) / target;
+        const dev =
+          Math.abs(dayCaloriesPerPerson(chosen, d, input.peopleCount) - target) / target;
         if (dev > worstDev) {
           worstDev = dev;
           worstDay = d;
@@ -194,7 +194,8 @@ export function planWeek(input: PlannerInput, rng: () => number = Math.random): 
         if (input.repeatPolicy === 'NO_REPEATS' && used.has(s.recipe.id)) continue;
         if (noCookSet.has(worstDay)) continue; // no-cook days keep their shape
         const kcal = s.recipe.nutrition.kcal * victim.servings;
-        const rest = dayCalories(chosen, worstDay) - victim.recipe.nutrition.kcal * victim.servings;
+        const rest =
+          dayCalories(chosen, worstDay) - victim.recipe.nutrition.kcal * victim.servings;
         const perPerson = (rest + kcal) / Math.max(1, input.peopleCount);
         const dev = Math.abs(perPerson - target) / target;
         if (!bestSwap || dev < bestSwap.dev) {
@@ -235,7 +236,9 @@ export function planWeek(input: PlannerInput, rng: () => number = Math.random): 
     }
   }
   const avgDailyCalorieDeviation =
-    deviations.length > 0 ? deviations.reduce((a, b) => a + b, 0) / deviations.length : null;
+    deviations.length > 0
+      ? deviations.reduce((a, b) => a + b, 0) / deviations.length
+      : null;
 
   return {
     entries: chosen,
