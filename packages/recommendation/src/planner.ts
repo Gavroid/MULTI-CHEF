@@ -10,12 +10,7 @@
 // reproducible (DoD). No I/O, no clock — the ctx carries `now`.
 
 import { rank } from './scoring/index.js';
-import type {
-  GenerationContext,
-  MealType,
-  Recipe,
-  ScoredRecipe,
-} from './types.js';
+import type { GenerationContext, MealType, Recipe, ScoredRecipe } from './types.js';
 
 export type RepeatPolicy = 'ALLOW_REPEATS' | 'NO_REPEATS';
 
@@ -181,8 +176,7 @@ export function planWeek(input: PlannerInput, rng: () => number): PlannerResult 
       let worstDay = -1;
       let worstDev = 0;
       for (let d = 0; d < days; d++) {
-        const dev =
-          Math.abs(dayCaloriesPerPerson(chosen, d, input.peopleCount) - target) / target;
+        const dev = Math.abs(dayCaloriesPerPerson(chosen, d, input.peopleCount) - target) / target;
         if (dev > worstDev) {
           worstDev = dev;
           worstDay = d;
@@ -200,8 +194,7 @@ export function planWeek(input: PlannerInput, rng: () => number): PlannerResult 
         if (input.repeatPolicy === 'NO_REPEATS' && used.has(s.recipe.id)) continue;
         if (noCookSet.has(worstDay)) continue; // no-cook days keep their shape
         const kcal = s.recipe.nutrition.kcal * victim.servings;
-        const rest =
-          dayCalories(chosen, worstDay) - victim.recipe.nutrition.kcal * victim.servings;
+        const rest = dayCalories(chosen, worstDay) - victim.recipe.nutrition.kcal * victim.servings;
         const perPerson = (rest + kcal) / Math.max(1, input.peopleCount);
         const dev = Math.abs(perPerson - target) / target;
         if (!bestSwap || dev < bestSwap.dev) {
@@ -242,9 +235,7 @@ export function planWeek(input: PlannerInput, rng: () => number): PlannerResult 
     }
   }
   const avgDailyCalorieDeviation =
-    deviations.length > 0
-      ? deviations.reduce((a, b) => a + b, 0) / deviations.length
-      : null;
+    deviations.length > 0 ? deviations.reduce((a, b) => a + b, 0) / deviations.length : null;
 
   return {
     entries: chosen,
