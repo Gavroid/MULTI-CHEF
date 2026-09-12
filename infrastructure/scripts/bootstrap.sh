@@ -31,7 +31,8 @@ if [ ! -f "$ENV_DIR/multichef.env" ]; then
     echo "COOKIE_SECRET=$(openssl rand -base64 36)"
     echo "APP_BASE_URL=http://192.168.1.35:8080"
     echo "CORS_ORIGINS=http://192.168.1.35:8080,https://192.168.1.35:8443"
-    echo "COOKIE_DOMAIN=192.168.1.35"
+    # NOTE: no COOKIE_DOMAIN for IP-only LAN hosts — browsers reject
+    # Domain=IP attributes, which silently drops the session cookie.
     echo "NEXT_PUBLIC_APP_BASE_URL=http://192.168.1.35:8080"
   } > "$ENV_DIR/multichef.env"
 fi
