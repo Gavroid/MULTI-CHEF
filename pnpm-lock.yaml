@@ -232,6 +232,9 @@ importers:
       '@multichef/database':
         specifier: workspace:*
         version: link:../../packages/database
+      '@multichef/recommendation':
+        specifier: workspace:*
+        version: link:../../packages/recommendation
       bullmq:
         specifier: ^5.34.0
         version: 5.81.5
