@@ -12,7 +12,7 @@ contract. Architecture decisions live in `docs/decisions/`.
 
 ## Status
 
-- Phase: **1 — web frontend (MC-010 auth, MC-011 profile, MC-012 design system, MC-013 app-shell merged; MC-014 auth screens next)**
+- **v0.1.0 MVP** — Фазы 0–7 MAIN-LINE закрыты (MC-001..075/080/082/090, кроме MC-041/043/053/074/075 — post-MVP): рецепты «на сегодня», «Спаси продукт», рулетка, недельный план (worker + BullMQ), список покупок с бюджетом, заготовки и хранение, PWA, прод-деплой на 192.168.1.35 (nginx gateway :8080/:8443, systemd).
 - Deployment model: systemd bare-metal (ADR-0006)
 - CI: 5-job pipeline (lint / typecheck / test / build / secret-scan) with pgvector for integration tests
 
@@ -135,3 +135,25 @@ test && build`);
 - how to run CI locally (and why Docker is required for `test:integration`).
 
 Issues and PRs follow the templates in `.github/` (added in MC-005).
+
+---
+
+## Деплой (prod host 192.168.1.35, MC-071/072/080/082)
+
+```bash
+# 1. Однократный bootstrap (idempotent): user multichef_app, /opt/multichef,
+#    self-signed TLS, секреты в /etc/multichef (chmod 600), nginx-гейтвей, pg role/db.
+sudo infrastructure/scripts/bootstrap.sh
+
+# 2. Каждый релиз: preflight → backup → pull → build → migrate → restart → smoke → health.
+sudo infrastructure/scripts/deploy.sh
+
+# 3. Проверка здоровья (api live/ready + web /today).
+infrastructure/scripts/health-check.sh http://127.0.0.1:8080
+```
+
+- Гейтвей: http://192.168.1.35:8080 (LAN) и https://192.168.1.35:8443 (self-signed).
+- systemd-юниты: `infrastructure/systemd/multichef-{api,worker,web}.service` (User=multichef_app, EnvironmentFile=/etc/multichef/multichef.env).
+- Бэкапы: `/var/lib/multichef/backups/` (pg_dump+gzip, ротация 7).
+- Ротация секретов: `docs/runbooks/secret-rotation.md` + `infrastructure/scripts/rotate-secrets.sh`.
+- E2E (против задеплоенного гейтвея): `E2E_BASE_URL=http://192.168.1.35:8080 pnpm --filter @multichef/web test:e2e`.
