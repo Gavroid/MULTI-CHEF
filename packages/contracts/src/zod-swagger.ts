@@ -15,6 +15,11 @@ import {
 } from './recipes.js';
 import { TodayRecommendationDtoSchema, TodayRequestDtoSchema } from './recommendations.js';
 import { RescueRequestDtoSchema, RescueResponseDtoSchema } from './rescue.js';
+import {
+  RouletteDrawRequestDtoSchema,
+  RouletteDrawResponseDtoSchema,
+  RouletteRejectResponseDtoSchema,
+} from './roulette.js';
 
 // Bypass deep Zod inference (TS2589) by typing the parameter as ZodTypeAny.
 // zod-to-json-schema v3 accepts any zod schema; the concrete ZodObject /
@@ -49,4 +54,16 @@ export const swaggerSchemas = {
   ),
   RescueRequestDto: toSwagger('RescueRequestDto', RescueRequestDtoSchema as ZodTypeAny),
   RescueResponseDto: toSwagger('RescueResponseDto', RescueResponseDtoSchema as ZodTypeAny),
+  RouletteDrawRequestDto: toSwagger(
+    'RouletteDrawRequestDto',
+    RouletteDrawRequestDtoSchema as ZodTypeAny,
+  ),
+  RouletteDrawResponseDto: toSwagger(
+    'RouletteDrawResponseDto',
+    RouletteDrawResponseDtoSchema as ZodTypeAny,
+  ),
+  RouletteRejectResponseDto: toSwagger(
+    'RouletteRejectResponseDto',
+    RouletteRejectResponseDtoSchema as ZodTypeAny,
+  ),
 } as const;

@@ -3,14 +3,23 @@
 import { z } from 'zod';
 import {
   RescueRequestDtoSchema,
+  RouletteDrawRequestDtoSchema,
   TodayRequestDtoSchema,
   TodayRecommendationDtoSchema,
 } from '@multichef/contracts';
 
-export { RescueRequestDtoSchema, TodayRequestDtoSchema, TodayRecommendationDtoSchema };
+export {
+  RescueRequestDtoSchema,
+  RouletteDrawRequestDtoSchema,
+  TodayRequestDtoSchema,
+  TodayRecommendationDtoSchema,
+};
 export type {
   RescueRequestDto,
   RescueResponseDto,
+  RouletteDrawRequestDto,
+  RouletteDrawResponseDto,
+  RouletteRejectResponseDto,
   TodayRequestDto,
   TodayRecommendationDto,
 } from '@multichef/contracts';

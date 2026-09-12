@@ -7,4 +7,5 @@
 export * from './recipes.js';
 export * from './recommendations.js';
 export * from './rescue.js';
+export * from './roulette.js';
 export * from './zod-swagger.js';
