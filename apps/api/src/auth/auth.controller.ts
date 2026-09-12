@@ -56,10 +56,15 @@ interface CookieFlags {
 
 function cookieFlags(): CookieFlags {
   const env = loadServerEnv();
+  const domain = env.COOKIE_DOMAIN;
+  // Omit the Domain attribute for IP/LAN hosts and the localhost default:
+  // a Domain=<ip|localhost> attribute makes browsers REJECT the cookie,
+  // which silently kills the session on IP-served deployments.
+  const useDomain = domain && domain !== 'localhost' && !/^\d{1,3}(\.\d{1,3}){3}$/.test(domain);
   return {
     secure: env.NODE_ENV === 'production',
     sameSite: env.NODE_ENV === 'production' ? 'Strict' : 'Lax',
-    domain: env.COOKIE_DOMAIN,
+    ...(useDomain ? { domain } : {}),
   };
 }
 
