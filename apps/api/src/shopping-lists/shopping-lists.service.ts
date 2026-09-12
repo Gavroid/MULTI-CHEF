@@ -13,10 +13,7 @@ import {
   type BudgetItem,
   type BudgetProposal,
 } from '@multichef/recommendation';
-import type {
-  ApplyBudgetProposalDto,
-  FitBudgetResponseDto,
-} from '@multichef/contracts';
+import type { ApplyBudgetProposalDto, FitBudgetResponseDto } from '@multichef/contracts';
 import { AppHttpException } from '../common/exception-filter.js';
 
 type PrismaLike = ReturnType<typeof getPrisma>;
@@ -92,8 +89,9 @@ export class ShoppingListsService {
           data: {
             ingredientId: substituteId,
             categoryId: substituteMeta?.categoryId ?? rawItem.categoryId,
-            estimatedPriceKopecks:
-              Math.round((substituteMeta?.avgPriceKopecks ?? 0) * rawItem.packageQuantity),
+            estimatedPriceKopecks: Math.round(
+              (substituteMeta?.avgPriceKopecks ?? 0) * rawItem.packageQuantity,
+            ),
           },
         });
       } else {
@@ -183,7 +181,9 @@ export class ShoppingListsService {
       by: ['ingredientId', 'optional'],
       where: {
         ingredientId: { in: [...listedIds] },
-        ...(list.mealPlanId ? { recipe: { entries: { some: { day: { mealPlanId: list.mealPlanId } } } } } : {}),
+        ...(list.mealPlanId
+          ? { recipe: { entries: { some: { day: { mealPlanId: list.mealPlanId } } } } }
+          : {}),
       },
       _count: { _all: true },
     });
