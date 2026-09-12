@@ -12,7 +12,7 @@
     "lint": "eslint .",
     "format:check": "prettier --check \"src/**/*.ts\" \"*.{js,json,md}\"",
     "typecheck": "tsc --noEmit",
-    "test": "node --test --import tsx src/__tests__/loop.test.ts",
+    "test": "node --test --import tsx src/__tests__/loop.test.ts src/__tests__/stages.test.ts",
     "clean": "rm -rf dist .turbo *.tsbuildinfo"
   },
   "devDependencies": {
@@ -23,5 +23,11 @@
     "prettier": "^3.4.2",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2"
+  },
+  "dependencies": {
+    "bullmq": "^5.34.0",
+    "@multichef/database": "workspace:*",
+    "@multichef/contracts": "workspace:*",
+    "ioredis": "^5.4.1"
   }
 }

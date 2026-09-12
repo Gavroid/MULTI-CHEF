@@ -599,11 +599,13 @@ model Job {
   stage     String?
   resultRef String?
   error     String?
+  paramsHash String?
   createdAt DateTime  @default(now()) @db.Timestamptz(6)
   updatedAt DateTime  @updatedAt @db.Timestamptz(6)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])
+  @@index([paramsHash])
   @@map("Job")
 }
