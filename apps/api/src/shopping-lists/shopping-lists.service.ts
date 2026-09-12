@@ -113,6 +113,82 @@ export class ShoppingListsService {
     return { applied: true, estimatedTotalKopecks: total };
   }
 
+  /** MC-056: toggle purchased on an item owned by the household. */
+  async setItemPurchased(userId: string, itemId: string, purchased: boolean) {
+    await this.requireOwnedHouseholdId(userId);
+    const item = await this.db.shoppingListItem.findFirst({
+      where: {
+        id: itemId,
+        shoppingList: { household: { members: { some: { userId, role: 'OWNER' } } } },
+      },
+      select: { id: true, purchased: true },
+    });
+    if (!item) {
+      throw new AppHttpException({
+        code: 'SHOPPING_ITEM_NOT_FOUND',
+        message: 'Позиция не найдена в списке',
+        details: { itemId },
+      });
+    }
+    await this.db.shoppingListItem.update({
+      where: { id: itemId },
+      data: { purchased, purchasedAt: purchased ? new Date() : null },
+    });
+    return { purchased };
+  }
+
+  /**
+   * MC-056: complete the list — archive it and credit every purchased
+   * item to the pantry (existing active row → grams increased, else a
+   * new row with purchaseDate = today).
+   */
+  async complete(userId: string, listId: string) {
+    const householdId = await this.requireOwnedHouseholdId(userId);
+    const list = await this.db.shoppingList.findFirst({
+      where: { id: listId, householdId },
+      include: { items: { where: { purchased: true } } },
+    });
+    if (!list) {
+      throw new AppHttpException({
+        code: 'SHOPPING_LIST_NOT_FOUND',
+        message: 'Shopping list not found',
+        details: { listId },
+      });
+    }
+    const today = new Date();
+    await this.db.$transaction(async (tx) => {
+      for (const item of list.items) {
+        const grams = item.packageQuantity * item.packageSize.toNumber();
+        const existing = await tx.pantryItem.findFirst({
+          where: { householdId, ingredientId: item.ingredientId, archivedAt: null },
+          select: { id: true, estimatedGrams: true },
+        });
+        if (existing) {
+          await tx.pantryItem.update({
+            where: { id: existing.id },
+            data: { estimatedGrams: { increment: grams }, purchaseDate: today },
+          });
+        } else {
+          await tx.pantryItem.create({
+            data: {
+              id: `${item.id}-pantry`,
+              householdId,
+              ingredientId: item.ingredientId,
+              quantity: item.packageQuantity,
+              unit: item.packageUnit,
+              estimatedGrams: grams,
+              amountStatus: 'PLENTY',
+              storageLocation: 'PANTRY',
+              purchaseDate: today,
+            },
+          });
+        }
+      }
+      await tx.shoppingList.update({ where: { id: list.id }, data: { status: 'COMPLETED' } });
+    });
+    return { completed: true, pantryItemsTouched: list.items.length };
+  }
+
   // --- internals -------------------------------------------------------------
 
   private async loadBudgetItems(userId: string, listId: string) {
