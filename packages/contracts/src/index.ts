@@ -10,4 +10,5 @@ export * from './rescue.js';
 export * from './roulette.js';
 export * from './jobs.js';
 export * from './meal-plans.js';
+export * from './budget.js';
 export * from './zod-swagger.js';

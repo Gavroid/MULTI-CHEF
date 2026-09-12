@@ -19,6 +19,12 @@ export {
   type RepeatPolicy,
 } from './planner.js';
 export {
+  fitBudgetProposals,
+  type BudgetItem,
+  type BudgetProposal,
+  type FitBudgetResult,
+} from './fit-budget.js';
+export {
   buildShoppingList,
   requiredGramsFromEntries,
   type ShoppingIngredientMeta,

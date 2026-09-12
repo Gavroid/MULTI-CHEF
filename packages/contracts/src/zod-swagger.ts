@@ -21,7 +21,6 @@ import {
   RouletteRejectResponseDtoSchema,
 } from './roulette.js';
 import { JobDtoSchema } from './jobs.js';
-import { CreateMealPlanResponseDtoSchema, MealPlanSetupDtoSchema } from './meal-plans.js';
 
 // Bypass deep Zod inference (TS2589) by typing the parameter as ZodTypeAny.
 // zod-to-json-schema v3 accepts any zod schema; the concrete ZodObject /
@@ -69,9 +68,4 @@ export const swaggerSchemas = {
     RouletteRejectResponseDtoSchema as ZodTypeAny,
   ),
   JobDto: toSwagger('JobDto', JobDtoSchema as ZodTypeAny),
-  MealPlanSetupDto: toSwagger('MealPlanSetupDto', MealPlanSetupDtoSchema as ZodTypeAny),
-  CreateMealPlanResponseDto: toSwagger(
-    'CreateMealPlanResponseDto',
-    CreateMealPlanResponseDtoSchema as ZodTypeAny,
-  ),
 } as const;
