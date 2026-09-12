@@ -18,6 +18,9 @@ import {
   TodayRecommendationDtoSchema,
   type TodayRequestDto,
   type TodayRecommendationDto,
+  type RescueRequestDto,
+  type RescueResponseDto,
+  RescueResponseDtoSchema,
 } from '@multichef/contracts';
 import { type ApiResponse, type ErrorEnvelope, request } from './auth-client';
 import { getApiBaseUrl } from './env';
@@ -71,6 +74,37 @@ export async function getRecommendationsToday(
     );
     if (result.error) return result;
     const parsed = TodayRecommendationDtoSchema.safeParse(result.data);
+    if (!parsed.success) {
+      return { error: contractMismatch() };
+    }
+    return { data: parsed.data };
+  } finally {
+    if (deps.fetchImpl) g['fetch'] = originalFetch;
+  }
+}
+
+/**
+ * POST /api/v1/recommendations/rescue (MC-040) — recipes that use a
+ * pantry ingredient, ranked «очевидные → необычные», with pantryUsage.
+ */
+export async function getRescueRecommendations(
+  input: RescueRequestDto,
+  deps: GetRecommendationsDeps = {},
+  options: { signal?: AbortSignal } = {},
+): Promise<ApiResponse<RescueResponseDto>> {
+  const base = deps.baseUrl ?? getApiBaseUrl();
+  const g = globalThis as unknown as Record<string, unknown>;
+  const originalFetch = g['fetch'];
+  if (deps.fetchImpl) g['fetch'] = deps.fetchImpl;
+  try {
+    const result = await request<unknown>(
+      `${base}/api/v1/recommendations/rescue`,
+      'POST',
+      input,
+      options.signal ? { signal: options.signal } : {},
+    );
+    if (result.error) return result;
+    const parsed = RescueResponseDtoSchema.safeParse(result.data);
     if (!parsed.success) {
       return { error: contractMismatch() };
     }

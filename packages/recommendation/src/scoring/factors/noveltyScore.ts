@@ -12,7 +12,12 @@
 import { clamp01 } from '../weights.js';
 import type { Recipe, GenerationContext } from '../../types.js';
 
-const NOVELTY_TAGS: ReadonlySet<string> = new Set(['необычное', 'экзотика', 'фьюжн', 'молекулярная']);
+const NOVELTY_TAGS: ReadonlySet<string> = new Set([
+  'необычное',
+  'экзотика',
+  'фьюжн',
+  'молекулярная',
+]);
 
 export function noveltyScore(recipe: Recipe, _ctx: GenerationContext): number {
   const tagBonus = recipe.tags.some((t) => NOVELTY_TAGS.has(t.toLowerCase())) ? 0.5 : 0;

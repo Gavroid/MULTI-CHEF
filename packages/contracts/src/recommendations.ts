@@ -61,9 +61,20 @@ export const TodayOptionDtoSchema = z.discriminatedUnion('type', [
 ]);
 export type TodayOptionDto = z.infer<typeof TodayOptionDtoSchema>;
 
+/** MC-040: how much of the rescued ingredient the picked recipes use. */
+export const PantryUsageSchema = z.object({
+  /** Grams of the ingredient used across the returned options. */
+  usedGrams: z.number().nonnegative(),
+  /** Current pantry stock of the ingredient. */
+  totalGrams: z.number().nonnegative(),
+});
+export type PantryUsage = z.infer<typeof PantryUsageSchema>;
+
 export const TodayRecommendationDtoSchema = z.object({
   options: z.array(TodayOptionDtoSchema).length(3),
   nutritionAccuracy: z.literal('ESTIMATED'),
   generatedAt: z.string().datetime(),
+  // MC-040 (additive): only the rescue endpoint populates this today.
+  pantryUsage: PantryUsageSchema.optional(),
 });
 export type TodayRecommendationDto = z.infer<typeof TodayRecommendationDtoSchema>;

@@ -57,7 +57,7 @@ test('selectUrgentItems: ≤ today+3d, soonest first, max 3, null expiry skipped
 });
 
 test('selectUrgentItems: empty when nothing in the window', () => {
-  const now = new Date('2026-03-01T12:00:00');
+  const now = new Date('2026-02-01T12:00:00');
   assert.deepEqual(selectUrgentItems(PANTRY, now), []);
 });
 
@@ -69,7 +69,7 @@ test('UrgentBlock: renders items; hidden when nothing urgent', () => {
   assert.ok(!html.includes('Сметана'), 'outside-window item hidden');
 
   const empty = renderToString(
-    React.createElement(UrgentBlock, { items: PANTRY, now: new Date('2026-03-01T12:00:00') }),
+    React.createElement(UrgentBlock, { items: PANTRY, now: new Date('2026-02-01T12:00:00') }),
   );
   assert.equal(empty, '', 'no urgent items → component renders nothing');
 });

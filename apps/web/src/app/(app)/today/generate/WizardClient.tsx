@@ -105,7 +105,7 @@ export function initialState(prefill: WizardPrefill = {}): WizardState {
 export interface WizardClientProps {
   /** Raw ?prefill= from the URL. */
   prefill?: string | null;
-  onSubmit?: (settings: {
+  onSubmit: (settings: {
     budgetMode: BudgetMode;
     maxMinutes: number;
     antiFilters: AntiFilter[];
@@ -120,7 +120,6 @@ const STEP_LABELS: Record<WizardState['step'], string> = {
 };
 
 export function WizardClient({ prefill, onSubmit }: WizardClientProps): React.ReactElement {
-  const router = useRouter();
   const prefillMemo = useMemo(() => parsePrefill(prefill ?? null), [prefill]);
   const [state, setState] = useState<WizardState>(() => initialState(prefillMemo));
   const stepIndex = STEP_ORDER.indexOf(state.step);
@@ -133,16 +132,7 @@ export function WizardClient({ prefill, onSubmit }: WizardClientProps): React.Re
       maxMinutes: state.maxMinutes,
       antiFilters: state.antiFilters,
     };
-    if (onSubmit) {
-      onSubmit(settings);
-      return;
-    }
-    const params = new URLSearchParams({
-      budget: settings.budgetMode,
-      time: String(settings.maxMinutes),
-      anti: settings.antiFilters.join(','),
-    });
-    router.push(`/today/loading?${params.toString()}`);
+    onSubmit(settings);
   };
 
   return (
@@ -211,3 +201,25 @@ export const WIZARD_ICONS = {
   Button,
   Card,
 };
+
+/**
+ * Page-facing wrapper: owns next/navigation (the pure WizardClient
+ * above stays router-free so node tests can mount it directly —
+ * next/navigation throws outside the app router context).
+ */
+export function WizardPageClient(props: Omit<WizardClientProps, 'onSubmit'>): React.ReactElement {
+  const router = useRouter();
+  const handleSubmit = (settings: {
+    budgetMode: BudgetMode;
+    maxMinutes: number;
+    antiFilters: AntiFilter[];
+  }): void => {
+    const params = new URLSearchParams({
+      budget: settings.budgetMode,
+      time: String(settings.maxMinutes),
+      anti: settings.antiFilters.join(','),
+    });
+    void router.push(`/today/loading?${params.toString()}`);
+  };
+  return <WizardClient {...props} onSubmit={handleSubmit} />;
+}

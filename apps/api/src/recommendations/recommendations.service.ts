@@ -6,9 +6,15 @@
 
 import { Inject, Injectable } from '@nestjs/common';
 import { getPrisma } from '@multichef/database';
-import { rank } from '@multichef/recommendation';
+import { rank, rankRescue } from '@multichef/recommendation';
 import type { GenerationContext } from '@multichef/recommendation';
-import type { TodayRecommendationDto, TodayRequestDto, RecipeDto } from '@multichef/contracts';
+import type {
+  TodayRecommendationDto,
+  TodayRequestDto,
+  RecipeDto,
+  RescueRequestDto,
+  RescueResponseDto,
+} from '@multichef/contracts';
 import { AppHttpException } from '../common/exception-filter.js';
 import {
   mapPantry,
@@ -17,6 +23,8 @@ import {
   fetchYesterdayMainProtein,
 } from './recommendations.mappers.js';
 import { pickTop3 } from './pick-top3.js';
+import { pickRescue, rescueUsedGrams } from './pick-rescue.js';
+import { countMissingIngredients } from './pick-top3.js';
 import type { RecipeRowWithRelations } from '../recipes/recipes.service.js';
 import type { AiExplanationProvider } from './ai/template-provider.js';
 
@@ -128,6 +136,144 @@ export class RecommendationsService {
       options,
       nutritionAccuracy: 'ESTIMATED' as const,
       generatedAt: now.toISOString(),
+    };
+  }
+
+  /**
+   * MC-040 «Спаси продукт»: rank the catalog under the rescue hard
+   * filter (must contain the ingredient) + rescue weights, then pick
+   * «очевидные → необычные». 404 when the ingredient is not in the
+   * household's pantry (privacy: never 403), 422 when nothing can be
+   * cooked from it.
+   */
+  async getRescue(userId: string, input: RescueRequestDto, now: Date): Promise<RescueResponseDto> {
+    const prisma = getPrisma();
+    const householdId = await this.requireOwnedHouseholdId(userId);
+
+    // Security invariant (ADR decision #8): the ingredient MUST be in
+    // THIS household's pantry, otherwise 404 — existence must not leak.
+    const pantryItem = await prisma.pantryItem.findFirst({
+      where: {
+        householdId,
+        ingredientId: input.ingredientId,
+        archivedAt: null,
+        estimatedGrams: { gt: 0 },
+      },
+      include: { ingredient: { select: { canonicalName: true } } },
+    });
+    if (!pantryItem) {
+      throw new AppHttpException({
+        code: 'INGREDIENT_NOT_FOUND',
+        message: 'Продукт не найден в холодильнике',
+        details: { ingredientId: input.ingredientId },
+      });
+    }
+
+    const [recipeRows, pantryRows, preferenceRows, profile] = await Promise.all([
+      prisma.recipe.findMany({
+        where: { sourceType: 'CURATED', status: 'PUBLISHED' },
+        include: {
+          ingredients: {
+            include: { ingredient: { include: { category: { select: { name: true } } } } },
+          },
+          nutrition: true,
+        },
+      }),
+      prisma.pantryItem.findMany({
+        where: { householdId, archivedAt: null, estimatedGrams: { gt: 0 } },
+        select: { ingredientId: true, estimatedGrams: true, priority: true, expiresAt: true },
+      }),
+      prisma.preference.findMany({
+        where: { userId, ingredientId: { not: null } },
+        select: { kind: true, ingredientId: true },
+      }),
+      prisma.nutritionProfile.findUnique({
+        where: { userId },
+        select: {
+          dietType: true,
+          appliances: true,
+          targetCalories: true,
+          targetProteinG: true,
+          targetFatG: true,
+          targetCarbsG: true,
+          mealsPerDay: true,
+          preferredPrepMinutes: true,
+        },
+      }),
+    ]);
+
+    // NOT_CHICKEN_AGAIN can never fire (antiFilters is empty in rescue),
+    // so the yesterday-protein lookup is skipped for latency.
+    const ctx: GenerationContext = {
+      now,
+      pantry: mapPantry(pantryRows),
+      preferences: mapPreferences(preferenceRows, profile),
+      maxMinutes: input.maxMinutes ?? profile?.preferredPrepMinutes ?? 60,
+      budgetMode: 'NORMAL',
+      antiFilters: [],
+      yesterdayMainProtein: 'NONE',
+      recentRecipeIds7d: [], // meal-plans history lands in MC-051
+      ...(profile?.targetCalories && profile.targetCalories > 0
+        ? {
+            targetDailyMacros: {
+              calories: profile.targetCalories,
+              proteinG: profile.targetProteinG ?? 0,
+              fatG: profile.targetFatG ?? 0,
+              carbsG: profile.targetCarbsG ?? 0,
+            },
+          }
+        : {}),
+      mealsPerDay: profile?.mealsPerDay ?? 3,
+    };
+
+    const pairs = recipeRows.map((row) => ({
+      row: row as RecipeRowWithRelations,
+      recipe: mapRecipeRow(row as RecipeRowWithRelations),
+    }));
+    const rowById = new Map(pairs.map((p) => [p.recipe.id, p.row]));
+
+    const ranked = rankRescue(
+      pairs.map((p) => p.recipe),
+      ctx,
+      {
+        targetIngredientId: input.ingredientId,
+      },
+    );
+    const picked = pickRescue(ranked, 3);
+    if (picked.length === 0) {
+      throw new AppHttpException({
+        code: 'EMPTY_RESCUE',
+        message: 'Нет рецептов с этим продуктом',
+        details: { ingredientId: input.ingredientId },
+      });
+    }
+
+    const options: RescueResponseDto['options'] = picked.map((s) => {
+      const toBuyCount = countMissingIngredients(s.recipe, ctx);
+      return {
+        type: 'FROM_PANTRY' as const,
+        recipe: mapDto(rowById.get(s.recipe.id)!),
+        score: s.score,
+        toBuyCount,
+        chainTag: s.recipe.chainTags?.[0] ?? null,
+        explanation: this.ai.explain(s, { toBuyCount }),
+      };
+    });
+
+    const totalGrams = pantryItem.estimatedGrams.toNumber();
+    return {
+      options,
+      nutritionAccuracy: 'ESTIMATED' as const,
+      generatedAt: now.toISOString(),
+      pantryUsage: {
+        usedGrams: rescueUsedGrams(picked, input.ingredientId),
+        totalGrams,
+      },
+      ingredient: {
+        id: input.ingredientId,
+        canonicalName: pantryItem.ingredient.canonicalName,
+        totalGrams,
+      },
     };
   }
 

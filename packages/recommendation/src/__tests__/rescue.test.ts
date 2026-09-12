@@ -15,7 +15,15 @@ function makeRecipe(overrides: Partial<Recipe> & { id: string }): Recipe {
     prepMinutes: 5,
     cookMinutes: 10,
     requiredAppliances: ['STOVE'],
-    ingredients: [{ ingredientId: 'tomato', categoryGroup: 'VEGETABLE', grams: 200, name: 'помидор', optional: false }],
+    ingredients: [
+      {
+        ingredientId: 'tomato',
+        categoryGroup: 'VEGETABLE',
+        grams: 200,
+        name: 'помидор',
+        optional: false,
+      },
+    ],
     tags: [],
     instructionsText: ['Нарезать'],
     leftoverSourceOf: [],
@@ -44,7 +52,18 @@ const ctx: GenerationContext = {
 test('rescue: mustContain — only recipes with the target ingredient pass', () => {
   const catalog = [
     makeRecipe({ id: 'with_tomato' }),
-    makeRecipe({ id: 'no_tomato', ingredients: [{ ingredientId: 'cheese', categoryGroup: 'DAIRY', grams: 100, name: 'сыр', optional: false }] }),
+    makeRecipe({
+      id: 'no_tomato',
+      ingredients: [
+        {
+          ingredientId: 'cheese',
+          categoryGroup: 'DAIRY',
+          grams: 100,
+          name: 'сыр',
+          optional: false,
+        },
+      ],
+    }),
   ];
   const ranked = rankRescue(catalog, ctx, { targetIngredientId: 'tomato' });
   const byId = new Map(ranked.map((s) => [s.recipe.id, s]));
@@ -56,7 +75,19 @@ test('rescue: mustContain — only recipes with the target ingredient pass', () 
 test('rescue: rankRescue happy path — passed recipes ranked desc, rescue weights applied', () => {
   const catalog = [
     makeRecipe({ id: 'a', difficulty: 1 }),
-    makeRecipe({ id: 'b', difficulty: 3, ingredients: [{ ingredientId: 'tomato', categoryGroup: 'VEGETABLE', grams: 300, name: 'помидор', optional: false }] }),
+    makeRecipe({
+      id: 'b',
+      difficulty: 3,
+      ingredients: [
+        {
+          ingredientId: 'tomato',
+          categoryGroup: 'VEGETABLE',
+          grams: 300,
+          name: 'помидор',
+          optional: false,
+        },
+      ],
+    }),
   ];
   const ranked = rankRescue(catalog, ctx, { targetIngredientId: 'tomato' });
   const passed = ranked.filter((s) => s.passed);
@@ -66,7 +97,10 @@ test('rescue: rankRescue happy path — passed recipes ranked desc, rescue weigh
   }
   // Rescue preset forces expirationBenefit weight 0.30 vs default 0.20 —
   // breakdown.weight must reflect the override.
-  assert.equal(passed[0]!.breakdown.expirationBenefit.weight, RESCUE_FACTOR_WEIGHTS.expirationBenefit);
+  assert.equal(
+    passed[0]!.breakdown.expirationBenefit.weight,
+    RESCUE_FACTOR_WEIGHTS.expirationBenefit,
+  );
 });
 
 test('noveltyScore: tag/chain/ingredient bonuses compose and clamp to [0,1]', () => {

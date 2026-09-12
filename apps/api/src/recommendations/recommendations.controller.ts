@@ -11,7 +11,12 @@ import { AuthGuard, currentUser } from '../common/auth-guard.js';
 import type { AuthenticatedUser } from '../auth/auth.service.js';
 import { AppHttpException } from '../common/exception-filter.js';
 import { RecommendationsService } from './recommendations.service.js';
-import { TodayRequestDtoSchema, type TodayRecommendationDto } from './recommendations.dto.js';
+import {
+  RescueRequestDtoSchema,
+  TodayRequestDtoSchema,
+  type RescueResponseDto,
+  type TodayRecommendationDto,
+} from './recommendations.dto.js';
 
 @ApiTags('recommendations')
 @UseGuards(AuthGuard)
@@ -42,5 +47,31 @@ export class RecommendationsController {
       });
     }
     return this.svc.getToday(user.id, parsed.data, new Date());
+  }
+
+  /** MC-040 «Спаси продукт»: recipes that use a pantry ingredient. */
+  @Post('rescue')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Rescue a pantry ingredient: recipes that use it (sync)' })
+  @ApiResponse({ status: 200, description: 'Ranked options + pantryUsage' })
+  @ApiResponse({ status: 401, description: 'No session' })
+  @ApiResponse({ status: 404, description: 'INGREDIENT_NOT_FOUND — not in this household pantry' })
+  @ApiResponse({ status: 422, description: 'EMPTY_RESCUE — no published recipe uses it' })
+  async rescue(@Req() req: FastifyRequest, @Body() body: unknown): Promise<RescueResponseDto> {
+    const user = currentUser(req as unknown as { user: AuthenticatedUser });
+    const parsed = RescueRequestDtoSchema.safeParse(body ?? {});
+    if (!parsed.success) {
+      const fields: Record<string, string[]> = {};
+      for (const issue of parsed.error.issues) {
+        const key = issue.path.join('.') || '_root';
+        (fields[key] ??= []).push(issue.message);
+      }
+      throw new AppHttpException({
+        code: 'VALIDATION_ERROR',
+        message: 'Invalid request body',
+        details: { fields },
+      });
+    }
+    return this.svc.getRescue(user.id, parsed.data, new Date());
   }
 }
