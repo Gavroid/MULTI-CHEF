@@ -10,6 +10,7 @@ ENV_FILE=/etc/multichef/multichef.env
 cd "$APP_DIR"
 
 echo "deploy: preflight"
+git config --global --add safe.directory "$APP_DIR" 2>/dev/null || true
 git fetch origin
 git status --porcelain | grep -q . && { echo "deploy: dirty tree, abort"; exit 1; }
 # NEXT_PUBLIC_* are inlined at BUILD time — env must be loaded first.

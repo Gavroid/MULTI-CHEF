@@ -11,6 +11,7 @@ id -u "$APP_USER" >/dev/null 2>&1 || useradd --system --create-home --shell /bin
 mkdir -p "$APP_DIR" "$ENV_DIR" /var/lib/multichef/backups
 [ -d "$APP_DIR/.git" ] || git clone "git@github.com:Gavroid/MULTI-CHEF.git" "$APP_DIR"
 chown -R "$APP_USER:$APP_USER" "$APP_DIR"
+git config --global --add safe.directory "$APP_DIR" 2>/dev/null || true
 
 # TLS: self-signed for the LAN until a public domain exists.
 if [ ! -f /etc/nginx/ssl/multichef.crt ]; then
