@@ -4,10 +4,25 @@
 // the worker; the client polls GET /jobs/:id (progress stages) and
 // then reads the ACTIVE plan.
 
-import { Body, Controller, Get, HttpCode, Inject, Post, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Inject,
+  Param,
+  Patch,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { FastifyRequest } from 'fastify';
-import type { CreateMealPlanResponseDto } from '@multichef/contracts';
+import type {
+  CreateMealPlanResponseDto,
+  PrepSessionDto,
+  StoragePlanDto,
+} from '@multichef/contracts';
 import { AppHttpException } from '../common/exception-filter.js';
 import { AuthGuard, currentUser } from '../common/auth-guard.js';
 import type { AuthenticatedUser } from '../auth/auth.service.js';
@@ -52,5 +67,36 @@ export class MealPlansController {
   async active(@Req() req: FastifyRequest): Promise<unknown> {
     const user = currentUser(req as unknown as { user: AuthenticatedUser });
     return this.svc.getActiveForUser(user.id);
+  }
+
+  /** MC-060: generate (idempotent) the prep session for the ACTIVE plan. */
+  @Post('active/prep')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Build the prep-session task list for the active plan' })
+  async prep(@Req() req: FastifyRequest): Promise<PrepSessionDto> {
+    const user = currentUser(req as unknown as { user: AuthenticatedUser });
+    return this.svc.generatePrepSession(user.id, 'BATCH_3H');
+  }
+
+  /** MC-060: toggle a prep task done flag. */
+  @Patch('prep-tasks/:taskId')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Toggle a prep task done flag' })
+  async toggleTask(
+    @Req() req: FastifyRequest,
+    @Param('taskId') taskId: string,
+    @Body() body: unknown,
+  ): Promise<{ done: boolean }> {
+    const user = currentUser(req as unknown as { user: AuthenticatedUser });
+    const done = (body as { done?: unknown } | null)?.done === true;
+    return this.svc.togglePrepTask(user.id, taskId, done);
+  }
+
+  /** MC-061: containers + defrost calendar for the ACTIVE plan. */
+  @Get('active/storage')
+  @ApiOperation({ summary: 'Storage plan: containers and the defrost calendar' })
+  async storage(@Req() req: FastifyRequest): Promise<StoragePlanDto> {
+    const user = currentUser(req as unknown as { user: AuthenticatedUser });
+    return this.svc.getStoragePlan(user.id);
   }
 }
