@@ -62,8 +62,9 @@ test('every (app) page renders the documented Russian h1 (directly or via Client
     const delegatesToFridge = /<FridgeClient\b/.test(src) && path.endsWith('fridge/page.tsx');
     // MC-034: /today delegates to TodayClient, which owns the TabTitle.
     const delegatesToToday = /<TodayClient\b/.test(src) && path.endsWith('today/page.tsx');
+    const delegatesToPlan = /<PlanClient\b/.test(src) && path.endsWith('plan/page.tsx');
     assert.ok(
-      direct.test(src) || delegatesToFridge || delegatesToToday,
+      direct.test(src) || delegatesToFridge || delegatesToToday || delegatesToPlan,
       `${path} should render <TabTitle>${title}</TabTitle> directly or delegate to its Client`,
     );
   }
@@ -84,6 +85,12 @@ test('every (app) page shows an empty-state Card with TODO marker (except /profi
       // MC-034: /today delegates to TodayClient (same pattern as fridge).
       const src = read(path);
       assert.match(src, /<TodayClient\b/, 'today page delegates to TodayClient');
+      continue;
+    }
+    if (path.endsWith('plan/page.tsx')) {
+      // MC-055: /plan delegates to PlanClient (same pattern as fridge).
+      const src = read(path);
+      assert.match(src, /<PlanClient\b/, 'plan page delegates to PlanClient');
       continue;
     }
     const src = read(path);

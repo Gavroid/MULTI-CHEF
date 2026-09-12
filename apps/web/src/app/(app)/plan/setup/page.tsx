@@ -1,27 +1,15 @@
-// /plan/setup — placeholder for the weekly-plan wizard (MC-055).
+// /plan/setup — weekly-plan wizard (MC-055, PRD §2.3.11).
 //
-// MC-035's «Добавить в план» deep-links here with
-// ?recipeId=…&servings=…; until MC-055 builds the real wizard this
-// page acknowledges the deep-link instead of 404-ing. The query
-// params are parsed and displayed so the future wizard's entry
-// contract is already exercised end-to-end.
+// Server wrapper over SetupClient (3 compact steps: household, shape,
+// goals → POST /meal-plans → job progress polling → /plan).
 
-export default async function PlanSetupPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ recipeId?: string; servings?: string }>;
-}): Promise<React.ReactElement> {
-  const { recipeId, servings } = await searchParams;
+import React, { Suspense } from 'react';
+import { SetupClient } from './SetupClient';
 
+export default function PlanSetupPage(): React.ReactElement {
   return (
-    <div className="flex flex-col items-center gap-3 py-16" data-testid="plan-setup-placeholder">
-      <h1 className="text-lg font-bold text-[var(--color-text)]">Настройка плана</h1>
-      <p className="text-sm text-[var(--color-text-muted)]">
-        Страница в разработке (MC-055). Рецепт
-        {recipeId ? ` «${recipeId}»` : ''}
-        {servings ? ` на ${servings} порц.` : ''} будет добавлен в план, когда мастер планов
-        появится.
-      </p>
-    </div>
+    <Suspense fallback={null}>
+      <SetupClient />
+    </Suspense>
   );
 }
