@@ -1,0 +1,15 @@
+# MC-082 — Next.js web unit (next start of the built app).
+[Unit]
+Description=MULTI-CHEF web (Next.js)
+After=network.target
+
+[Service]
+User=multichef_app
+WorkingDirectory=/opt/multichef/apps/web
+EnvironmentFile=/etc/multichef/multichef.env
+ExecStart=/usr/bin/pnpm start
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
