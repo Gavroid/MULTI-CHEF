@@ -136,19 +136,25 @@ export function planWeek(input: PlannerInput, rng: () => number): PlannerResult 
     const pool = byMeal.get(mealType) ?? [];
     const taken = takenByDay.get(dayIndex)!;
     const noCookDay = noCookSet.has(dayIndex);
-    let fallback: ScoredRecipe | null = null;
+    let best: { s: ScoredRecipe; key: number } | null = null;
+    let fallback: { s: ScoredRecipe; key: number } | null = null;
     for (const s of pool) {
       if (input.repeatPolicy === 'NO_REPEATS' && used.has(s.recipe.id)) continue;
       if (taken.has(s.recipe.id)) continue;
-      if (noCookDay && s.recipe.prepMinutes <= 5) return s;
-      if (noCookDay) {
-        // remember a soft fallback — prefer filling the day over 404-ing it.
-        fallback ??= s;
+      // score + chain priority (+ no-cook preference), seeded jitter
+      // breaks exact ties while keeping the plan reproducible.
+      let key = s.score;
+      if (sharesChain(s.recipe, chosen)) key += CHAIN_BONUS;
+      if (noCookDay && s.recipe.prepMinutes <= 5) key += CHAIN_BONUS;
+      key += rng() * 0.001;
+      if (noCookDay && s.recipe.prepMinutes > NO_COOK_MAX_PREP_MINUTES) {
+        // soft fallback on no-cook days: prefer filling the day.
+        if (!fallback || key > fallback.key) fallback = { s, key };
         continue;
       }
-      return s;
+      if (!best || key > best.key) best = { s, key };
     }
-    return fallback;
+    return best?.s ?? fallback?.s ?? null;
   };
 
   // 3. greedy layout.
