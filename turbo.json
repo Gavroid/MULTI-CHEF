@@ -3,24 +3,40 @@
   "ui": "stream",
   "tasks": {
     "lint": {
-      "dependsOn": ["^build"],
+      "dependsOn": [
+        "^build"
+      ],
       "outputs": []
     },
     "format:check": {
-      "dependsOn": ["^build"],
+      "dependsOn": [
+        "^build"
+      ],
       "outputs": []
     },
     "typecheck": {
-      "dependsOn": ["^build"],
+      "dependsOn": [
+        "^build"
+      ],
       "outputs": []
     },
     "test": {
-      "dependsOn": ["^build"],
-      "outputs": ["coverage/**"]
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": [
+        "coverage/**"
+      ]
     },
     "build": {
-      "dependsOn": ["^build"],
-      "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": [
+        "dist/**",
+        ".next/**",
+        "!.next/cache/**"
+      ]
     },
     "dev": {
       "cache": false,
@@ -34,5 +50,11 @@
       "cache": false,
       "outputs": []
     }
-  }
+  },
+  "globalEnv": [
+    "NEXT_PUBLIC_APP_BASE_URL",
+    "NEXT_PUBLIC_USE_MEALPLAN_MOCK",
+    "NEXT_PUBLIC_USE_RECIPE_FIXTURES",
+    "NODE_ENV"
+  ]
 }
