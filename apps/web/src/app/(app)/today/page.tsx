@@ -1,24 +1,11 @@
-// /today — главный экран (PRD §2.3.2). MC-013: stub с приветственной
-// карточкой. Полный контент с 3 типами карточек рекомендаций появится
-// в MC-034.
+// /today — главный экран (PRD §2.3.2, MC-034).
+//
+// The idle view lives in TodayClient (data via usePantry/usePreferences
+// hooks with deps injection); wizard/loading/result are separate
+// sub-routes per the URL-driven state machine in the ADR.
 
-import { Button, Card } from '@multichef/ui';
-import { TabTitle } from '@/components/TabTitle';
+import { TodayClient } from './TodayClient';
 
-export default function TodayPage(): React.ReactElement {
-  return (
-    <>
-      <TabTitle sublabel="Главный экран">Сегодня</TabTitle>
-      <Card variant="elevated">
-        <h2 className="text-title mb-2">Добро пожаловать</h2>
-        <p className="text-body mb-3">
-          Здесь будут три карточки рецептов: «Из того, что есть», «Лучший вариант», «Выгодная
-          цепочка».
-        </p>
-        <Button variant="primary" disabled>
-          Найти рецепт (TODO: MC-034)
-        </Button>
-      </Card>
-    </>
-  );
+export default function TodayPage(): React.JSX.Element {
+  return <TodayClient />;
 }
