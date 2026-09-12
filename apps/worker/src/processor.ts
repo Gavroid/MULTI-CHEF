@@ -6,7 +6,6 @@
 import type { Job } from 'bullmq';
 import { runWithMirror } from './job-runner.js';
 import { runPlanWeek } from './plan-week.js';
-import type { MealPlanSetupDto } from '@multichef/contracts';
 
 export interface ProcessPayload {
   jobId: string;
