@@ -7,7 +7,7 @@
 // another user's job is a 404, never a 403 (privacy).
 
 import { createHash, randomUUID } from 'node:crypto';
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Optional } from '@nestjs/common';
 import { getPrisma } from '@multichef/database';
 import type { JobType } from '@multichef/contracts';
 import { AppHttpException } from '../common/exception-filter.js';
@@ -46,7 +46,7 @@ export class JobsService {
   constructor(
     @Inject('QueuePublisher') private readonly publisher: QueuePublisher,
     /** Test seam: defaults to the process-wide Prisma client. */
-    prisma?: PrismaLike,
+    @Optional() prisma?: PrismaLike,
   ) {
     this.prismaOverride = prisma;
   }

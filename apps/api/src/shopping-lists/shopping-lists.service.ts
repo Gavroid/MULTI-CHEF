@@ -6,7 +6,7 @@
 // applyProposal mutates the list transactionally (SUBSTITUTE replaces
 // the row, DROP_OPTIONAL deletes it) and recomputes the total.
 
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import { getPrisma } from '@multichef/database';
 import {
   fitBudgetProposals,
@@ -22,7 +22,7 @@ type PrismaLike = ReturnType<typeof getPrisma>;
 export class ShoppingListsService {
   private readonly prismaOverride: PrismaLike | undefined;
 
-  constructor(prisma?: PrismaLike) {
+  constructor(@Optional() prisma?: PrismaLike) {
     this.prismaOverride = prisma;
   }
 

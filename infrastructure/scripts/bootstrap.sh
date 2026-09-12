@@ -26,6 +26,11 @@ if [ ! -f "$ENV_DIR/multichef.env" ]; then
     echo "DATABASE_URL=postgresql://multichef:$(openssl rand -hex 12)@127.0.0.1:5432/multichef"
     echo "REDIS_URL=redis://127.0.0.1:6379"
     echo "JWT_SECRET=$(openssl rand -base64 32)"
+    echo "SESSION_SECRET=$(openssl rand -base64 36)"
+    echo "COOKIE_SECRET=$(openssl rand -base64 36)"
+    echo "APP_BASE_URL=http://192.168.1.35:8080"
+    echo "CORS_ORIGINS=http://192.168.1.35:8080,https://192.168.1.35:8443"
+    echo "COOKIE_DOMAIN=192.168.1.35"
     echo "NEXT_PUBLIC_APP_BASE_URL=http://192.168.1.35:8080"
   } > "$ENV_DIR/multichef.env"
 fi
