@@ -34,5 +34,11 @@
       "cache": false,
       "outputs": []
     }
-  }
+  },
+  "globalEnv": [
+    "NEXT_PUBLIC_APP_BASE_URL",
+    "NEXT_PUBLIC_USE_MEALPLAN_MOCK",
+    "NEXT_PUBLIC_USE_RECIPE_FIXTURES",
+    "NODE_ENV"
+  ]
 }
