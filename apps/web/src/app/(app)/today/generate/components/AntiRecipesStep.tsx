@@ -13,7 +13,6 @@ import {
   CookingPot,
   Flame,
   Repeat,
-  Snowflake,
   Timer,
 } from 'lucide-react';
 import { Button, Card } from '@multichef/ui';

@@ -59,10 +59,12 @@ test('every (app) page renders the documented Russian h1 (directly or via Client
     // delegates to a Client component that owns the TabTitle (MC-023
     // /fridge → FridgeClient).
     const direct = new RegExp(`<TabTitle\\b[^>]*>\\s*${title}\\s*</TabTitle>`);
-    const delegatesToClient = /<FridgeClient\b/.test(src) && path.endsWith('fridge/page.tsx');
+    const delegatesToFridge = /<FridgeClient\b/.test(src) && path.endsWith('fridge/page.tsx');
+    // MC-034: /today delegates to TodayClient, which owns the TabTitle.
+    const delegatesToToday = /<TodayClient\b/.test(src) && path.endsWith('today/page.tsx');
     assert.ok(
-      direct.test(src) || delegatesToClient,
-      `${path} should render <TabTitle>${title}</TabTitle> directly or delegate to FridgeClient (MC-023)`,
+      direct.test(src) || delegatesToFridge || delegatesToToday,
+      `${path} should render <TabTitle>${title}</TabTitle> directly or delegate to its Client`,
     );
   }
 });
@@ -76,6 +78,12 @@ test('every (app) page shows an empty-state Card with TODO marker (except /profi
     if (path.endsWith('fridge/page.tsx')) {
       const src = read(path);
       assert.match(src, /<FridgeClient\b/, 'fridge page delegates to FridgeClient');
+      continue;
+    }
+    if (path.endsWith('today/page.tsx')) {
+      // MC-034: /today delegates to TodayClient (same pattern as fridge).
+      const src = read(path);
+      assert.match(src, /<TodayClient\b/, 'today page delegates to TodayClient');
       continue;
     }
     const src = read(path);

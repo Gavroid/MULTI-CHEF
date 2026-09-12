@@ -62,7 +62,6 @@ export function OptionCard({
       <div className="mb-3 flex gap-3">
         <div className="h-16 w-16 shrink-0 overflow-hidden rounded-[var(--radius-sm)] bg-[var(--color-surface-2)]">
           {recipe.imageKey && !imageFailed ? (
-            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={recipe.imageKey}
               alt={recipe.title}
