@@ -7,7 +7,7 @@
 import { Body, Controller, Get, HttpCode, Inject, Post, Req, UseGuards } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { FastifyRequest } from 'fastify';
-import type { CreateMealPlanResponseDto, MealPlanSetupDto } from '@multichef/contracts';
+import type { CreateMealPlanResponseDto } from '@multichef/contracts';
 import { AppHttpException } from '../common/exception-filter.js';
 import { AuthGuard, currentUser } from '../common/auth-guard.js';
 import type { AuthenticatedUser } from '../auth/auth.service.js';

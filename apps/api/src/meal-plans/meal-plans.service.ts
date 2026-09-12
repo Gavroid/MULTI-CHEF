@@ -4,7 +4,10 @@
 
 import { Inject, Injectable } from '@nestjs/common';
 import { getPrisma } from '@multichef/database';
-import type { CreateMealPlanResponseDto, MealPlanSetupDto } from '@multichef/contracts';
+import type {
+  CreateMealPlanResponseDto,
+  MealPlanSetupDto,
+} from '@multichef/contracts';
 import { AppHttpException } from '../common/exception-filter.js';
 import { JobsService } from '../jobs/jobs.service.js';
 
@@ -13,14 +16,8 @@ export class MealPlansService {
   constructor(@Inject(JobsService) private readonly jobs: JobsService) {}
 
   async create(userId: string, setup: MealPlanSetupDto): Promise<CreateMealPlanResponseDto> {
-    const prisma = getPrisma();
     const householdId = await this.requireOwnedHouseholdId(userId);
-    return this.jobs.enqueue(
-      userId,
-      householdId,
-      'GENERATE_PLAN',
-      setup as unknown as Record<string, unknown>,
-    );
+    return this.jobs.enqueue(userId, householdId, 'GENERATE_PLAN', setup as unknown as Record<string, unknown>);
   }
 
   /** Fetch the household's active plan (web «План» tab, MC-055). */
