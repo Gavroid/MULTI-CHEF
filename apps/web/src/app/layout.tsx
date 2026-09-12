@@ -1,10 +1,13 @@
 import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
+import { PwaRegister } from '@/components/PwaRegister';
 import './globals.css';
 
 export const metadata: Metadata = {
   title: 'MULTI-CHEF',
   description: 'Семейный планировщик питания — рецепты из того, что уже есть дома.',
+  manifest: '/manifest.webmanifest',
+  icons: { icon: '/icons/icon.svg' },
 };
 
 export const viewport: Viewport = {
@@ -21,7 +24,10 @@ export default function RootLayout({ children }: { children: ReactNode }): React
   // deterministic; the client effect swaps it before paint if needed.
   return (
     <html lang="ru" data-theme="light">
-      <body className="min-h-screen bg-bg text-text font-sans">{children}</body>
+      <body className="min-h-screen bg-bg text-text font-sans">
+        {children}
+        <PwaRegister />
+      </body>
     </html>
   );
 }
