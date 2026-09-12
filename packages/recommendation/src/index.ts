@@ -19,6 +19,17 @@ export {
   type RepeatPolicy,
 } from './planner.js';
 export {
+  buildPrepTasks,
+  buildStoragePlan,
+  INTENSITY_TARGET_MINUTES,
+  type PrepIntensity,
+  type PrepEntryInput,
+  type PrepTaskDraft,
+  type StorageEntryInput,
+  type StorageAssignment,
+  type StoragePlanResult,
+} from './prep.js';
+export {
   fitBudgetProposals,
   type BudgetItem,
   type BudgetProposal,
