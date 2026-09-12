@@ -9,4 +9,5 @@ export * from './recommendations.js';
 export * from './rescue.js';
 export * from './roulette.js';
 export * from './jobs.js';
+export * from './meal-plans.js';
 export * from './zod-swagger.js';

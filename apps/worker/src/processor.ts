@@ -1,11 +1,11 @@
-// MC-050 — BullMQ processor: payload → Job mirror lifecycle.
+// MC-050/MC-051 — BullMQ processor: payload → Job mirror lifecycle.
 //
-// The domain work between stages is a no-op until MC-051 lands the
-// weekly planner (GENERATE_PLAN): it will run the heuristic pipeline
-// inside this runner and return the plan id as resultRef.
+// GENERATE_PLAN runs the weekly heuristic planner (MC-051); other job
+// types complete immediately until their milestones land.
 
 import type { Job } from 'bullmq';
 import { runWithMirror } from './job-runner.js';
+import { runPlanWeek } from './plan-week.js';
 
 export interface ProcessPayload {
   jobId: string;
@@ -20,11 +20,7 @@ export async function processJob(bullJob: Job<ProcessPayload>): Promise<void> {
   await runWithMirror({ jobId, type }, async (report) => {
     switch (type) {
       case 'GENERATE_PLAN':
-        // MC-051 replaces this placeholder with the real planner.
-        await report('scoring');
-        await report('optimizing');
-        await report('building-list');
-        return undefined;
+        return runPlanWeek(bullJob.data, report, new Date());
       default:
         // Unknown types complete immediately (mirror stays consistent).
         return undefined;
