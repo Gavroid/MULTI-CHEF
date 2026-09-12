@@ -18,6 +18,13 @@ export {
   type PlannerMetrics,
   type RepeatPolicy,
 } from './planner.js';
+export {
+  buildShoppingList,
+  requiredGramsFromEntries,
+  type ShoppingIngredientMeta,
+  type ShoppingListItemDraft,
+  type BuildShoppingListInput,
+} from './shopping.js';
 export type { FactorName } from './scoring/weights.js';
 export type { Filter } from './filters/index.js';
 export type {
