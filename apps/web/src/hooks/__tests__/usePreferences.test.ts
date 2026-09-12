@@ -137,7 +137,8 @@ test('usePreferences success: maps and caches', async () => {
         }),
       );
     },
-    onState: (s) => states.push({ loading: s.loading, dietType: s.dietType, allergies: s.allergies }),
+    onState: (s) =>
+      states.push({ loading: s.loading, dietType: s.dietType, allergies: s.allergies }),
   });
   await act(async () => {
     await new Promise((r) => setTimeout(r, 10));
@@ -155,7 +156,8 @@ test('usePreferences success: maps and caches', async () => {
       calls += 1;
       return Promise.resolve(profileResponse({ data: {} }));
     },
-    onState: (s) => states.push({ loading: s.loading, dietType: s.dietType, allergies: s.allergies }),
+    onState: (s) =>
+      states.push({ loading: s.loading, dietType: s.dietType, allergies: s.allergies }),
   });
   await act(async () => {
     await new Promise((r) => setTimeout(r, 10));

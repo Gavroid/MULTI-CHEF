@@ -26,9 +26,13 @@ test('greetingForHour: morning / day / evening buckets', () => {
 });
 
 test('Greeting renders the right text for the injected hour', () => {
-  const html = renderToString(React.createElement(Greeting, { now: new Date('2026-01-01T09:00:00') }));
+  const html = renderToString(
+    React.createElement(Greeting, { now: new Date('2026-01-01T09:00:00') }),
+  );
   assert.match(html, /Доброе утро/);
-  const evening = renderToString(React.createElement(Greeting, { now: new Date('2026-01-01T21:00:00') }));
+  const evening = renderToString(
+    React.createElement(Greeting, { now: new Date('2026-01-01T21:00:00') }),
+  );
   assert.match(evening, /Добрый вечер/);
 });
 

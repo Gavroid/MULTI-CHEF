@@ -4,7 +4,7 @@
 // hooks with deps injection); wizard/loading/result are separate
 // sub-routes per the URL-driven state machine in the ADR.
 
-import { TodayClient } from "./TodayClient";
+import { TodayClient } from './TodayClient';
 
 export default function TodayPage(): React.JSX.Element {
   return <TodayClient />;

@@ -17,10 +17,7 @@ export default function ShoppingListPage({
 }): React.ReactElement {
   const { listId } = use(params);
   return (
-    <div
-      className="flex flex-col items-center gap-3 py-16"
-      data-testid="shopping-list-placeholder"
-    >
+    <div className="flex flex-col items-center gap-3 py-16" data-testid="shopping-list-placeholder">
       <ShoppingCart size={40} className="text-[var(--color-text-muted)]" aria-hidden />
       <h1 className="text-lg font-bold text-[var(--color-text)]">Список покупок</h1>
       <p className="max-w-xs text-center text-sm text-[var(--color-text-muted)]">

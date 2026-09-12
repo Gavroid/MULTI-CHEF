@@ -61,7 +61,8 @@ export function ResultClient({ deps: depsOverride }: ResultClientProps): React.R
       if (!session) return;
       setBusyRecipeId(recipeId);
       setAcceptError(null);
-      const servings = session.result.options.find((o) => o.recipe.id === recipeId)?.recipe.servings ?? 2;
+      const servings =
+        session.result.options.find((o) => o.recipe.id === recipeId)?.recipe.servings ?? 2;
       const result = await deps.acceptRecommendation({ recipeId, servings });
       if (result.error) {
         setBusyRecipeId(null);
@@ -82,7 +83,10 @@ export function ResultClient({ deps: depsOverride }: ResultClientProps): React.R
 
   if (!checkedSession) {
     return (
-      <div className="py-10 text-center text-sm text-[var(--color-text-muted)]" data-testid="result-loading">
+      <div
+        className="py-10 text-center text-sm text-[var(--color-text-muted)]"
+        data-testid="result-loading"
+      >
         Загрузка…
       </div>
     );
@@ -98,7 +102,10 @@ export function ResultClient({ deps: depsOverride }: ResultClientProps): React.R
       <TabTitle sublabel="3 варианта на сегодня">Ваш выбор</TabTitle>
 
       {mockMode ? (
-        <p className="mb-3 rounded-[var(--radius-sm)] bg-[var(--color-surface-2)] px-3 py-1.5 text-[11px] text-[var(--color-text-muted)]" data-testid="mock-banner">
+        <p
+          className="mb-3 rounded-[var(--radius-sm)] bg-[var(--color-surface-2)] px-3 py-1.5 text-[11px] text-[var(--color-text-muted)]"
+          data-testid="mock-banner"
+        >
           Демо-режим: план будет создан локально (бэкенд планов появится позже).
         </p>
       ) : null}

@@ -5,16 +5,7 @@
 // /today/loading with the settings in the query string.
 
 import React from 'react';
-import {
-  ArrowLeft,
-  Carrot,
-  ChefHat,
-  Clock,
-  CookingPot,
-  Flame,
-  Repeat,
-  Timer,
-} from 'lucide-react';
+import { ArrowLeft, Carrot, ChefHat, Clock, CookingPot, Flame, Repeat, Timer } from 'lucide-react';
 import { Button, Card } from '@multichef/ui';
 import type { AntiFilter } from '@multichef/contracts';
 
@@ -78,7 +69,9 @@ export function AntiRecipesStep({
             >
               <Icon
                 size={18}
-                className={checked ? 'text-[var(--color-primary)]' : 'text-[var(--color-text-muted)]'}
+                className={
+                  checked ? 'text-[var(--color-primary)]' : 'text-[var(--color-text-muted)]'
+                }
                 aria-hidden
               />
               <span className="text-sm text-[var(--color-text)]">{label}</span>
@@ -90,15 +83,15 @@ export function AntiRecipesStep({
         })}
       </div>
       <div className="mt-4 flex gap-2">
-        <Button variant="secondary" className="flex-1" onClick={onBack} data-testid="wizard-step-back">
+        <Button
+          variant="secondary"
+          className="flex-1"
+          onClick={onBack}
+          data-testid="wizard-step-back"
+        >
           <ArrowLeft size={18} aria-hidden /> Назад
         </Button>
-        <Button
-          variant="primary"
-          className="flex-1"
-          onClick={onSubmit}
-          data-testid="wizard-submit"
-        >
+        <Button variant="primary" className="flex-1" onClick={onSubmit} data-testid="wizard-submit">
           <Clock size={18} aria-hidden /> Получить рекомендацию
         </Button>
       </div>

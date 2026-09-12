@@ -16,10 +16,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation';
 import { AlertTriangle } from 'lucide-react';
 import { Button, Card } from '@multichef/ui';
-import {
-  getRecommendationsToday,
-  type GenerationSettings,
-} from '@/lib/recommendations-client';
+import { getRecommendationsToday, type GenerationSettings } from '@/lib/recommendations-client';
 import type { AntiFilter, BudgetMode, TodayRecommendationDto } from '@multichef/contracts';
 import { TabTitle } from '@/components/TabTitle';
 
@@ -117,11 +114,7 @@ export function LoadingClient({ deps: depsOverride }: LoadingClientProps): React
   const searchParams = useSearchParams();
   const settings = useMemo(
     () =>
-      parseSettings(
-        searchParams.get('budget'),
-        searchParams.get('time'),
-        searchParams.get('anti'),
-      ),
+      parseSettings(searchParams.get('budget'), searchParams.get('time'), searchParams.get('anti')),
     [searchParams],
   );
 

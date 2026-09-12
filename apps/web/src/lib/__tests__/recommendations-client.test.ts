@@ -85,28 +85,22 @@ test('getRecommendationsToday: happy path validates the contract', async () => {
 
 test('getRecommendationsToday: contract mismatch → CONTRACT_MISMATCH error', async () => {
   const broken = { ...validRecommendation, options: [] }; // schema requires length 3
-  const result = await getRecommendationsToday(
-    {},
-    {
-      baseUrl: 'http://api.test',
-      fetchImpl: (async () => jsonResponse(200, { data: broken })) as never,
-    } as never,
-  );
+  const result = await getRecommendationsToday({}, {
+    baseUrl: 'http://api.test',
+    fetchImpl: (async () => jsonResponse(200, { data: broken })) as never,
+  } as never);
   assert.equal(result.data, undefined);
   assert.equal(result.error?.error.code, 'CONTRACT_MISMATCH');
 });
 
 test('getRecommendationsToday: HTTP error passes through', async () => {
-  const result = await getRecommendationsToday(
-    {},
-    {
-      baseUrl: 'http://api.test',
-      fetchImpl: (async () =>
-        jsonResponse(500, {
-          error: { code: 'INTERNAL_ERROR', message: 'boom' },
-        })) as never,
-    } as never,
-  );
+  const result = await getRecommendationsToday({}, {
+    baseUrl: 'http://api.test',
+    fetchImpl: (async () =>
+      jsonResponse(500, {
+        error: { code: 'INTERNAL_ERROR', message: 'boom' },
+      })) as never,
+  } as never);
   assert.equal(result.error?.error.code, 'INTERNAL_ERROR');
 });
 
@@ -156,19 +150,16 @@ test('acceptRecommendation real mode: posts to /meal-plans and validates', async
   delete process.env['NEXT_PUBLIC_USE_MEALPLAN_MOCK'];
   try {
     let capturedBody = '';
-    const result = await acceptRecommendation(
-      { recipeId: 'r1', servings: 2 },
-      {
-        baseUrl: 'http://api.test',
-        fetchImpl: (async (url: string | URL | Request, init?: RequestInit) => {
-          capturedBody = String(init?.body ?? '');
-          void url;
-          return jsonResponse(200, {
-            data: { mealPlanId: 'plan-1', shoppingListId: 'list-1' },
-          });
-        }) as never,
-      } as never,
-    );
+    const result = await acceptRecommendation({ recipeId: 'r1', servings: 2 }, {
+      baseUrl: 'http://api.test',
+      fetchImpl: (async (url: string | URL | Request, init?: RequestInit) => {
+        capturedBody = String(init?.body ?? '');
+        void url;
+        return jsonResponse(200, {
+          data: { mealPlanId: 'plan-1', shoppingListId: 'list-1' },
+        });
+      }) as never,
+    } as never);
     assert.equal(result.error, undefined);
     assert.deepEqual(result.data, { mealPlanId: 'plan-1', shoppingListId: 'list-1' });
     assert.match(capturedBody, /"recipeId":"r1"/);
@@ -181,14 +172,10 @@ test('acceptRecommendation real mode: malformed body → CONTRACT_MISMATCH', asy
   const original = process.env['NEXT_PUBLIC_USE_MEALPLAN_MOCK'];
   delete process.env['NEXT_PUBLIC_USE_MEALPLAN_MOCK'];
   try {
-    const result = await acceptRecommendation(
-      { recipeId: 'r1', servings: 2 },
-      {
-        baseUrl: 'http://api.test',
-        fetchImpl: (async () =>
-          jsonResponse(200, { data: { mealPlanId: 'plan-1' } })) as never, // missing shoppingListId
-      } as never,
-    );
+    const result = await acceptRecommendation({ recipeId: 'r1', servings: 2 }, {
+      baseUrl: 'http://api.test',
+      fetchImpl: (async () => jsonResponse(200, { data: { mealPlanId: 'plan-1' } })) as never, // missing shoppingListId
+    } as never);
     assert.equal(result.error?.error.code, 'CONTRACT_MISMATCH');
   } finally {
     if (original !== undefined) process.env['NEXT_PUBLIC_USE_MEALPLAN_MOCK'] = original;

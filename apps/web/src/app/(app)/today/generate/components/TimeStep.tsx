@@ -57,7 +57,12 @@ export function TimeStep({ value, onChange, onBack, onNext }: TimeStepProps): Re
         ))}
       </div>
       <div className="mt-4 flex gap-2">
-        <Button variant="secondary" className="flex-1" onClick={onBack} data-testid="wizard-step-back">
+        <Button
+          variant="secondary"
+          className="flex-1"
+          onClick={onBack}
+          data-testid="wizard-step-back"
+        >
           <ArrowLeft size={18} aria-hidden /> Назад
         </Button>
         <Button

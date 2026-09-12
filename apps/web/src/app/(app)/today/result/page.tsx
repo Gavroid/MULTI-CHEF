@@ -5,8 +5,8 @@
 // Suspense is required because ResultClient reads ?ref= via
 // useSearchParams() — without a boundary the static prerender bails.
 
-import React, { Suspense } from "react";
-import { ResultClient } from "./ResultClient";
+import React, { Suspense } from 'react';
+import { ResultClient } from './ResultClient';
 
 export default function TodayResultPage(): React.JSX.Element {
   return (

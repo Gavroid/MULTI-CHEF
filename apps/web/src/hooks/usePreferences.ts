@@ -41,10 +41,7 @@ export interface UsePreferencesResult {
 }
 
 export type UsePreferencesDeps = {
-  fetchProfile?: (
-    url: string,
-    init?: { signal?: AbortSignal },
-  ) => Promise<Response>;
+  fetchProfile?: (url: string, init?: { signal?: AbortSignal }) => Promise<Response>;
 };
 
 interface ProfileWire {
@@ -113,8 +110,10 @@ export function usePreferences(deps?: Partial<UsePreferencesDeps>): UsePreferenc
     setLoading(true);
     setError(null);
     const base = getApiBaseUrl();
-    const doFetch = fetchRef.current ?? ((url: string, init?: { signal?: AbortSignal }) =>
-      fetch(url, { credentials: 'include', ...(init?.signal ? { signal: init.signal } : {}) }));
+    const doFetch =
+      fetchRef.current ??
+      ((url: string, init?: { signal?: AbortSignal }) =>
+        fetch(url, { credentials: 'include', ...(init?.signal ? { signal: init.signal } : {}) }));
 
     doFetch(`${base}/api/v1/profile`, { signal: controller.signal })
       .then(async (res) => {

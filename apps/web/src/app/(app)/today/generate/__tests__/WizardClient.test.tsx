@@ -10,12 +10,7 @@ import { Window } from 'happy-dom';
 import { createRoot } from 'react-dom/client';
 import { act } from 'react';
 
-import {
-  WizardClient,
-  parsePrefill,
-  initialState,
-  URGENT_SETTINGS,
-} from '../WizardClient';
+import { WizardClient, parsePrefill, initialState, URGENT_SETTINGS } from '../WizardClient';
 
 /* ---------------- happy-dom harness ---------------- */
 

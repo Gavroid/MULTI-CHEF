@@ -13,7 +13,10 @@ import type { TodayOptionDto } from '@multichef/contracts';
 import { ExplanationChip } from './ExplanationChip';
 import { ChainTimeline } from './ChainTimeline';
 
-export const OPTION_BADGES: Record<TodayOptionDto['type'], { label: string; tone: 'fresh' | 'info' | 'warning' }> = {
+export const OPTION_BADGES: Record<
+  TodayOptionDto['type'],
+  { label: string; tone: 'fresh' | 'info' | 'warning' }
+> = {
   FROM_PANTRY: { label: 'Из того, что есть', tone: 'fresh' },
   BEST_MATCH: { label: 'Лучший вариант', tone: 'info' },
   CHAIN: { label: 'Выгодная цепочка', tone: 'warning' },
@@ -75,7 +78,10 @@ export function OptionCard({
           )}
         </div>
         <div className="min-w-0">
-          <h3 className="truncate text-base font-semibold text-[var(--color-text)]" data-testid={`title-${option.type}`}>
+          <h3
+            className="truncate text-base font-semibold text-[var(--color-text)]"
+            data-testid={`title-${option.type}`}
+          >
             {recipe.title}
           </h3>
           <p className="text-xs text-[var(--color-text-muted)]">
@@ -100,7 +106,10 @@ export function OptionCard({
       ) : null}
 
       {acceptError ? (
-        <p className="mt-2 text-xs text-[var(--color-warning)]" data-testid={`accept-error-${option.type}`}>
+        <p
+          className="mt-2 text-xs text-[var(--color-warning)]"
+          data-testid={`accept-error-${option.type}`}
+        >
           {acceptError}
         </p>
       ) : null}

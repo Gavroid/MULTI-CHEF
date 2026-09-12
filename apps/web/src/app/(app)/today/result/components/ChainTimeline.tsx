@@ -18,7 +18,11 @@ export interface ChainTimelineProps {
   chainTag: string | null;
 }
 
-export function ChainTimeline({ main, followUps, chainTag }: ChainTimelineProps): React.ReactElement | null {
+export function ChainTimeline({
+  main,
+  followUps,
+  chainTag,
+}: ChainTimelineProps): React.ReactElement | null {
   if (followUps.length === 0) {
     // Red flag #14: CHAIN fallback with chainTag=null and empty chain.
     return (

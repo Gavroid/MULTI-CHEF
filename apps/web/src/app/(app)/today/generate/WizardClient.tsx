@@ -85,9 +85,7 @@ export function parsePrefill(raw: string | null): WizardPrefill {
       'SHORT_TIME',
       'NO_MULTISTEP',
     ];
-    const filters = anti
-      .split(',')
-      .filter((token) => ALL.includes(token)) as AntiFilter[];
+    const filters = anti.split(',').filter((token) => ALL.includes(token)) as AntiFilter[];
     if (filters.length > 0) prefill.antiFilters = filters;
   }
   return prefill;
@@ -107,7 +105,11 @@ export function initialState(prefill: WizardPrefill = {}): WizardState {
 export interface WizardClientProps {
   /** Raw ?prefill= from the URL. */
   prefill?: string | null;
-  onSubmit?: (settings: { budgetMode: BudgetMode; maxMinutes: number; antiFilters: AntiFilter[] }) => void;
+  onSubmit?: (settings: {
+    budgetMode: BudgetMode;
+    maxMinutes: number;
+    antiFilters: AntiFilter[];
+  }) => void;
 }
 
 const STEP_ORDER: WizardState['step'][] = ['budget', 'time', 'anti'];

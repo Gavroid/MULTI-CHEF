@@ -18,10 +18,7 @@ export interface UrgentItem {
 /** Urgency window: expiresAt ≤ today + 3 days (PRD §2.3.2). */
 export const URGENT_WINDOW_DAYS = 3;
 
-export function selectUrgentItems(
-  items: UrgentItem[],
-  now: Date = new Date(),
-): UrgentItem[] {
+export function selectUrgentItems(items: UrgentItem[], now: Date = new Date()): UrgentItem[] {
   const today = new Date(now);
   today.setHours(0, 0, 0, 0);
   const limit = new Date(today);

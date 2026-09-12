@@ -5,8 +5,8 @@
 // required because LoadingClient reads ?budget/&time/&anti via
 // useSearchParams() — without a boundary the static prerender bails.
 
-import React, { Suspense } from "react";
-import { LoadingClient } from "./LoadingClient";
+import React, { Suspense } from 'react';
+import { LoadingClient } from './LoadingClient';
 
 export default function TodayLoadingPage(): React.JSX.Element {
   return (

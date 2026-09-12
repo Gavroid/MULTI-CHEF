@@ -138,12 +138,7 @@ export async function acceptRecommendation(
   const originalFetch = g['fetch'];
   if (deps.fetchImpl) g['fetch'] = deps.fetchImpl;
   try {
-    const result = await request<unknown>(
-      `${base}/api/v1/meal-plans`,
-      'POST',
-      input,
-      {},
-    );
+    const result = await request<unknown>(`${base}/api/v1/meal-plans`, 'POST', input, {});
     if (result.error) return result;
     const parsed = AcceptRecommendationResultSchema.safeParse(result.data);
     if (!parsed.success) {

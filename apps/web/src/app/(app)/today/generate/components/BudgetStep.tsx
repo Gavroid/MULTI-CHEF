@@ -69,7 +69,9 @@ export function BudgetStep({ value, onChange, onNext }: BudgetStepProps): React.
             >
               <Icon
                 size={20}
-                className={selected ? 'text-[var(--color-primary)]' : 'text-[var(--color-text-muted)]'}
+                className={
+                  selected ? 'text-[var(--color-primary)]' : 'text-[var(--color-text-muted)]'
+                }
                 aria-hidden
               />
               <span>

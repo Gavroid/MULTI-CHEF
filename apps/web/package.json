@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@multichef/config": "workspace:*",
+    "@multichef/contracts": "workspace:^",
     "@multichef/nutrition": "workspace:*",
     "@multichef/ui": "workspace:*",
     "clsx": "^2.1.1",
@@ -24,7 +25,8 @@
     "next": "^15.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "tailwind-merge": "^2.6.0"
+    "tailwind-merge": "^2.6.0",
+    "zod": "^3.24.1"
   },
   "devDependencies": {
     "@multichef/eslint-config": "workspace:*",

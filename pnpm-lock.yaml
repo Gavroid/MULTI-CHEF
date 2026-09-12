@@ -144,6 +144,9 @@ importers:
       '@multichef/config':
         specifier: workspace:*
         version: link:../../packages/config
+      '@multichef/contracts':
+        specifier: workspace:^
+        version: link:../../packages/contracts
       '@multichef/nutrition':
         specifier: workspace:*
         version: link:../../packages/nutrition
@@ -168,6 +171,9 @@ importers:
       tailwind-merge:
         specifier: ^2.6.0
         version: 2.6.1
+      zod:
+        specifier: ^3.24.1
+        version: 3.25.76
     devDependencies:
       '@multichef/eslint-config':
         specifier: workspace:*
