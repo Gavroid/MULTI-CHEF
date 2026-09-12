@@ -5,7 +5,7 @@
 // recipes included with passed=false and their rejection reason so the
 // caller can explain what was filtered out and why.
 
-import { FACTOR_NAMES, FACTOR_WEIGHTS, type FactorName } from './weights.js';
+import { FACTOR_NAMES, FACTOR_WEIGHTS, clamp01, type FactorName } from './weights.js';
 import { pantryMatch } from './factors/pantryMatch.js';
 import { expirationBenefit } from './factors/expirationBenefit.js';
 import { budgetMatch } from './factors/budgetMatch.js';
@@ -13,6 +13,7 @@ import { nutritionMatch } from './factors/nutritionMatch.js';
 import { timeMatch } from './factors/timeMatch.js';
 import { preferenceMatch } from './factors/preferenceMatch.js';
 import { varietyScore } from './factors/varietyScore.js';
+import { noveltyScore } from './factors/noveltyScore.js';
 import { applyHardFilters } from '../filters/index.js';
 import type {
   FactorContribution,
@@ -30,16 +31,34 @@ const FACTOR_FN: Record<FactorName, (recipe: Recipe, ctx: GenerationContext) => 
   timeMatch,
   preferenceMatch,
   varietyScore,
+  noveltyScore,
 };
 
-/** Compute the weighted 7-factor score of a single recipe (no filtering). */
+/** Σ of effective weights must equal 1 within this epsilon. */
+const WEIGHT_SUM_EPSILON = 1e-9;
+
+/** Effective weights for a context: FACTOR_WEIGHTS merged with ctx override. */
+function effectiveWeights(ctx: GenerationContext): Record<FactorName, number> {
+  const weights = { ...FACTOR_WEIGHTS, ...(ctx.factorWeightsOverride ?? {}) };
+  const sum = FACTOR_NAMES.reduce((acc, name) => acc + weights[name], 0);
+  if (Math.abs(sum - 1) > WEIGHT_SUM_EPSILON) {
+    throw new Error(
+      `factorWeightsOverride broken: Σ weights = ${sum.toFixed(12)}, expected 1.0 (±1e-9). ` +
+        `Override keys: ${Object.keys(ctx.factorWeightsOverride ?? {}).join(', ') || 'none'}`,
+    );
+  }
+  return weights;
+}
+
+/** Compute the weighted 8-factor score of a single recipe (no filtering). */
 export function scoreRecipe(recipe: Recipe, ctx: GenerationContext): ScoredRecipe {
+  const weights = effectiveWeights(ctx);
   const breakdown = {} as ScoreBreakdown;
   let score = 0;
 
   for (const name of FACTOR_NAMES) {
-    const value = FACTOR_FN[name](recipe, ctx);
-    const weight = FACTOR_WEIGHTS[name];
+    const value = clamp01(FACTOR_FN[name](recipe, ctx));
+    const weight = weights[name];
     const contribution: FactorContribution = {
       value,
       weight,

@@ -48,11 +48,14 @@ test('chainTags: recipe without chainTags (omitted) still scores — MC-032 comp
   assert.ok(scored.score >= 0 && scored.score <= 1);
 });
 
-test('chainTags: recipe with chainTags scores identically (chainTags not in scoring)', () => {
+test('chainTags: recipe with chainTags scores identically apart from novelty bonus', () => {
+  // MC-040: chainTags now DO affect scoring — via the noveltyScore
+  // factor (+0.2 chain bonus × 0.05 weight = +0.01). The invariant is
+  // the exact delta, not full equality.
   const withTags = scoreRecipe(recipe, ctx);
   const { chainTags: _omitted, ...without } = recipe;
   const withoutTags = scoreRecipe(without, ctx);
-  assert.equal(withTags.score, withoutTags.score);
+  assert.ok(Math.abs(withTags.score - withoutTags.score - 0.2 * 0.05) < 1e-9);
 });
 
 test('chainTags: rank + explain accept the extended DTO', () => {

@@ -19,7 +19,7 @@
     "lint": "eslint .",
     "format:check": "prettier --check \"src/**/*.ts\"",
     "typecheck": "tsc --noEmit",
-    "test": "node --test --import tsx --test-reporter=spec --experimental-test-coverage src/__tests__/weights.test.ts src/__tests__/types.test.ts src/__tests__/rank.test.ts \"src/__tests__/factors/*.test.ts\" \"src/__tests__/filters/*.test.ts\" \"src/__tests__/explain/*.test.ts\"",
+    "test": "node --test --import tsx --test-reporter=spec --experimental-test-coverage src/__tests__/weights.test.ts src/__tests__/types.test.ts src/__tests__/rank.test.ts src/__tests__/rescue.test.ts \"src/__tests__/factors/*.test.ts\" \"src/__tests__/filters/*.test.ts\" \"src/__tests__/explain/*.test.ts\"",
     "build": "tsc -p tsconfig.build.json",
     "clean": "rm -rf dist .turbo *.tsbuildinfo"
   },

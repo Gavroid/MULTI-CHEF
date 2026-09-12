@@ -14,6 +14,7 @@ const FACTOR_LABELS: Record<FactorName, string> = {
   timeMatch: 'быстро готовить',
   preferenceMatch: 'попадает в твои вкусы',
   varietyScore: 'давно не готовил',
+  noveltyScore: 'необычное сочетание',
 };
 
 const ANTI_LABELS: Record<AntiFilter, string> = {

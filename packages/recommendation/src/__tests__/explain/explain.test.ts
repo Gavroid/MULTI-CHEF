@@ -31,7 +31,8 @@ test('explain: neutral recipe falls back to «нейтральный вариа�
       nutritionMatch: { value: 0, weight: 0.15, contribution: 0 },
       timeMatch: { value: 0, weight: 0.1, contribution: 0 },
       preferenceMatch: { value: 0, weight: 0.1, contribution: 0 },
-      varietyScore: { value: 0, weight: 0.05, contribution: 0 },
+      varietyScore: { value: 0, weight: 0, contribution: 0 },
+      noveltyScore: { value: 0, weight: 0.05, contribution: 0 },
     },
   };
   assert.equal(buildExplanation(scored), 'нейтральный вариант');

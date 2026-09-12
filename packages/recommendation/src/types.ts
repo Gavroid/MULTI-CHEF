@@ -136,6 +136,13 @@ export interface GenerationContext {
   mealsPerDay: number;
   /** MC-040 rescue mode: only recipes containing this ingredient pass. */
   rescue?: { targetIngredientId: string };
+  /**
+   * MC-040: per-factor weight override (e.g. rescue forces
+   * expirationBenefit). Merged over FACTOR_WEIGHTS; the SUM of the
+   * effective weights must be 1.0 (±1e-9) — enforced at runtime in
+   * scoreRecipe with a clear error.
+   */
+  factorWeightsOverride?: Partial<Record<string, number>>;
 }
 
 // --- Scoring / filtering results ----------------------------------------
@@ -156,6 +163,8 @@ export type ScoreBreakdown = {
   timeMatch: FactorContribution;
   preferenceMatch: FactorContribution;
   varietyScore: FactorContribution;
+  /** MC-040: 8th factor (tag/structure-based novelty). */
+  noveltyScore: FactorContribution;
 };
 
 export type RejectionReason =
