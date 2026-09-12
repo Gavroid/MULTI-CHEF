@@ -6,7 +6,8 @@
 export { rank, scoreRecipe } from './scoring/index.js';
 export { applyHardFilters, ANTI_RECIPE_PREDICATES } from './filters/index.js';
 export { buildExplanation } from './explain.js';
-export { FACTOR_WEIGHTS, FACTOR_NAMES } from './scoring/weights.js';
+export { FACTOR_WEIGHTS, FACTOR_NAMES, RESCUE_FACTOR_WEIGHTS } from './scoring/weights.js';
+export { rankRescue } from './scoring/rescue.js';
 export type { FactorName } from './scoring/weights.js';
 export type { Filter } from './filters/index.js';
 export type {

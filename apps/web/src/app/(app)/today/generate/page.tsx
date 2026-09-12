@@ -7,7 +7,7 @@
 'use client';
 
 import React, { use } from 'react';
-import { WizardClient } from './WizardClient';
+import { WizardPageClient } from './WizardClient';
 
 export default function TodayGeneratePage({
   searchParams,
@@ -15,5 +15,5 @@ export default function TodayGeneratePage({
   searchParams: Promise<{ prefill?: string }>;
 }): React.ReactElement {
   const { prefill } = use(searchParams);
-  return <WizardClient prefill={prefill ?? null} />;
+  return <WizardPageClient prefill={prefill ?? null} />;
 }

@@ -2,7 +2,7 @@
 // page header zone (sticky on scroll in future MCs). Uses the design
 // token `text-display` so font + line-height match PRD §2.5.2.
 
-import type { ReactElement, ReactNode } from 'react';
+import React, { type ReactNode } from 'react';
 
 export function TabTitle({
   children,
@@ -10,7 +10,7 @@ export function TabTitle({
 }: {
   children: ReactNode;
   sublabel?: ReactNode;
-}): ReactElement {
+}): React.ReactElement {
   return (
     <header className="mb-4">
       <h1 className="text-display text-text">{children}</h1>

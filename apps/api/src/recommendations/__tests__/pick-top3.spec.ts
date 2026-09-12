@@ -48,7 +48,8 @@ function makeScored(
       nutritionMatch: { value: 0, weight: 0.15, contribution: 0 },
       timeMatch: { value: 0, weight: 0.1, contribution: 0 },
       preferenceMatch: { value: 0.5, weight: 0.1, contribution: 0.05 },
-      varietyScore: { value: 0, weight: 0.05, contribution: 0 },
+      varietyScore: { value: 0, weight: 0, contribution: 0 },
+      noveltyScore: { value: 0, weight: 0.05, contribution: 0 },
     },
   };
 }
