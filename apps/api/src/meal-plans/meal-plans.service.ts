@@ -24,9 +24,8 @@ export class MealPlansService {
 
   /** Fetch the household's active plan (web «План» tab, MC-055). */
   async getActiveForUser(userId: string) {
-    const prisma = getPrisma();
     const householdId = await this.requireOwnedHouseholdId(userId);
-    return prisma.mealPlan.findFirst({
+    const plan = await getPrisma().mealPlan.findFirst({
       where: { householdId, status: 'ACTIVE' },
       include: {
         days: {
@@ -35,6 +34,42 @@ export class MealPlansService {
         },
       },
     });
+    if (!plan) return null;
+    return {
+      id: plan.id,
+      startDate: plan.startDate.toISOString(),
+      endDate: plan.endDate.toISOString(),
+      peopleCount: plan.peopleCount,
+      status: plan.status,
+      days: plan.days.map((day) => ({
+        id: day.id,
+        date: day.date.toISOString(),
+        totalCalories: day.totalCalories.toNumber(),
+        totalProteinG: day.totalProteinG.toNumber(),
+        totalFatG: day.totalFatG.toNumber(),
+        totalCarbsG: day.totalCarbsG.toNumber(),
+        entries: day.entries.map((entry) => ({
+          id: entry.id,
+          mealType: entry.mealType,
+          recipe: {
+            id: entry.recipe.id,
+            title: entry.recipe.title,
+            description: entry.recipe.description,
+            imageKey: entry.recipe.imageKey,
+            servings: entry.recipe.servings,
+            prepMinutes: entry.recipe.prepMinutes,
+            cookMinutes: entry.recipe.cookMinutes,
+            difficulty: entry.recipe.difficulty,
+            mealTypes: entry.recipe.mealTypes,
+            tags: entry.recipe.tags,
+            requiredAppliances: entry.recipe.requiredAppliances,
+          },
+          servings: entry.servings.toNumber(),
+          portionGrams: entry.portionGrams.toNumber(),
+          position: entry.position,
+        })),
+      })),
+    };
   }
 
   private async requireOwnedHouseholdId(userId: string): Promise<string> {
