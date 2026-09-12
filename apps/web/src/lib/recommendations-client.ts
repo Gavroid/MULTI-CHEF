@@ -20,7 +20,12 @@ import {
   type TodayRecommendationDto,
   type RescueRequestDto,
   type RescueResponseDto,
+  type RouletteDrawRequestDto,
+  type RouletteDrawResponseDto,
+  type RouletteRejectResponseDto,
   RescueResponseDtoSchema,
+  RouletteDrawResponseDtoSchema,
+  RouletteRejectResponseDtoSchema,
 } from '@multichef/contracts';
 import { type ApiResponse, type ErrorEnvelope, request } from './auth-client';
 import { getApiBaseUrl } from './env';
@@ -105,6 +110,56 @@ export async function getRescueRecommendations(
     );
     if (result.error) return result;
     const parsed = RescueResponseDtoSchema.safeParse(result.data);
+    if (!parsed.success) {
+      return { error: contractMismatch() };
+    }
+    return { data: parsed.data };
+  } finally {
+    if (deps.fetchImpl) g['fetch'] = originalFetch;
+  }
+}
+
+/** POST /recommendations/roulette/draw (MC-042) — one weighted card. */
+export async function drawRoulette(
+  input: RouletteDrawRequestDto,
+  deps: GetRecommendationsDeps = {},
+): Promise<ApiResponse<RouletteDrawResponseDto>> {
+  return postAndValidate<RouletteDrawResponseDto>(
+    `${deps.baseUrl ?? getApiBaseUrl()}/api/v1/recommendations/roulette/draw`,
+    input,
+    RouletteDrawResponseDtoSchema,
+    deps,
+  );
+}
+
+/** POST /recommendations/roulette/reject (MC-042) — burn one reject. */
+export async function rejectRoulette(
+  deps: GetRecommendationsDeps = {},
+): Promise<ApiResponse<RouletteRejectResponseDto>> {
+  return postAndValidate<RouletteRejectResponseDto>(
+    `${deps.baseUrl ?? getApiBaseUrl()}/api/v1/recommendations/roulette/reject`,
+    {},
+    RouletteRejectResponseDtoSchema,
+    deps,
+  );
+}
+
+/** Shared draw/reject plumbing: fetch → error passthrough → Zod check. */
+async function postAndValidate<T>(
+  url: string,
+  body: unknown,
+  schema: {
+    safeParse: (data: unknown) => { success: true; data: T } | { success: false };
+  },
+  deps: GetRecommendationsDeps,
+): Promise<ApiResponse<T>> {
+  const g = globalThis as unknown as Record<string, unknown>;
+  const originalFetch = g['fetch'];
+  if (deps.fetchImpl) g['fetch'] = deps.fetchImpl;
+  try {
+    const result = await request<unknown>(url, 'POST', body, {});
+    if (result.error) return result;
+    const parsed = schema.safeParse(result.data);
     if (!parsed.success) {
       return { error: contractMismatch() };
     }

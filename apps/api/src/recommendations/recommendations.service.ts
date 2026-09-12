@@ -14,7 +14,11 @@ import type {
   RecipeDto,
   RescueRequestDto,
   RescueResponseDto,
+  RouletteDrawRequestDto,
+  RouletteDrawResponseDto,
+  RouletteRejectResponseDto,
 } from '@multichef/contracts';
+import { MAX_ROULETTE_REJECTS } from '@multichef/contracts';
 import { AppHttpException } from '../common/exception-filter.js';
 import {
   mapPantry,
@@ -22,15 +26,19 @@ import {
   mapRecipeRow,
   fetchYesterdayMainProtein,
 } from './recommendations.mappers.js';
-import { pickTop3 } from './pick-top3.js';
+import { pickTop3, countMissingIngredients } from './pick-top3.js';
 import { pickRescue, rescueUsedGrams } from './pick-rescue.js';
-import { countMissingIngredients } from './pick-top3.js';
+import { pickWeightedByScore } from './pick-roulette.js';
+import { ROULETTE_TTL_SECONDS, type RouletteCounter } from './roulette-counter.js';
 import type { RecipeRowWithRelations } from '../recipes/recipes.service.js';
 import type { AiExplanationProvider } from './ai/template-provider.js';
 
 @Injectable()
 export class RecommendationsService {
-  constructor(@Inject('AiExplanationProvider') private readonly ai: AiExplanationProvider) {}
+  constructor(
+    @Inject('AiExplanationProvider') private readonly ai: AiExplanationProvider,
+    @Inject('RouletteCounter') private readonly rouletteCounter: RouletteCounter,
+  ) {}
 
   async getToday(
     userId: string,
@@ -275,6 +283,121 @@ export class RecommendationsService {
         totalGrams,
       },
     };
+  }
+
+  /**
+   * MC-042 «Кулинарная рулетка»: one score-weighted random card.
+   * The reject counter lives on the server (Redis, TTL 30 min) — the
+   * client cannot bypass the limit (DoD).
+   */
+  async drawRoulette(
+    userId: string,
+    input: RouletteDrawRequestDto,
+    now: Date,
+    rng: () => number = Math.random,
+  ): Promise<RouletteDrawResponseDto> {
+    const prisma = getPrisma();
+    const householdId = await this.requireOwnedHouseholdId(userId);
+
+    const [recipeRows, pantryRows, preferenceRows, profile] = await Promise.all([
+      prisma.recipe.findMany({
+        where: { sourceType: 'CURATED', status: 'PUBLISHED' },
+        include: {
+          ingredients: {
+            include: { ingredient: { include: { category: { select: { name: true } } } } },
+          },
+          nutrition: true,
+        },
+      }),
+      prisma.pantryItem.findMany({
+        where: { householdId, archivedAt: null, estimatedGrams: { gt: 0 } },
+        select: { ingredientId: true, estimatedGrams: true, priority: true, expiresAt: true },
+      }),
+      prisma.preference.findMany({
+        where: { userId, ingredientId: { not: null } },
+        select: { kind: true, ingredientId: true },
+      }),
+      prisma.nutritionProfile.findUnique({
+        where: { userId },
+        select: {
+          dietType: true,
+          appliances: true,
+          targetCalories: true,
+          targetProteinG: true,
+          targetFatG: true,
+          targetCarbsG: true,
+          mealsPerDay: true,
+          preferredPrepMinutes: true,
+        },
+      }),
+    ]);
+
+    const ctx: GenerationContext = {
+      now,
+      pantry: mapPantry(pantryRows),
+      preferences: mapPreferences(preferenceRows, profile),
+      maxMinutes: input.maxMinutes ?? profile?.preferredPrepMinutes ?? 60,
+      ...(input.budgetMode ? { budgetMode: input.budgetMode } : {}),
+      antiFilters: [],
+      yesterdayMainProtein: 'NONE',
+      recentRecipeIds7d: [],
+      ...(profile?.targetCalories && profile.targetCalories > 0
+        ? {
+            targetDailyMacros: {
+              calories: profile.targetCalories,
+              proteinG: profile.targetProteinG ?? 0,
+              fatG: profile.targetFatG ?? 0,
+              carbsG: profile.targetCarbsG ?? 0,
+            },
+          }
+        : {}),
+      mealsPerDay: profile?.mealsPerDay ?? 3,
+    };
+
+    const pairs = recipeRows.map((row) => ({
+      row: row as RecipeRowWithRelations,
+      recipe: mapRecipeRow(row as RecipeRowWithRelations),
+    }));
+    const rowById = new Map(pairs.map((p) => [p.recipe.id, p.row]));
+
+    const ranked = rank(
+      pairs.map((p) => p.recipe),
+      ctx,
+    );
+    const picked = pickWeightedByScore(ranked, rng);
+    if (!picked) {
+      throw new AppHttpException({
+        code: 'ROULETTE_EMPTY',
+        message: 'Подходящих рецептов не нашлось',
+      });
+    }
+
+    const rejects = await this.rouletteCounter.get(`roulette:${householdId}`);
+    return {
+      option: {
+        type: 'BEST_MATCH',
+        recipe: mapDto(rowById.get(picked.recipe.id)!),
+        score: picked.score,
+        explanation: this.ai.explain(picked),
+      },
+      attemptsLeft: Math.max(0, MAX_ROULETTE_REJECTS - rejects),
+    };
+  }
+
+  /** Burn one of the 2 rejects; 409 once the limit is exhausted. */
+  async rejectRoulette(userId: string): Promise<RouletteRejectResponseDto> {
+    const householdId = await this.requireOwnedHouseholdId(userId);
+    const rejects = await this.rouletteCounter.incr(
+      `roulette:${householdId}`,
+      ROULETTE_TTL_SECONDS,
+    );
+    if (rejects > MAX_ROULETTE_REJECTS) {
+      throw new AppHttpException({
+        code: 'REJECT_LIMIT_REACHED',
+        message: 'Судьба выбрана',
+      });
+    }
+    return { attemptsLeft: MAX_ROULETTE_REJECTS - rejects };
   }
 
   private async requireOwnedHouseholdId(userId: string): Promise<string> {
