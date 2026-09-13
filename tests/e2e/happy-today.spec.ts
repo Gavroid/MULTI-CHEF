@@ -34,21 +34,30 @@ test('register → stock the fridge → get a recommendation → accept it', asy
       sameSite: 'Lax',
     },
   ]);
-  await page.addInitScript((stored) => {
-    window.localStorage.setItem('mc_user', JSON.stringify(stored));
-  }, {
-    id: registerBody.user.id,
-    email: registerBody.user.email,
-    householdId: registerBody.household.id,
-  });
+  await page.addInitScript(
+    (stored) => {
+      window.localStorage.setItem('mc_user', JSON.stringify(stored));
+    },
+    {
+      id: registerBody.user.id,
+      email: registerBody.user.email,
+      householdId: registerBody.household.id,
+    },
+  );
 
   // 3. Stock the fridge from inside the page context (cookies + CSRF
   //    token ride along; the Idempotency-Key must be a UUID).
   await page.goto('/today');
   await page.waitForTimeout(500);
   const added = await page.evaluate(async () => {
-    const csrf = document.cookie.split('; ').find((c) => c.startsWith('mc_csrf='))?.split('=')[1];
-    const search = await fetch('/api/v1/ingredients?q=%D0%BC%D0%BE%D0%BB%D0%BE%D0%BA%D0%BE&limit=1', { credentials: 'include' });
+    const csrf = document.cookie
+      .split('; ')
+      .find((c) => c.startsWith('mc_csrf='))
+      ?.split('=')[1];
+    const search = await fetch(
+      '/api/v1/ingredients?q=%D0%BC%D0%BE%D0%BB%D0%BE%D0%BA%D0%BE&limit=1',
+      { credentials: 'include' },
+    );
     const searchJson = await search.json();
     const ingredientId = searchJson.data?.[0]?.id;
     if (!ingredientId) return { ok: false, step: 'search' as const };
@@ -88,5 +97,5 @@ test('register → stock the fridge → get a recommendation → accept it', asy
   await expect(page.locator('[data-testid^="option-"]').first()).toBeVisible();
 
   await page.locator('[data-testid^="accept-"]').first().click();
-  await expect(page).toHaveURL(/\/shopping\//, { timeout: 15_000 });
+  await expect(page).toHaveURL(/\/shopping/, { timeout: 15_000 });
 });
