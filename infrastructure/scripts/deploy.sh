@@ -23,8 +23,20 @@ echo "deploy: pull"
 git pull --ff-only origin main
 
 echo "deploy: install + build"
-sudo -u multichef_app pnpm install --frozen-lockfile
-sudo -u multichef_app pnpm turbo run build --filter=@multichef/web... --filter=@multichef/api...
+# sudo resets the environment (env_reset) — NEXT_PUBLIC_* are inlined at
+# BUILD time, so they must be passed through explicitly (audit fix).
+sudo -u multichef_app env \
+  NEXT_PUBLIC_APP_BASE_URL="$NEXT_PUBLIC_APP_BASE_URL" \
+  NEXT_PUBLIC_USE_MEALPLAN_MOCK="$NEXT_PUBLIC_USE_MEALPLAN_MOCK" \
+  NEXT_PUBLIC_USE_RECIPE_FIXTURES="$NEXT_PUBLIC_USE_RECIPE_FIXTURES" \
+  NODE_ENV="$NODE_ENV" \
+  pnpm install --frozen-lockfile
+sudo -u multichef_app env \
+  NEXT_PUBLIC_APP_BASE_URL="$NEXT_PUBLIC_APP_BASE_URL" \
+  NEXT_PUBLIC_USE_MEALPLAN_MOCK="$NEXT_PUBLIC_USE_MEALPLAN_MOCK" \
+  NEXT_PUBLIC_USE_RECIPE_FIXTURES="$NEXT_PUBLIC_USE_RECIPE_FIXTURES" \
+  NODE_ENV="$NODE_ENV" \
+  pnpm turbo run build --filter=@multichef/web... --filter=@multichef/api...
 
 echo "deploy: migrate"
 set -a; source "$ENV_FILE"; set +a
