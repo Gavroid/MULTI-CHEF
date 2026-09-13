@@ -248,7 +248,7 @@ export class MealPlansService {
     const vegRows = await prisma.recipeIngredient.findMany({
       where: {
         recipeId: { in: recipeIds },
-        ingredient: { category: { name: { contains: 'овощ' } } },
+        ingredient: { category: { name: { contains: 'овощ', mode: 'insensitive' } } },
       },
       select: { recipeId: true },
     });
