@@ -18,13 +18,30 @@ export const viewport: Viewport = {
   themeColor: '#E8590C',
 };
 
+// Restores the theme before first paint on EVERY full page load. Without
+// this script only pages mounting <ThemeToggle> (/, /design, /profile)
+// re-applied the stored choice after SSR rendered data-theme="light",
+// so dark mode "fell off" on navigation. Same key and OS fallback as
+// useTheme (src/hooks/useTheme.ts).
+const themeInitScript = `(function () {
+  try {
+    var t = localStorage.getItem('mc-theme');
+    if (t !== 'light' && t !== 'dark') {
+      t = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    document.documentElement.setAttribute('data-theme', t);
+  } catch (e) {}
+})();`;
+
 export default function RootLayout({ children }: { children: ReactNode }): React.ReactElement {
-  // data-theme defaults to "light". useTheme() client-side may override.
-  // We deliberately leave the attribute static here to keep SSR markup
-  // deterministic; the client effect swaps it before paint if needed.
+  // SSR keeps data-theme="light" deterministic; the inline script above the
+  // app content swaps it pre-paint. suppressHydrationWarning tells React to
+  // keep the client-applied attribute instead of correcting it to the
+  // server value during hydration.
   return (
-    <html lang="ru" data-theme="light">
+    <html lang="ru" data-theme="light" suppressHydrationWarning>
       <body className="min-h-screen bg-bg text-text font-sans">
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         {children}
         <PwaRegister />
       </body>
