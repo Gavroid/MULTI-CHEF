@@ -13,6 +13,7 @@ import { Throttle } from '@nestjs/throttler';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { loadServerEnv } from '@multichef/config';
+import { generateSessionToken } from './session-token.js';
 import { AuthService, type AuthResult } from './auth.service.js';
 import type { LoginDto, LogoutDto, RegisterDto } from './auth.dto-classes.js';
 import { AppHttpException } from '../common/exception-filter.js';
@@ -47,6 +48,11 @@ type CookieRequest = FastifyRequest & {
 };
 
 export const SESSION_COOKIE = 'mc_session';
+// Audit 2026-09-13: the guard only VERIFIED mc_csrf — nobody ever SET
+// it, so double-submit CSRF was de-facto disabled. Issued on
+// register/login alongside the session cookie (readable by JS by
+// design — double-submit needs the JS to echo it in a header).
+export const CSRF_COOKIE = 'mc_csrf';
 const COOKIE_PATH = '/';
 
 interface CookieFlags {
@@ -87,10 +93,26 @@ function setSessionCookie(res: FastifyReply, result: AuthResult): void {
     maxAge: maxAgeSec,
     ...(flags.domain ? { domain: flags.domain } : {}),
   });
+  // Double-submit pair: JS-readable so request() can echo the header.
+  (res as CookieReply).setCookie(CSRF_COOKIE, generateSessionToken(), {
+    httpOnly: false,
+    secure: flags.secure,
+    sameSite: flags.sameSite,
+    path: COOKIE_PATH,
+    maxAge: maxAgeSec,
+    ...(flags.domain ? { domain: flags.domain } : {}),
+  });
 }
 
 function clearSessionCookie(res: FastifyReply): void {
   const flags = cookieFlags();
+  // Audit fix: drop the double-submit pair together with the session.
+  (res as CookieReply).clearCookie(CSRF_COOKIE, {
+    path: COOKIE_PATH,
+    secure: flags.secure,
+    sameSite: flags.sameSite,
+    ...(flags.domain ? { domain: flags.domain } : {}),
+  });
   (res as CookieReply).clearCookie(SESSION_COOKIE, {
     path: COOKIE_PATH,
     secure: flags.secure,

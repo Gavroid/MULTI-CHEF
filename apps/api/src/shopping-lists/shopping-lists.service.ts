@@ -6,7 +6,7 @@
 // applyProposal mutates the list transactionally (SUBSTITUTE replaces
 // the row, DROP_OPTIONAL deletes it) and recomputes the total.
 
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import { getPrisma } from '@multichef/database';
 import {
   fitBudgetProposals,
@@ -22,7 +22,7 @@ type PrismaLike = ReturnType<typeof getPrisma>;
 export class ShoppingListsService {
   private readonly prismaOverride: PrismaLike | undefined;
 
-  constructor(prisma?: PrismaLike) {
+  constructor(@Optional() prisma?: PrismaLike) {
     this.prismaOverride = prisma;
   }
 
@@ -33,7 +33,7 @@ export class ShoppingListsService {
   /** The household's ACTIVE shopping list (or null). */
   async getActiveForUser(userId: string) {
     const householdId = await this.requireOwnedHouseholdId(userId);
-    return this.db.shoppingList.findFirst({
+    const list = await this.db.shoppingList.findFirst({
       where: { householdId, status: 'ACTIVE' },
       include: {
         items: {
@@ -43,6 +43,14 @@ export class ShoppingListsService {
         },
       },
     });
+    if (!list) return null;
+    return {
+      ...list,
+      items: list.items.map((item) => ({
+        ...item,
+        name: item.ingredient?.canonicalName ?? null,
+      })),
+    };
   }
 
   async fitBudget(

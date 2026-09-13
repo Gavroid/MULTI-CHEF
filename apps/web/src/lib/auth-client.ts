@@ -139,6 +139,16 @@ export async function request<T>(
   // may omit it.
   if (method !== 'GET') {
     headers['Idempotency-Key'] = options.idempotencyKey ?? generateIdempotencyKey();
+    // Double-submit CSRF pair: the server issues the readable mc_csrf
+    // cookie on register/login; echo it in the header (audit 2026-09-13
+    // — previously nothing set the cookie, so CSRF was de-facto off).
+    if (typeof document !== 'undefined') {
+      const csrf = document.cookie
+        .split('; ')
+        .find((c) => c.startsWith('mc_csrf='))
+        ?.split('=')[1];
+      if (csrf) headers['X-CSRF-Token'] = csrf;
+    }
   }
 
   const init: RequestInit = {
