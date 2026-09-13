@@ -56,30 +56,37 @@
 Пять раундов глобального технического и продуктового аудита: 21 дефект закрыт.
 
 ### Раунд 1 (тех.фиксы деплоя)
+
 - contracts runtime → dist (api/worker не стартовали), NEXT_PUBLIC_* проброс в deploy, @Optional DI, E2E-спеки.
 
 ### Раунды 2–3 (регрессии продукта)
+
 - MealPlans/ShoppingLists модули восстановлены в app.module (роуты плана/бюджета 404).
 - CSRF двойного сабмита включён де-факто: mc_csrf выдаётся на register/login, web эхоит X-CSRF-Token.
 - Все доменные ошибки AppHttpException получили корректные HTTP-статусы (были 500).
 - Shopping items рендерят названия ингредиентов.
 
 ### Раунд 4 (UI/ops)
+
 - Валидные CTA-ссылки на /plan (nested interactive), hydration-safe Greeting (React #418).
 - Пустой appliances больше не схлопывает каталог новому пользователю (план 21/21 слотов).
 - Redis AOF включён; тест восстановления backup — 269/300/146.
 
 ### Раунд 5 (продукт)
+
 - Онбординг-данные (имя семьи/людей/бюджет) сохраняются; регистрация получила поле «Бюджет на неделю».
 - BudgetProgress на /today подключён к Household.budgetWeekKopecks.
 - /fridge/add (404) → redirect + автооткрытие диалога создания.
 
 ### Раунд 6 (ops/безопасность)
+
 - Swagger закрыт в production; ежедневный backup-cron 03:00; Redis maxmemory 512mb; journald 200M; nginx gzip.
 
 ### Раунд 7 (продукт)
+
 - UpcomingMeals на /today подключён к реальному активному плану.
 
 ### Производительность (замер на проде)
+
 - POST /recommendations/today: ~80–117 мс (DoD < 500 мс).
 - GET /recipes: ~13 мс.
