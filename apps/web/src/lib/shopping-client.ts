@@ -17,6 +17,8 @@ function base(deps?: PlanClientDeps): string {
 const ItemSchema = z.object({
   id: z.string(),
   ingredientId: z.string(),
+  /** Catalogue name (audit fix — UI must not render raw ids). */
+  name: z.string().nullable().optional(),
   requiredGrams: z.coerce.number(),
   packageQuantity: z.coerce.number(),
   packageSize: z.coerce.number(),

@@ -33,6 +33,8 @@ export interface PantryItem {
   id: string;
   householdId: string;
   ingredientId: string;
+  /** Catalogue name (audit fix — optional for older cached payloads). */
+  name?: string | null;
   /** Decimal grams — the API coerces to a JS number. */
   quantity: number;
   unit: Unit;

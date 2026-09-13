@@ -24,9 +24,12 @@ import { JobsModule } from './jobs/jobs.module.js';
 
 @Module({
   imports: [
-    // Rate limit. The 'auth' bucket is the only named bucket for now;
-    // MC-051 will introduce Redis-backed storage and more buckets.
-    ThrottlerModule.forRoot([{ name: 'auth', ttl: 60_000, limit: 10 }]),
+    // Rate limit. Global default is generous (a real session fires
+    // pantry + plan + shopping reads in bursts); auth endpoints tighten
+    // it to 10/min via @Throttle on AuthController (audit 2026-09-13:
+    // the previous single 10/min bucket throttled EVERY endpoint and
+    // broke normal multi-screen usage).
+    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 300 }]),
     HealthModule,
     AuthModule,
     ProfileModule,
