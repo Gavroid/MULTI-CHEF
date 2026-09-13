@@ -98,9 +98,7 @@ export default function ProfilePage(): React.ReactElement {
           <p className="text-body text-[var(--color-text-muted)]">
             {householdName}
             {peopleCount > 0 ? ` · ${peopleCount} чел.` : ''}
-            {budgetWeekKopecks
-              ? ` · бюджет ${Math.round(budgetWeekKopecks / 100)} ₽/нед`
-              : ''}
+            {budgetWeekKopecks ? ` · бюджет ${Math.round(budgetWeekKopecks / 100)} ₽/нед` : ''}
           </p>
         ) : null}
       </Card>

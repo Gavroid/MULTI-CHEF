@@ -33,7 +33,11 @@ export function groupItems(items: ShoppingItemDto[], orders: Map<string, number>
   const groups = new Map<string, ItemGroup>();
   for (const item of items) {
     const sortOrder = orders.get(item.categoryId) ?? 99;
-    const group = groups.get(item.categoryId) ?? { categoryId: item.categoryId, sortOrder, items: [] };
+    const group = groups.get(item.categoryId) ?? {
+      categoryId: item.categoryId,
+      sortOrder,
+      items: [],
+    };
     group.items.push(item);
     groups.set(item.categoryId, group);
   }
@@ -70,7 +74,10 @@ export function ShoppingClient({
 }: {
   deps?: Partial<ShoppingClientDeps>;
 }): React.ReactElement {
-  const deps = useMemo<ShoppingClientDeps>(() => ({ ...defaultDeps, ...depsOverride }), [depsOverride]);
+  const deps = useMemo<ShoppingClientDeps>(
+    () => ({ ...defaultDeps, ...depsOverride }),
+    [depsOverride],
+  );
   const [list, setList] = useState<ShoppingListDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [budgetInput, setBudgetInput] = useState('');
@@ -109,7 +116,9 @@ export function ShoppingClient({
           current
             ? {
                 ...current,
-                items: current.items.map((i) => (i.id === item.id ? { ...i, purchased: item.purchased } : i)),
+                items: current.items.map((i) =>
+                  i.id === item.id ? { ...i, purchased: item.purchased } : i,
+                ),
               }
             : current,
         );
@@ -191,7 +200,9 @@ export function ShoppingClient({
       <>
         <TabTitle sublabel="Список покупок">Покупки</TabTitle>
         <Card data-testid="shopping-empty">
-          <p className="text-body mb-3">Активного списка нет — он появится после принятия рецепта.</p>
+          <p className="text-body mb-3">
+            Активного списка нет — он появится после принятия рецепта.
+          </p>
           <Link href="/fridge" className="text-sm text-[var(--color-primary)] underline">
             Заглянуть в холодильник
           </Link>
@@ -231,7 +242,12 @@ export function ShoppingClient({
             onChange={(e) => setBudgetInput(e.target.value)}
             data-testid="shopping-budget-input"
           />
-          <Button variant="secondary" disabled={busy} onClick={() => void runFitBudget()} data-testid="shopping-fit">
+          <Button
+            variant="secondary"
+            disabled={busy}
+            onClick={() => void runFitBudget()}
+            data-testid="shopping-fit"
+          >
             Уложить
           </Button>
         </div>
@@ -254,7 +270,12 @@ export function ShoppingClient({
                     : 'Объединение блюд — позже'}
               </span>
               {p.kind !== 'MERGE_MEALS' ? (
-                <Button variant="secondary" disabled={busy} onClick={() => void applyOne(p)} data-testid={`shopping-apply-${index}`}>
+                <Button
+                  variant="secondary"
+                  disabled={busy}
+                  onClick={() => void applyOne(p)}
+                  data-testid={`shopping-apply-${index}`}
+                >
                   Применить
                 </Button>
               ) : null}
@@ -263,34 +284,38 @@ export function ShoppingClient({
         </Card>
       ) : null}
 
-      {groupItems(list.items, new Map(list.items.map((i) => [i.categoryId, i.sortOrder]))).map((group) => (
-        <Card key={group.categoryId} className="mb-3" data-testid="shopping-group">
-          {group.items.map((item) => (
-            <label
-              key={item.id}
-              className="flex items-center justify-between border-b border-[var(--color-border)] py-2 last:border-none"
-              data-testid={`shopping-item-${item.ingredientId}`}
-            >
-              <span className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={item.purchased}
-                  onChange={() => void toggle(item)}
-                  className="h-7 w-7"
-                  data-testid={`shopping-check-${item.ingredientId}`}
-                />
-                <span className={item.purchased ? 'text-[var(--color-text-muted)] line-through' : ''}>
-                  {item.name ?? item.ingredientId}
+      {groupItems(list.items, new Map(list.items.map((i) => [i.categoryId, i.sortOrder]))).map(
+        (group) => (
+          <Card key={group.categoryId} className="mb-3" data-testid="shopping-group">
+            {group.items.map((item) => (
+              <label
+                key={item.id}
+                className="flex items-center justify-between border-b border-[var(--color-border)] py-2 last:border-none"
+                data-testid={`shopping-item-${item.ingredientId}`}
+              >
+                <span className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={item.purchased}
+                    onChange={() => void toggle(item)}
+                    className="h-7 w-7"
+                    data-testid={`shopping-check-${item.ingredientId}`}
+                  />
+                  <span
+                    className={item.purchased ? 'text-[var(--color-text-muted)] line-through' : ''}
+                  >
+                    {item.name ?? item.ingredientId}
+                  </span>
                 </span>
-              </span>
-              <span className="text-xs text-[var(--color-text-muted)]">
-                {item.packageQuantity} уп. · {formatKopecks(item.estimatedPriceKopecks ?? 0)}
-                {item.utilityScore != null ? ` · польза ${item.utilityScore}/10` : ''}
-              </span>
-            </label>
-          ))}
-        </Card>
-      ))}
+                <span className="text-xs text-[var(--color-text-muted)]">
+                  {item.packageQuantity} уп. · {formatKopecks(item.estimatedPriceKopecks ?? 0)}
+                  {item.utilityScore != null ? ` · польза ${item.utilityScore}/10` : ''}
+                </span>
+              </label>
+            ))}
+          </Card>
+        ),
+      )}
 
       <Card className="mb-6" data-testid="shopping-complete">
         <Button

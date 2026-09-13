@@ -17,7 +17,11 @@ import { TabTitle } from '@/components/TabTitle';
 export const DEFAULT_DAILY_TARGET = 2000;
 
 /** Percent (0..110 capped) of the daily target consumed by a day. */
-export function kcalPercent(totalCalories: number, target = DEFAULT_DAILY_TARGET, peopleCount = 1): number {
+export function kcalPercent(
+  totalCalories: number,
+  target = DEFAULT_DAILY_TARGET,
+  peopleCount = 1,
+): number {
   if (target <= 0) return 0;
   const perPerson = totalCalories / Math.max(1, peopleCount);
   return Math.min(110, Math.round((perPerson / target) * 100));
