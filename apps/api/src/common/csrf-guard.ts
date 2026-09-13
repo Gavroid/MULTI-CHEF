@@ -36,7 +36,18 @@ export class CsrfDoubleSubmitGuard implements CanActivate {
     if (SAFE_METHODS.has(method)) return true;
 
     const cookieToken = req.cookies?.[CSRF_COOKIE];
-    if (typeof cookieToken !== 'string' || cookieToken.length === 0) return true;
+    const hasSession =
+      typeof req.cookies?.['mc_session'] === 'string' && req.cookies['mc_session'].length > 0;
+    // Audit fix: hard-fail when a session cookie is present but mc_csrf
+    // is missing — the double-submit pair is mandatory for authed
+    // mutations. Non-browser clients (no session, no csrf) still pass.
+    if (!cookieToken && !hasSession) return true;
+    if (!cookieToken) {
+      throw new AppHttpException({
+        code: 'CSRF_MISMATCH',
+        message: 'mc_csrf cookie is required for authed mutations',
+      });
+    }
 
     const headerToken = req.headers[CSRF_HEADER];
     if (typeof headerToken !== 'string' || headerToken !== cookieToken) {

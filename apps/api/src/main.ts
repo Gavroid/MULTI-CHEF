@@ -26,7 +26,9 @@ try {
 }
 
 async function bootstrap(): Promise<void> {
-  const fastifyAdapter = new FastifyAdapter({ trustProxy: true, logger: false });
+  // Audit fix: trust only our nginx gateway (single hop) — client
+  // X-Forwarded-For is not trusted for rate-limit IP extraction.
+  const fastifyAdapter = new FastifyAdapter({ trustProxy: '127.0.0.1', logger: false });
   // @fastify/cors MUST be registered first — before any other plugin
   // that touches the response (helmet, cookie) so the OPTIONS
   // preflight is short-circuited with the right headers. We
