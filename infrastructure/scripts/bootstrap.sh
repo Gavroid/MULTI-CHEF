@@ -24,6 +24,7 @@ fi
 # Secrets: generate once, keep in /etc/multichef (root-only).
 if [ ! -f "$ENV_DIR/multichef.env" ]; then
   {
+    echo "NODE_ENV=production"
     echo "DATABASE_URL=postgresql://multichef:$(openssl rand -hex 12)@127.0.0.1:5432/multichef"
     echo "REDIS_URL=redis://127.0.0.1:6379"
     echo "JWT_SECRET=$(openssl rand -base64 32)"
@@ -31,9 +32,12 @@ if [ ! -f "$ENV_DIR/multichef.env" ]; then
     echo "COOKIE_SECRET=$(openssl rand -base64 36)"
     echo "APP_BASE_URL=http://192.168.1.35:8080"
     echo "CORS_ORIGINS=http://192.168.1.35:8080,https://192.168.1.35:8443"
+    echo "COOKIE_SECURE=false"
+    echo "COOKIE_SAMESITE=lax"
     # NOTE: no COOKIE_DOMAIN for IP-only LAN hosts — browsers reject
     # Domain=IP attributes, which silently drops the session cookie.
     echo "NEXT_PUBLIC_APP_BASE_URL=http://192.168.1.35:8080"
+    echo "NEXT_PUBLIC_USE_MEALPLAN_MOCK=0"
   } > "$ENV_DIR/multichef.env"
 fi
 chmod 600 "$ENV_DIR/multichef.env"

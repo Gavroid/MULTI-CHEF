@@ -51,7 +51,8 @@ export function selectPickerChips(items: PantryItem[], now: Date): PickerChips {
 }
 
 export function chipLabel(item: PantryItem): string {
-  return item.notes ?? item.ingredientId;
+  // Audit fix: prefer the catalogue name — raw ids are not human UI.
+  return item.name ?? item.notes ?? item.ingredientId;
 }
 
 export interface IngredientPickerProps {

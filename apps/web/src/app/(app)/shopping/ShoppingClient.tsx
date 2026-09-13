@@ -303,7 +303,7 @@ export function ShoppingClient({
                 <span
                   className={item.purchased ? 'text-[var(--color-text-muted)] line-through' : ''}
                 >
-                  {item.ingredientId}
+                  {item.name ?? item.ingredientId}
                 </span>
               </span>
               <span className="text-xs text-[var(--color-text-muted)]">

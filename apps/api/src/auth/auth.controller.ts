@@ -9,6 +9,7 @@
 // in main.ts / app.module.ts so they apply to every mutating endpoint.
 
 import { Body, Controller, Get, HttpCode, Inject, Post, Req, Res } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { loadServerEnv } from '@multichef/config';
@@ -50,8 +51,12 @@ const COOKIE_PATH = '/';
 
 interface CookieFlags {
   secure: boolean;
-  sameSite: 'Lax' | 'Strict';
+  sameSite: 'Lax' | 'Strict' | 'None';
   domain?: string | undefined;
+}
+
+function sameSiteFromEnv(value: 'lax' | 'strict' | 'none'): 'Lax' | 'Strict' | 'None' {
+  return (value.charAt(0).toUpperCase() + value.slice(1)) as 'Lax' | 'Strict' | 'None';
 }
 
 function cookieFlags(): CookieFlags {
@@ -61,9 +66,12 @@ function cookieFlags(): CookieFlags {
   // a Domain=<ip|localhost> attribute makes browsers REJECT the cookie,
   // which silently kills the session on IP-served deployments.
   const useDomain = domain && domain !== 'localhost' && !/^\d{1,3}(\.\d{1,3}){3}$/.test(domain);
+  // Audit fix (2026-09-13): honour COOKIE_SECURE / COOKIE_SAMESITE from
+  // env — the previous NODE_ENV-only branching made those knobs dead
+  // configuration (the cookie was never marked Secure on TLS deploys).
   return {
-    secure: env.NODE_ENV === 'production',
-    sameSite: env.NODE_ENV === 'production' ? 'Strict' : 'Lax',
+    secure: env.COOKIE_SECURE,
+    sameSite: sameSiteFromEnv(env.COOKIE_SAMESITE),
     ...(useDomain ? { domain } : {}),
   };
 }
@@ -92,6 +100,10 @@ function clearSessionCookie(res: FastifyReply): void {
 }
 
 @ApiTags('auth')
+// Audit fix (2026-09-13): the tight 10/min bucket now applies ONLY to
+// auth endpoints — the global throttler default is 300/min so normal
+// multi-screen usage (pantry + plan + shopping reads) is not throttled.
+@Throttle({ default: { ttl: 60_000, limit: 10 } })
 @Controller({ path: 'auth' })
 export class AuthController {
   constructor(@Inject(AuthService) private readonly auth: AuthService) {}

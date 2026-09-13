@@ -42,6 +42,8 @@ export interface PantryItemView {
   purchaseDate: string | null;
   archivedAt: string | null; // ISO timestamp or null
   notes: string | null;
+  /** Catalogue name for UI (null only for deleted ingredients). */
+  name: string | null;
   createdAt: string; // ISO timestamp
   updatedAt: string;
 }
@@ -62,6 +64,7 @@ function toView(row: PantryItemRow): PantryItemView {
     purchaseDate: row.purchaseDate ? toIsoDate(row.purchaseDate) : null,
     archivedAt: row.archivedAt ? row.archivedAt.toISOString() : null,
     notes: row.notes,
+    name: row.ingredient?.canonicalName ?? null,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
@@ -80,7 +83,11 @@ function toIsoDate(d: Date): string {
   return iso.slice(0, 10);
 }
 
-type PantryItemRow = Prisma.PantryItemGetPayload<Record<string, never>>;
+// Audit fix: include the ingredient name so UI never renders raw
+// ingredient ids (product audit 2026-09-13).
+type PantryItemRow = Prisma.PantryItemGetPayload<{
+  include: { ingredient: { select: { canonicalName: true } } };
+}>;
 
 @Injectable()
 export class PantryService {
@@ -114,6 +121,7 @@ export class PantryService {
         ...(body.purchaseDate ? { purchaseDate: new Date(body.purchaseDate) } : {}),
         ...(body.notes !== undefined ? { notes: body.notes } : {}),
       },
+      include: { ingredient: { select: { canonicalName: true } } },
     });
     return toView(row);
   }
@@ -144,6 +152,7 @@ export class PantryService {
       orderBy,
       take: query.limit,
       skip: query.offset,
+      include: { ingredient: { select: { canonicalName: true } } },
     });
     return rows.map(toView);
   }
@@ -154,6 +163,7 @@ export class PantryService {
     // other households, even if id exists.
     const row = await PRISMA.pantryItem.findFirst({
       where: { id, householdId },
+      include: { ingredient: { select: { canonicalName: true } } },
     });
     if (!row) {
       throw new AppHttpException({
@@ -171,6 +181,7 @@ export class PantryService {
     // if the row would otherwise produce 0 affected rows).
     const existing = await PRISMA.pantryItem.findFirst({
       where: { id, householdId },
+      include: { ingredient: { select: { canonicalName: true } } },
     });
     if (!existing) {
       throw new AppHttpException({
@@ -199,6 +210,7 @@ export class PantryService {
     const row = await PRISMA.pantryItem.update({
       where: { id },
       data,
+      include: { ingredient: { select: { canonicalName: true } } },
     });
     return toView(row);
   }
@@ -227,6 +239,7 @@ export class PantryService {
     // archived. If archivedAt is null we return 400 ITEM_NOT_ARCHIVED.
     const existing = await PRISMA.pantryItem.findFirst({
       where: { id, householdId },
+      include: { ingredient: { select: { canonicalName: true } } },
     });
     if (!existing) {
       throw new AppHttpException({
@@ -245,6 +258,7 @@ export class PantryService {
     const row = await PRISMA.pantryItem.update({
       where: { id },
       data: { archivedAt: null },
+      include: { ingredient: { select: { canonicalName: true } } },
     });
     return toView(row);
   }

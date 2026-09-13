@@ -6,7 +6,7 @@
 // applyProposal mutates the list transactionally (SUBSTITUTE replaces
 // the row, DROP_OPTIONAL deletes it) and recomputes the total.
 
-import { Injectable, Optional } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { getPrisma } from '@multichef/database';
 import {
   fitBudgetProposals,
@@ -22,7 +22,7 @@ type PrismaLike = ReturnType<typeof getPrisma>;
 export class ShoppingListsService {
   private readonly prismaOverride: PrismaLike | undefined;
 
-  constructor(@Optional() prisma?: PrismaLike) {
+  constructor(prisma?: PrismaLike) {
     this.prismaOverride = prisma;
   }
 
@@ -35,7 +35,13 @@ export class ShoppingListsService {
     const householdId = await this.requireOwnedHouseholdId(userId);
     return this.db.shoppingList.findFirst({
       where: { householdId, status: 'ACTIVE' },
-      include: { items: { orderBy: [{ sortOrder: 'asc' }, { ingredientId: 'asc' }] } },
+      include: {
+        items: {
+          orderBy: [{ sortOrder: 'asc' }, { ingredientId: 'asc' }],
+          // Audit fix: the UI must show catalogue names, not raw ids.
+          include: { ingredient: { select: { canonicalName: true } } },
+        },
+      },
     });
   }
 
@@ -146,7 +152,12 @@ export class ShoppingListsService {
     const householdId = await this.requireOwnedHouseholdId(userId);
     const list = await this.db.shoppingList.findFirst({
       where: { id: listId, householdId },
-      include: { items: { where: { purchased: true } } },
+      include: {
+        items: {
+          where: { purchased: true },
+          include: { ingredient: { select: { canonicalName: true } } },
+        },
+      },
     });
     if (!list) {
       throw new AppHttpException({
@@ -195,7 +206,9 @@ export class ShoppingListsService {
     const householdId = await this.requireOwnedHouseholdId(userId);
     const list = await this.db.shoppingList.findFirst({
       where: { id: listId, householdId },
-      include: { items: true },
+      include: {
+        items: { include: { ingredient: { select: { canonicalName: true } } } },
+      },
     });
     if (!list) {
       throw new AppHttpException({
