@@ -1,6 +1,6 @@
 # Промт для новой сессии: перенос MULTI-CHEF с .35 на .95
 
-```
+````
 Ты — devops-инженер. Перенеси production-деплой MULTI-CHEF с 192.168.1.35
 на 192.168.1.95 (Proxmox LXC, Ubuntu 24.04, root доступ по ключу уже
 настроен с Hermes-Agent). После переноса удали прод с 192.168.1.35.
@@ -61,7 +61,7 @@ nginx -t && systemctl reload nginx
 mkdir -p /etc/multichef
 scp root@192.168.1.35:/etc/multichef/multichef.env /etc/multichef/multichef.env
 # ОБЯЗАТЕЛЬНО заменить DATABASE_URL на .95-пароль и хост!
-```
+````
 
 ### Шаг 2 — Клонировать репо и собрать
 
@@ -179,6 +179,8 @@ rm -rf /etc/multichef
 - **Secrets**: JWT_SECRET/SESSION_SECRET/COOKIE_SECRET — сгенерируй новые
   для .95, не копируй старые (или копируй если нужно сохранить сессии).
 - **Firewall .95**: ufw allow 22,8080,8443; ufw enable.
+
 ```
 
 Промт готов — скопируй в новую сессию, открой на `192.168.1.35` и выполняй по шагам. После шага 7 напиши «verify» — я проверю с этой сессии что .95 отвечает. После шага 8 — прод на .35 будет удалён.
+```
