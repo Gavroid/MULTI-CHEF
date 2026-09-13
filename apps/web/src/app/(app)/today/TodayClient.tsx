@@ -19,6 +19,8 @@ import { listItems, type PantryItem } from '@/lib/pantry-client';
 import { usePantry } from '@/hooks/usePantry';
 import { usePreferences } from '@/hooks/usePreferences';
 import { getHousehold } from '@/lib/household-client';
+import { getActivePlan } from '@/lib/plan-client';
+import type { ActivePlanDto } from '@multichef/contracts';
 import { Greeting } from './components/Greeting';
 import { UrgentBlock, type UrgentItem } from './components/UrgentBlock';
 import { BudgetProgress } from './components/BudgetProgress';
@@ -30,9 +32,10 @@ import { RouletteLink } from './components/RouletteLink';
 export interface TodayClientDeps {
   listItems: typeof listItems;
   getHousehold: typeof getHousehold;
+  getActivePlan: typeof getActivePlan;
 }
 
-const defaultDeps: TodayClientDeps = { listItems, getHousehold };
+const defaultDeps: TodayClientDeps = { listItems, getHousehold, getActivePlan };
 
 export interface TodayClientProps {
   deps?: Partial<TodayClientDeps>;
@@ -50,6 +53,26 @@ function toUrgentItems(items: PantryItem[]): UrgentItem[] {
   }));
 }
 
+/** Audit round-7: UpcomingMeals was previously hardwired to null — the
+ * active plan (MC-051) is now the real source. Only entries from today
+ * onward are shown, mapped into the component's shape. */
+function toUpcomingMeals(plan: ActivePlanDto | null): {
+  entries: Array<{ recipeId: string; title: string; scheduledFor: string }>;
+} | null {
+  if (!plan) return null;
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const entries = plan.days
+    .filter((d) => d.date.slice(0, 10) >= todayIso)
+    .flatMap((d) =>
+      d.entries.map((e) => ({
+        recipeId: e.recipe.id,
+        title: e.recipe.title,
+        scheduledFor: d.date.slice(0, 10),
+      })),
+    );
+  return { entries };
+}
+
 export function TodayClient({ deps: depsOverride, now }: TodayClientProps): React.ReactElement {
   // Memoize the merged deps — a fresh object each render would re-fire
   // the pantry fetch loop (MC-023 lesson).
@@ -61,6 +84,20 @@ export function TodayClient({ deps: depsOverride, now }: TodayClientProps): Reac
   // Audit round-5: the weekly budget comes from the household record
   // (filled by onboarding registration or PATCH /household).
   const [budgetWeekKopecks, setBudgetWeekKopecks] = useState<number | null>(null);
+  const [activePlan, setActivePlan] = useState<ActivePlanDto | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    void deps
+      .getActivePlan()
+      .then((res) => {
+        if (cancelled || res.error) return;
+        setActivePlan(res.data);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [deps]);
   useEffect(() => {
     let cancelled = false;
     void deps
@@ -87,7 +124,7 @@ export function TodayClient({ deps: depsOverride, now }: TodayClientProps): Reac
       <BudgetProgress budgetWeekKopecks={budgetWeekKopecks} />
       <HeroButton pantrySize={pantry.items.length} />
       <QuickScenarios />
-      <UpcomingMeals activePlan={null} />
+      <UpcomingMeals activePlan={toUpcomingMeals(activePlan)} />
       <RouletteLink />
     </>
   );
