@@ -21,7 +21,8 @@ export class AppHttpException extends HttpException {
     // (INGREDIENT_NOT_FOUND, JOB_NOT_FOUND, CSRF_MISMATCH, ...) came
     // out as 500 INTERNAL_ERROR on the wire. Now the full envelope is
     // carried and the HTTP status is derived from STATUS_BY_CODE.
-    const status = STATUS_BY_CODE[(input.code ?? 'INTERNAL_ERROR') as keyof typeof STATUS_BY_CODE] ?? 500;
+    const status =
+      STATUS_BY_CODE[(input.code ?? 'INTERNAL_ERROR') as keyof typeof STATUS_BY_CODE] ?? 500;
     super(
       {
         code: input.code ?? 'INTERNAL_ERROR',
