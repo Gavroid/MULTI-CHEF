@@ -21,8 +21,18 @@ export interface GreetingProps {
 }
 
 export function Greeting({ now, name }: GreetingProps): React.ReactElement {
-  const [hour] = useState(() => (now ?? new Date()).getHours());
-  const { text, Icon } = greetingForHour(hour);
+  // Audit round-4 (React #418): SSR renders with the server clock while
+  // the client would re-render with its own — a guaranteed hydration
+  // mismatch. The browser hour is resolved AFTER mount (tests inject
+  // `now` and stay synchronous/SSR-safe).
+  const [hour, setHour] = useState<number | null>(() =>
+    now ? (now ?? new Date()).getHours() : null,
+  );
+  React.useEffect(() => {
+    if (hour === null) setHour(new Date().getHours());
+  }, [hour]);
+  const resolved = greetingForHour(hour ?? 12);
+  const { text, Icon } = hour === null ? { text: 'Привет', Icon: Sun } : resolved;
   return (
     <div className="mb-4 flex items-center gap-2" data-testid="greeting">
       <Icon size={20} className="text-[var(--color-primary)]" aria-hidden />

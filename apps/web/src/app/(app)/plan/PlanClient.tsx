@@ -9,7 +9,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Button, Card, Skeleton } from '@multichef/ui';
+import { Card, Skeleton } from '@multichef/ui';
 import type { ActivePlanDto } from '@multichef/contracts';
 import { getActivePlan, type PlanClientDeps } from '@/lib/plan-client';
 import { TabTitle } from '@/components/TabTitle';
@@ -104,9 +104,15 @@ export function PlanClient({ deps: depsOverride }: PlanClientProps): React.React
           <p className="text-body mb-3">
             Активного плана пока нет. Соберите неделю из того, что есть в холодильнике.
           </p>
-          <Button variant="primary" data-testid="plan-setup-cta">
-            <Link href="/plan/setup">Собрать план</Link>
-          </Button>
+          {/* Audit round-4: a <Link> inside <Button> is invalid HTML
+              (nested interactive elements) — link styled as the CTA. */}
+          <Link
+            href="/plan/setup"
+            className="inline-flex h-14 w-full items-center justify-center gap-2 rounded-[var(--radius-md)] bg-[var(--color-primary)] px-4 text-base font-semibold text-white hover:bg-[var(--color-primary-press)]"
+            data-testid="plan-setup-cta"
+          >
+            Собрать план
+          </Link>
         </Card>
       </>
     );
@@ -165,10 +171,11 @@ export function PlanClient({ deps: depsOverride }: PlanClientProps): React.React
         })}
       </div>
       <Card className="mb-6" data-testid="plan-regenerate">
-        <Link href="/plan/setup">
-          <Button variant="secondary" className="w-full">
-            Пересобрать план
-          </Button>
+        <Link
+          href="/plan/setup"
+          className="flex w-full items-center justify-center gap-2 rounded-[var(--radius-md)] border-[1.5px] border-[var(--color-border)] bg-transparent px-4 py-3 text-base font-semibold text-[var(--color-text)] hover:bg-[var(--color-surface-2)]"
+        >
+          Пересобрать план
         </Link>
       </Card>
     </>
