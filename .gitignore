@@ -51,3 +51,4 @@ apps/web/playwright/.cache/
 # Husky: track the hook scripts, ignore the runtime shim dir.
 .husky/_
 .handover/
+audit2.tgz
