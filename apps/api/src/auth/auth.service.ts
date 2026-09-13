@@ -37,6 +37,8 @@ export interface AuthResult {
 interface RegisterInput {
   email: string;
   password: string;
+  /** Audit round-5: the UI collects a family name and weekly budget. */
+  householdName?: string | undefined;
   guestProfile?:
     | {
         peopleCount?: number | undefined;
@@ -99,10 +101,17 @@ export class AuthService {
           passwordHash,
         },
       });
+      // Audit round-5: persist onboarding data (family name, headcount,
+      // weekly budget) — previously silently dropped.
       await tx.household.create({
         data: {
           id: householdId,
           ownerId: userId,
+          name: input.householdName ?? 'Моя семья',
+          defaultPeopleCount: input.guestProfile?.peopleCount ?? 2,
+          ...(input.guestProfile?.budgetWeekKopecks
+            ? { budgetWeekKopecks: input.guestProfile.budgetWeekKopecks }
+            : {}),
         },
       });
       await tx.householdMember.create({
