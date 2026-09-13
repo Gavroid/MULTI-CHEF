@@ -1,0 +1,57 @@
+{
+  "title": "Овощной суп из чеснока и маслин",
+  "description": "Овощной суп из чеснока и маслин — 160 ккал на порцию. Подготовка 10 мин, готовка 30 мин, 3 порции, сложность 2 из 3.",
+  "category": "SOUP",
+  "cuisines": ["американская"],
+  "seasons": ["ALL_YEAR"],
+  "diets": ["VEGETARIAN", "VEGAN", "GLUTEN_FREE"],
+  "mealTypes": ["LUNCH"],
+  "difficulty": 2,
+  "servings": 3,
+  "prepMinutes": 10,
+  "cookMinutes": 30,
+  "requiredAppliances": [],
+  "ingredients": [
+    {
+      "ingredient": "чеснок",
+      "quantity": 15,
+      "unit": "G",
+      "grams": 43
+    },
+    {
+      "ingredient": "маслины",
+      "quantity": 90,
+      "unit": "G",
+      "grams": 259
+    },
+    {
+      "ingredient": "базилик сушёный",
+      "quantity": 6,
+      "unit": "G",
+      "grams": 17
+    },
+    {
+      "ingredient": "соль",
+      "quantity": 9,
+      "unit": "G",
+      "grams": 26
+    }
+  ],
+  "instructions": [
+    "Нарежьте чесноком (undefined г) и маслинами (undefined г) одинаковыми кубиками — так они сварятся равномерно.",
+    "Вскипятите 1,5 л подсоленной воды, опустите чесноком и варите 10 минут.",
+    "Добавьте маслинами и варите ещё 10–15 минут до мягкости.",
+    "Заправьте undefined и попробуйте на соль.",
+    "Настаивайте под крышкой 10 минут — суп станет заметно насыщеннее."
+  ],
+  "imagePrompt": "Овощной суп из чеснока и маслин — готовое блюдо, домашняя подача, естественный дневной свет, ракурс 45 градусов, фотореалистично",
+  "imageAlt": "Овощной суп из чеснока и маслин — готовое блюдо",
+  "tags": [
+    "category:SOUP",
+    "cuisine:американская",
+    "season:ALL_YEAR",
+    "diet:VEGETARIAN",
+    "diet:VEGAN",
+    "diet:GLUTEN_FREE"
+  ]
+}

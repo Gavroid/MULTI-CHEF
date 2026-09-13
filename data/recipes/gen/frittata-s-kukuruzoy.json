@@ -1,0 +1,44 @@
+{
+  "title": "Фриттата с кукурузой",
+  "description": "Фриттата с кукурузой — 349 ккал на порцию. Подготовка 10 мин, готовка 15 мин, 2 порции, сложность 1 из 3.",
+  "category": "MAIN",
+  "cuisines": ["русская"],
+  "seasons": ["SUMMER"],
+  "diets": ["VEGETARIAN", "GLUTEN_FREE"],
+  "mealTypes": ["LUNCH", "DINNER"],
+  "difficulty": 1,
+  "servings": 2,
+  "prepMinutes": 10,
+  "cookMinutes": 15,
+  "requiredAppliances": [],
+  "ingredients": [
+    {
+      "ingredient": "яйцо куриное",
+      "quantity": 4,
+      "unit": "PIECE",
+      "grams": 220
+    },
+    {
+      "ingredient": "кукуруза",
+      "quantity": 180,
+      "unit": "G",
+      "grams": 180
+    },
+    {
+      "ingredient": "молоко (коровье)",
+      "quantity": 300,
+      "unit": "ML",
+      "grams": 300
+    }
+  ],
+  "instructions": [
+    "Взбейте 4 яйца (NaN г) с молоком (undefined г) и щепоткой соли.",
+    "Обжарьте нарезанный кукурузой (undefined г) на сковороде 4 минуты.",
+    "Влейте яичную смесь и готовьте на слабом огне 5–6 минут, приподнимая края лопаткой.",
+    "Перенесите сковороду под гриль на 3–4 минуты, чтобы верх схватился.",
+    "Нарежьте на секторы и подавайте тёплой — половина фриттаты на порцию."
+  ],
+  "imagePrompt": "Фриттата с кукурузой — готовое блюдо, домашняя подача, естественный дневной свет, ракурс 45 градусов, фотореалистично",
+  "imageAlt": "Фриттата с кукурузой — готовое блюдо",
+  "tags": ["category:MAIN", "cuisine:русская", "season:SUMMER", "diet:VEGETARIAN", "diet:GLUTEN_FREE"]
+}

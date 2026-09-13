@@ -1,0 +1,44 @@
+{
+  "title": "Фриттата с фенхелем",
+  "description": "Фриттата с фенхелем — 265 ккал на порцию. Подготовка 10 мин, готовка 15 мин, 3 порции, сложность 1 из 3.",
+  "category": "MAIN",
+  "cuisines": ["домашняя"],
+  "seasons": ["ALL_YEAR"],
+  "diets": ["VEGETARIAN", "GLUTEN_FREE"],
+  "mealTypes": ["LUNCH", "DINNER"],
+  "difficulty": 1,
+  "servings": 3,
+  "prepMinutes": 10,
+  "cookMinutes": 15,
+  "requiredAppliances": [],
+  "ingredients": [
+    {
+      "ingredient": "яйцо куриное",
+      "quantity": 6,
+      "unit": "PIECE",
+      "grams": 330
+    },
+    {
+      "ingredient": "фенхель",
+      "quantity": 210,
+      "unit": "G",
+      "grams": 210
+    },
+    {
+      "ingredient": "сливки 10%",
+      "quantity": 180,
+      "unit": "ML",
+      "grams": 180
+    }
+  ],
+  "instructions": [
+    "Взбейте 4 яйца (NaN г) с сливками (undefined г) и щепоткой соли.",
+    "Обжарьте нарезанный фенхелем (undefined г) на сковороде 4 минуты.",
+    "Влейте яичную смесь и готовьте на слабом огне 5–6 минут, приподнимая края лопаткой.",
+    "Перенесите сковороду под гриль на 3–4 минуты, чтобы верх схватился.",
+    "Нарежьте на секторы и подавайте тёплой — половина фриттаты на порцию."
+  ],
+  "imagePrompt": "Фриттата с фенхелем — готовое блюдо, домашняя подача, естественный дневной свет, ракурс 45 градусов, фотореалистично",
+  "imageAlt": "Фриттата с фенхелем — готовое блюдо",
+  "tags": ["category:MAIN", "cuisine:домашняя", "season:ALL_YEAR", "diet:VEGETARIAN", "diet:GLUTEN_FREE"]
+}

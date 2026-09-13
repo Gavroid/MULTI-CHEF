@@ -1,0 +1,57 @@
+{
+  "title": "Овощной суп из картофеля и маслин",
+  "description": "Овощной суп из картофеля и маслин — 151 ккал на порцию. Подготовка 10 мин, готовка 30 мин, 4 порции, сложность 2 из 3.",
+  "category": "SOUP",
+  "cuisines": ["европейская"],
+  "seasons": ["ALL_YEAR"],
+  "diets": ["VEGETARIAN", "VEGAN", "GLUTEN_FREE"],
+  "mealTypes": ["LUNCH"],
+  "difficulty": 2,
+  "servings": 4,
+  "prepMinutes": 10,
+  "cookMinutes": 30,
+  "requiredAppliances": [],
+  "ingredients": [
+    {
+      "ingredient": "картофель",
+      "quantity": 480,
+      "unit": "G",
+      "grams": 480
+    },
+    {
+      "ingredient": "маслины",
+      "quantity": 120,
+      "unit": "G",
+      "grams": 120
+    },
+    {
+      "ingredient": "куркума",
+      "quantity": 12,
+      "unit": "G",
+      "grams": 12
+    },
+    {
+      "ingredient": "аджика",
+      "quantity": 40,
+      "unit": "G",
+      "grams": 40
+    }
+  ],
+  "instructions": [
+    "Нарежьте картофелем (undefined г) и маслинами (undefined г) одинаковыми кубиками — так они сварятся равномерно.",
+    "Вскипятите 1,5 л подсоленной воды, опустите картофелем и варите 10 минут.",
+    "Добавьте маслинами и варите ещё 10–15 минут до мягкости.",
+    "Заправьте undefined и попробуйте на соль.",
+    "Настаивайте под крышкой 10 минут — суп станет заметно насыщеннее."
+  ],
+  "imagePrompt": "Овощной суп из картофеля и маслин — готовое блюдо, домашняя подача, естественный дневной свет, ракурс 45 градусов, фотореалистично",
+  "imageAlt": "Овощной суп из картофеля и маслин — готовое блюдо",
+  "tags": [
+    "category:SOUP",
+    "cuisine:европейская",
+    "season:ALL_YEAR",
+    "diet:VEGETARIAN",
+    "diet:VEGAN",
+    "diet:GLUTEN_FREE"
+  ]
+}

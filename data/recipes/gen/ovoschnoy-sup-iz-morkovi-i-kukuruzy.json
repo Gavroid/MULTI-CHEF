@@ -1,0 +1,50 @@
+{
+  "title": "Овощной суп из моркови и кукурузы",
+  "description": "Овощной суп из моркови и кукурузы — 177 ккал на порцию. Подготовка 10 мин, готовка 30 мин, 5 порции, сложность 3 из 3.",
+  "category": "SOUP",
+  "cuisines": ["русская"],
+  "seasons": ["SUMMER"],
+  "diets": ["VEGETARIAN", "VEGAN", "GLUTEN_FREE"],
+  "mealTypes": ["LUNCH"],
+  "difficulty": 3,
+  "servings": 5,
+  "prepMinutes": 10,
+  "cookMinutes": 30,
+  "requiredAppliances": [],
+  "ingredients": [
+    {
+      "ingredient": "морковь",
+      "quantity": 350,
+      "unit": "G",
+      "grams": 490
+    },
+    {
+      "ingredient": "кукуруза",
+      "quantity": 450,
+      "unit": "G",
+      "grams": 630
+    },
+    {
+      "ingredient": "кориандр молотый",
+      "quantity": 15,
+      "unit": "G",
+      "grams": 21
+    },
+    {
+      "ingredient": "корица",
+      "quantity": 15,
+      "unit": "G",
+      "grams": 21
+    }
+  ],
+  "instructions": [
+    "Нарежьте морковью (undefined г) и кукурузой (undefined г) одинаковыми кубиками — так они сварятся равномерно.",
+    "Вскипятите 1,5 л подсоленной воды, опустите морковью и варите 10 минут.",
+    "Добавьте кукурузой и варите ещё 10–15 минут до мягкости.",
+    "Заправьте undefined и попробуйте на соль.",
+    "Настаивайте под крышкой 10 минут — суп станет заметно насыщеннее."
+  ],
+  "imagePrompt": "Овощной суп из моркови и кукурузы — готовое блюдо, домашняя подача, естественный дневной свет, ракурс 45 градусов, фотореалистично",
+  "imageAlt": "Овощной суп из моркови и кукурузы — готовое блюдо",
+  "tags": ["category:SOUP", "cuisine:русская", "season:SUMMER", "diet:VEGETARIAN", "diet:VEGAN", "diet:GLUTEN_FREE"]
+}

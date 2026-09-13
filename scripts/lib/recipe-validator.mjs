@@ -125,8 +125,10 @@ export function validateCard(card, ctx) {
     f /= per;
     c /= per;
     const isDrink = card.category === 'DRINK';
+    const light = card.category === 'SALAD' || card.category === 'DESSERT';
     if (isDrink && (kcal < 0 || kcal > 500)) err(`KCAL:${Math.round(kcal)}`);
-    if (!isDrink && (kcal < 120 || kcal > 1200)) err(`KCAL:${Math.round(kcal)}`);
+    if (!isDrink && light && (kcal < 60 || kcal > 1200)) err(`KCAL:${Math.round(kcal)}`);
+    if (!isDrink && !light && (kcal < 120 || kcal > 1200)) err(`KCAL:${Math.round(kcal)}`);
     const macroKcal = 4 * p + 9 * f + 4 * c;
     if (macroKcal > 0 && Math.abs(macroKcal - kcal) / macroKcal > 0.25) err('KCAL:macroMismatch');
     card._perServing = {

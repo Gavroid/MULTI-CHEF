@@ -1,0 +1,50 @@
+{
+  "title": "Овощной суп из батата и баклажана",
+  "description": "Овощной суп из батата и баклажана — 150 ккал на порцию. Подготовка 10 мин, готовка 30 мин, 2 порции, сложность 2 из 3.",
+  "category": "SOUP",
+  "cuisines": ["домашняя"],
+  "seasons": ["SUMMER"],
+  "diets": ["VEGETARIAN", "VEGAN", "GLUTEN_FREE"],
+  "mealTypes": ["LUNCH"],
+  "difficulty": 2,
+  "servings": 2,
+  "prepMinutes": 10,
+  "cookMinutes": 30,
+  "requiredAppliances": [],
+  "ingredients": [
+    {
+      "ingredient": "батат",
+      "quantity": 240,
+      "unit": "G",
+      "grams": 240
+    },
+    {
+      "ingredient": "баклажан",
+      "quantity": 220,
+      "unit": "G",
+      "grams": 220
+    },
+    {
+      "ingredient": "паприка",
+      "quantity": 6,
+      "unit": "G",
+      "grams": 6
+    },
+    {
+      "ingredient": "хмели-сунели",
+      "quantity": 8,
+      "unit": "G",
+      "grams": 8
+    }
+  ],
+  "instructions": [
+    "Нарежьте бататом (undefined г) и баклажаном (undefined г) одинаковыми кубиками — так они сварятся равномерно.",
+    "Вскипятите 1,5 л подсоленной воды, опустите бататом и варите 10 минут.",
+    "Добавьте баклажаном и варите ещё 10–15 минут до мягкости.",
+    "Заправьте undefined и попробуйте на соль.",
+    "Настаивайте под крышкой 10 минут — суп станет заметно насыщеннее."
+  ],
+  "imagePrompt": "Овощной суп из батата и баклажана — готовое блюдо, домашняя подача, естественный дневной свет, ракурс 45 градусов, фотореалистично",
+  "imageAlt": "Овощной суп из батата и баклажана — готовое блюдо",
+  "tags": ["category:SOUP", "cuisine:домашняя", "season:SUMMER", "diet:VEGETARIAN", "diet:VEGAN", "diet:GLUTEN_FREE"]
+}

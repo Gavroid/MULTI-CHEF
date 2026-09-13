@@ -1,0 +1,50 @@
+{
+  "title": "Овощной суп из батата и помидоров",
+  "description": "Овощной суп из батата и помидоров — 135 ккал на порцию. Подготовка 10 мин, готовка 30 мин, 6 порции, сложность 2 из 3.",
+  "category": "SOUP",
+  "cuisines": ["русская"],
+  "seasons": ["SUMMER"],
+  "diets": ["VEGETARIAN", "VEGAN", "GLUTEN_FREE"],
+  "mealTypes": ["LUNCH"],
+  "difficulty": 2,
+  "servings": 6,
+  "prepMinutes": 10,
+  "cookMinutes": 30,
+  "requiredAppliances": [],
+  "ingredients": [
+    {
+      "ingredient": "батат",
+      "quantity": 720,
+      "unit": "G",
+      "grams": 720
+    },
+    {
+      "ingredient": "помидор",
+      "quantity": 540,
+      "unit": "G",
+      "grams": 540
+    },
+    {
+      "ingredient": "перец чили",
+      "quantity": 30,
+      "unit": "G",
+      "grams": 30
+    },
+    {
+      "ingredient": "хмели-сунели",
+      "quantity": 24,
+      "unit": "G",
+      "grams": 24
+    }
+  ],
+  "instructions": [
+    "Нарежьте бататом (undefined г) и помидорами (undefined г) одинаковыми кубиками — так они сварятся равномерно.",
+    "Вскипятите 1,5 л подсоленной воды, опустите бататом и варите 10 минут.",
+    "Добавьте помидорами и варите ещё 10–15 минут до мягкости.",
+    "Заправьте undefined и попробуйте на соль.",
+    "Настаивайте под крышкой 10 минут — суп станет заметно насыщеннее."
+  ],
+  "imagePrompt": "Овощной суп из батата и помидоров — готовое блюдо, домашняя подача, естественный дневной свет, ракурс 45 градусов, фотореалистично",
+  "imageAlt": "Овощной суп из батата и помидоров — готовое блюдо",
+  "tags": ["category:SOUP", "cuisine:русская", "season:SUMMER", "diet:VEGETARIAN", "diet:VEGAN", "diet:GLUTEN_FREE"]
+}

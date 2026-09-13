@@ -1,0 +1,57 @@
+{
+  "title": "Салат из оливок и тыквы с бри",
+  "description": "Салат из оливок и тыквы с бри — 408 ккал на порцию. Подготовка 12 мин, готовка 5 мин, 5 порции, сложность 1 из 3.",
+  "category": "SALAD",
+  "cuisines": ["домашняя"],
+  "seasons": ["AUTUMN"],
+  "diets": ["VEGETARIAN", "GLUTEN_FREE"],
+  "mealTypes": ["LUNCH", "DINNER"],
+  "difficulty": 1,
+  "servings": 5,
+  "prepMinutes": 12,
+  "cookMinutes": 5,
+  "requiredAppliances": [],
+  "ingredients": [
+    {
+      "ingredient": "оливки",
+      "quantity": 150,
+      "unit": "G",
+      "grams": 150
+    },
+    {
+      "ingredient": "тыква",
+      "quantity": 650,
+      "unit": "G",
+      "grams": 650
+    },
+    {
+      "ingredient": "щавель",
+      "quantity": 300,
+      "unit": "G",
+      "grams": 300
+    },
+    {
+      "ingredient": "сыр Бри",
+      "quantity": 250,
+      "unit": "G",
+      "grams": 250
+    },
+    {
+      "ingredient": "майонез",
+      "quantity": 125,
+      "unit": "G",
+      "grams": 125
+    }
+  ],
+  "instructions": [
+    "Нарежьте оливками (undefined г) и тыквой (undefined г) одинаковой соломкой или кубиками.",
+    "Добавьте бри (undefined г), затем порвите руками щавелем (undefined г) — так салат остаётся нежным.",
+    "Соедините в большой миске и аккуратно перемешайте.",
+    "Заправьте майонезом (undefined г), посолите и поперчите.",
+    "Подавайте сразу — свежие салаты не хранят.",
+    "Готовое блюдо рассчитано на 5 порции — примерно 295 г каждая; всего продуктов 1475 г, общее время 17 минут. Приятного аппетита!"
+  ],
+  "imagePrompt": "Салат из оливок и тыквы с бри — готовое блюдо, домашняя подача, естественный дневной свет, ракурс 45 градусов, фотореалистично",
+  "imageAlt": "Салат из оливок и тыквы с бри — готовое блюдо",
+  "tags": ["category:SALAD", "cuisine:домашняя", "season:AUTUMN", "diet:VEGETARIAN", "diet:GLUTEN_FREE"]
+}

@@ -1,0 +1,57 @@
+{
+  "title": "Овощной суп из картофеля и кабачка",
+  "description": "Овощной суп из картофеля и кабачка — 140 ккал на порцию. Подготовка 10 мин, готовка 30 мин, 4 порции, сложность 1 из 3.",
+  "category": "SOUP",
+  "cuisines": ["американская"],
+  "seasons": ["SUMMER"],
+  "diets": ["VEGETARIAN", "VEGAN", "GLUTEN_FREE"],
+  "mealTypes": ["LUNCH"],
+  "difficulty": 1,
+  "servings": 4,
+  "prepMinutes": 10,
+  "cookMinutes": 30,
+  "requiredAppliances": [],
+  "ingredients": [
+    {
+      "ingredient": "картофель",
+      "quantity": 480,
+      "unit": "G",
+      "grams": 480
+    },
+    {
+      "ingredient": "кабачок",
+      "quantity": 520,
+      "unit": "G",
+      "grams": 520
+    },
+    {
+      "ingredient": "кумин",
+      "quantity": 12,
+      "unit": "G",
+      "grams": 12
+    },
+    {
+      "ingredient": "перец чёрный",
+      "quantity": 8,
+      "unit": "G",
+      "grams": 8
+    }
+  ],
+  "instructions": [
+    "Нарежьте картофелем (undefined г) и кабачком (undefined г) одинаковыми кубиками — так они сварятся равномерно.",
+    "Вскипятите 1,5 л подсоленной воды, опустите картофелем и варите 10 минут.",
+    "Добавьте кабачком и варите ещё 10–15 минут до мягкости.",
+    "Заправьте undefined и попробуйте на соль.",
+    "Настаивайте под крышкой 10 минут — суп станет заметно насыщеннее."
+  ],
+  "imagePrompt": "Овощной суп из картофеля и кабачка — готовое блюдо, домашняя подача, естественный дневной свет, ракурс 45 градусов, фотореалистично",
+  "imageAlt": "Овощной суп из картофеля и кабачка — готовое блюдо",
+  "tags": [
+    "category:SOUP",
+    "cuisine:американская",
+    "season:SUMMER",
+    "diet:VEGETARIAN",
+    "diet:VEGAN",
+    "diet:GLUTEN_FREE"
+  ]
+}

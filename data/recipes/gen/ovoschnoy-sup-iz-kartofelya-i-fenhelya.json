@@ -1,0 +1,57 @@
+{
+  "title": "Овощной суп из картофеля и фенхеля",
+  "description": "Овощной суп из картофеля и фенхеля — 134 ккал на порцию. Подготовка 10 мин, готовка 30 мин, 5 порции, сложность 2 из 3.",
+  "category": "SOUP",
+  "cuisines": ["европейская"],
+  "seasons": ["ALL_YEAR"],
+  "diets": ["VEGETARIAN", "VEGAN", "GLUTEN_FREE"],
+  "mealTypes": ["LUNCH"],
+  "difficulty": 2,
+  "servings": 5,
+  "prepMinutes": 10,
+  "cookMinutes": 30,
+  "requiredAppliances": [],
+  "ingredients": [
+    {
+      "ingredient": "картофель",
+      "quantity": 600,
+      "unit": "G",
+      "grams": 600
+    },
+    {
+      "ingredient": "фенхель",
+      "quantity": 350,
+      "unit": "G",
+      "grams": 350
+    },
+    {
+      "ingredient": "корица",
+      "quantity": 15,
+      "unit": "G",
+      "grams": 15
+    },
+    {
+      "ingredient": "хмели-сунели",
+      "quantity": 20,
+      "unit": "G",
+      "grams": 20
+    }
+  ],
+  "instructions": [
+    "Нарежьте картофелем (undefined г) и фенхелем (undefined г) одинаковыми кубиками — так они сварятся равномерно.",
+    "Вскипятите 1,5 л подсоленной воды, опустите картофелем и варите 10 минут.",
+    "Добавьте фенхелем и варите ещё 10–15 минут до мягкости.",
+    "Заправьте undefined и попробуйте на соль.",
+    "Настаивайте под крышкой 10 минут — суп станет заметно насыщеннее."
+  ],
+  "imagePrompt": "Овощной суп из картофеля и фенхеля — готовое блюдо, домашняя подача, естественный дневной свет, ракурс 45 градусов, фотореалистично",
+  "imageAlt": "Овощной суп из картофеля и фенхеля — готовое блюдо",
+  "tags": [
+    "category:SOUP",
+    "cuisine:европейская",
+    "season:ALL_YEAR",
+    "diet:VEGETARIAN",
+    "diet:VEGAN",
+    "diet:GLUTEN_FREE"
+  ]
+}

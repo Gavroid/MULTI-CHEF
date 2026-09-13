@@ -1,0 +1,44 @@
+{
+  "title": "Фриттата с оливками",
+  "description": "Фриттата с оливками — 278 ккал на порцию. Подготовка 10 мин, готовка 15 мин, 5 порции, сложность 2 из 3.",
+  "category": "MAIN",
+  "cuisines": ["русская"],
+  "seasons": ["ALL_YEAR"],
+  "diets": ["VEGETARIAN", "GLUTEN_FREE"],
+  "mealTypes": ["LUNCH", "DINNER"],
+  "difficulty": 2,
+  "servings": 5,
+  "prepMinutes": 10,
+  "cookMinutes": 15,
+  "requiredAppliances": [],
+  "ingredients": [
+    {
+      "ingredient": "яйцо куриное",
+      "quantity": 10,
+      "unit": "PIECE",
+      "grams": 550
+    },
+    {
+      "ingredient": "оливки",
+      "quantity": 150,
+      "unit": "G",
+      "grams": 150
+    },
+    {
+      "ingredient": "сливки 10%",
+      "quantity": 300,
+      "unit": "ML",
+      "grams": 300
+    }
+  ],
+  "instructions": [
+    "Взбейте 4 яйца (NaN г) с сливками (undefined г) и щепоткой соли.",
+    "Обжарьте нарезанный оливками (undefined г) на сковороде 4 минуты.",
+    "Влейте яичную смесь и готовьте на слабом огне 5–6 минут, приподнимая края лопаткой.",
+    "Перенесите сковороду под гриль на 3–4 минуты, чтобы верх схватился.",
+    "Нарежьте на секторы и подавайте тёплой — половина фриттаты на порцию."
+  ],
+  "imagePrompt": "Фриттата с оливками — готовое блюдо, домашняя подача, естественный дневной свет, ракурс 45 градусов, фотореалистично",
+  "imageAlt": "Фриттата с оливками — готовое блюдо",
+  "tags": ["category:MAIN", "cuisine:русская", "season:ALL_YEAR", "diet:VEGETARIAN", "diet:GLUTEN_FREE"]
+}

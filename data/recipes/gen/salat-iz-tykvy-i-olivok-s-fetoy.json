@@ -1,0 +1,57 @@
+{
+  "title": "Салат из тыквы и оливок с фетой",
+  "description": "Салат из тыквы и оливок с фетой — 260 ккал на порцию. Подготовка 12 мин, готовка 5 мин, 5 порции, сложность 2 из 3.",
+  "category": "SALAD",
+  "cuisines": ["русская"],
+  "seasons": ["AUTUMN"],
+  "diets": ["VEGETARIAN", "GLUTEN_FREE"],
+  "mealTypes": ["LUNCH", "DINNER"],
+  "difficulty": 2,
+  "servings": 5,
+  "prepMinutes": 12,
+  "cookMinutes": 5,
+  "requiredAppliances": [],
+  "ingredients": [
+    {
+      "ingredient": "тыква",
+      "quantity": 650,
+      "unit": "G",
+      "grams": 650
+    },
+    {
+      "ingredient": "оливки",
+      "quantity": 150,
+      "unit": "G",
+      "grams": 150
+    },
+    {
+      "ingredient": "шпинат",
+      "quantity": 300,
+      "unit": "G",
+      "grams": 300
+    },
+    {
+      "ingredient": "сыр Фета",
+      "quantity": 250,
+      "unit": "G",
+      "grams": 250
+    },
+    {
+      "ingredient": "маслины",
+      "quantity": 150,
+      "unit": "G",
+      "grams": 150
+    }
+  ],
+  "instructions": [
+    "Нарежьте тыквой (undefined г) и оливками (undefined г) одинаковой соломкой или кубиками.",
+    "Добавьте фетой (undefined г), затем порвите руками шпинатом (undefined г) — так салат остаётся нежным.",
+    "Соедините в большой миске и аккуратно перемешайте.",
+    "Заправьте маслинами (undefined г), посолите и поперчите.",
+    "Подавайте сразу — свежие салаты не хранят.",
+    "Готовое блюдо рассчитано на 5 порции — примерно 300 г каждая; всего продуктов 1500 г, общее время 17 минут. Приятного аппетита!"
+  ],
+  "imagePrompt": "Салат из тыквы и оливок с фетой — готовое блюдо, домашняя подача, естественный дневной свет, ракурс 45 градусов, фотореалистично",
+  "imageAlt": "Салат из тыквы и оливок с фетой — готовое блюдо",
+  "tags": ["category:SALAD", "cuisine:русская", "season:AUTUMN", "diet:VEGETARIAN", "diet:GLUTEN_FREE"]
+}

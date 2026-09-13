@@ -1,0 +1,50 @@
+{
+  "title": "Овощной суп из чеснока и кукурузы",
+  "description": "Овощной суп из чеснока и кукурузы — 147 ккал на порцию. Подготовка 10 мин, готовка 30 мин, 2 порции, сложность 1 из 3.",
+  "category": "SOUP",
+  "cuisines": ["русская"],
+  "seasons": ["SUMMER"],
+  "diets": ["VEGETARIAN", "VEGAN", "GLUTEN_FREE"],
+  "mealTypes": ["LUNCH"],
+  "difficulty": 1,
+  "servings": 2,
+  "prepMinutes": 10,
+  "cookMinutes": 30,
+  "requiredAppliances": [],
+  "ingredients": [
+    {
+      "ingredient": "чеснок",
+      "quantity": 10,
+      "unit": "G",
+      "grams": 14
+    },
+    {
+      "ingredient": "кукуруза",
+      "quantity": 180,
+      "unit": "G",
+      "grams": 252
+    },
+    {
+      "ingredient": "соль",
+      "quantity": 6,
+      "unit": "G",
+      "grams": 8
+    },
+    {
+      "ingredient": "мускатный орех",
+      "quantity": 4,
+      "unit": "G",
+      "grams": 6
+    }
+  ],
+  "instructions": [
+    "Нарежьте чесноком (undefined г) и кукурузой (undefined г) одинаковыми кубиками — так они сварятся равномерно.",
+    "Вскипятите 1,5 л подсоленной воды, опустите чесноком и варите 10 минут.",
+    "Добавьте кукурузой и варите ещё 10–15 минут до мягкости.",
+    "Заправьте undefined и попробуйте на соль.",
+    "Настаивайте под крышкой 10 минут — суп станет заметно насыщеннее."
+  ],
+  "imagePrompt": "Овощной суп из чеснока и кукурузы — готовое блюдо, домашняя подача, естественный дневной свет, ракурс 45 градусов, фотореалистично",
+  "imageAlt": "Овощной суп из чеснока и кукурузы — готовое блюдо",
+  "tags": ["category:SOUP", "cuisine:русская", "season:SUMMER", "diet:VEGETARIAN", "diet:VEGAN", "diet:GLUTEN_FREE"]
+}

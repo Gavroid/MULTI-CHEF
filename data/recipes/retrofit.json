@@ -1,0 +1,1347 @@
+[
+  {
+    "slug": "yayca-otvarnye",
+    "title": "Яйца отварные",
+    "category": "BREAKFAST"
+  },
+  {
+    "slug": "salat-s-yaycom-i-zelenym-lukom",
+    "title": "Салат с яйцом и зелёным луком",
+    "category": "BREAKFAST"
+  },
+  {
+    "slug": "vatrushki",
+    "title": "Ватрушки",
+    "category": "BREAKFAST"
+  },
+  {
+    "slug": "syrnye-tosty",
+    "title": "Сырные тосты",
+    "category": "BREAKFAST"
+  },
+  {
+    "slug": "mannaya-kasha",
+    "title": "Манная каша",
+    "category": "BREAKFAST"
+  },
+  {
+    "slug": "oladi-s-yablokom",
+    "title": "Оладьи с яблоком",
+    "category": "BREAKFAST"
+  },
+  {
+    "slug": "kasha-yachnaya-s-maslom",
+    "title": "Каша ячная с маслом",
+    "category": "BREAKFAST"
+  },
+  {
+    "slug": "syrniki-s-izyumom",
+    "title": "Сырники с изюмом",
+    "category": "BREAKFAST"
+  },
+  {
+    "slug": "kasha-ovsyanaya-s-yablokom-i-koricey",
+    "title": "Каша овсяная с яблоком и корицей",
+    "category": "BREAKFAST"
+  },
+  {
+    "slug": "kasha-risovaya-s-izyumom",
+    "title": "Каша рисовая с изюмом",
+    "category": "BREAKFAST"
+  },
+  {
+    "slug": "ovsyanoblin",
+    "title": "Овсяноблин",
+    "category": "BREAKFAST"
+  },
+  {
+    "slug": "kurinyy-sup-s-risom",
+    "title": "Куриный суп с рисом",
+    "category": "SOUP"
+  },
+  {
+    "slug": "sup-s-vermishelyu",
+    "title": "Суп с вермишелью",
+    "category": "SOUP"
+  },
+  {
+    "slug": "harcho",
+    "title": "Харчо",
+    "category": "SOUP"
+  },
+  {
+    "slug": "solyanka-myasnaya",
+    "title": "Солянка мясная",
+    "category": "SOUP"
+  },
+  {
+    "slug": "uha-iz-golovy",
+    "title": "Уха из головы",
+    "category": "SOUP"
+  },
+  {
+    "slug": "okroshka-na-kefire",
+    "title": "Окрошка на кефире",
+    "category": "SOUP"
+  },
+  {
+    "slug": "svekolnik-holodnyy",
+    "title": "Свекольник холодный",
+    "category": "SOUP"
+  },
+  {
+    "slug": "salat-iz-svekly-s-chesnokom",
+    "title": "Салат из свёклы с чесноком",
+    "category": "SALAD"
+  },
+  {
+    "slug": "sup-s-pelmenyami",
+    "title": "Суп с пельменями",
+    "category": "SOUP"
+  },
+  {
+    "slug": "molochnyy-sup-s-lapshoy",
+    "title": "Молочный суп с лапшой",
+    "category": "SOUP"
+  },
+  {
+    "slug": "sup-tomatnyy-s-risom",
+    "title": "Суп томатный с рисом",
+    "category": "SOUP"
+  },
+  {
+    "slug": "uha-s-pshenom",
+    "title": "Уха с пшеном",
+    "category": "SOUP"
+  },
+  {
+    "slug": "salat-vinegret-s-seledkoy",
+    "title": "Салат винегрет с селёдкой",
+    "category": "SALAD"
+  },
+  {
+    "slug": "mimoza",
+    "title": "Мимоза",
+    "category": "SALAD"
+  },
+  {
+    "slug": "kurica-gril-v-duhovke",
+    "title": "Курица гриль в духовке",
+    "category": "MAIN"
+  },
+  {
+    "slug": "salat-s-pomidorami-i-lukom",
+    "title": "Салат с помидорами и луком",
+    "category": "SALAD"
+  },
+  {
+    "slug": "salat-s-kapustoy-i-ogurcom",
+    "title": "Салат с капустой и огурцом",
+    "category": "SALAD"
+  },
+  {
+    "slug": "vareniki-s-kartoshkoy",
+    "title": "Вареники с картошкой",
+    "category": "MAIN"
+  },
+  {
+    "slug": "golubcy",
+    "title": "Голубцы",
+    "category": "MAIN"
+  },
+  {
+    "slug": "sup-chechevichnyy",
+    "title": "Суп чечевичный",
+    "category": "SOUP"
+  },
+  {
+    "slug": "shashlyk-baraniy",
+    "title": "Шашлык бараний",
+    "category": "MAIN"
+  },
+  {
+    "slug": "manty",
+    "title": "Манты",
+    "category": "MAIN"
+  },
+  {
+    "slug": "chahohbili",
+    "title": "Чахохбили",
+    "category": "MAIN"
+  },
+  {
+    "slug": "beshbarmak",
+    "title": "Бешбармак",
+    "category": "MAIN"
+  },
+  {
+    "slug": "pasta-boloneze",
+    "title": "Паста болоньезе",
+    "category": "MAIN"
+  },
+  {
+    "slug": "picca-margarita",
+    "title": "Пицца маргарита",
+    "category": "MAIN"
+  },
+  {
+    "slug": "salat-s-govyadinoy-i-rukkoloy",
+    "title": "Салат с говядиной и рукколой",
+    "category": "SALAD"
+  },
+  {
+    "slug": "kartofelnaya-zapekanka-s-syrom",
+    "title": "Картофельная запеканка с сыром",
+    "category": "MAIN"
+  },
+  {
+    "slug": "kurinye-krylyshki-v-soevom-souse",
+    "title": "Куриные крылышки в соевом соусе",
+    "category": "MAIN"
+  },
+  {
+    "slug": "ratatuy",
+    "title": "Рататуй",
+    "category": "MAIN"
+  },
+  {
+    "slug": "lecho",
+    "title": "Лечо",
+    "category": "MAIN"
+  },
+  {
+    "slug": "grechka-v-multivarke",
+    "title": "Гречка в мультиварке",
+    "category": "MAIN"
+  },
+  {
+    "slug": "gulyash-iz-govyadiny",
+    "title": "Гуляш из говядины",
+    "category": "MAIN"
+  },
+  {
+    "slug": "zharkoe-s-kuricey",
+    "title": "Жаркое с курицей",
+    "category": "MAIN"
+  },
+  {
+    "slug": "svinina-s-chernoslivom",
+    "title": "Свинина с черносливом",
+    "category": "MAIN"
+  },
+  {
+    "slug": "spagetti-otvarnye",
+    "title": "Спагетти отварные",
+    "category": "MAIN"
+  },
+  {
+    "slug": "shnicel",
+    "title": "Шницель",
+    "category": "MAIN"
+  },
+  {
+    "slug": "plov-s-govyadinoy",
+    "title": "Плов с говядиной",
+    "category": "MAIN"
+  },
+  {
+    "slug": "kurica-teriyaki",
+    "title": "Курица терияки",
+    "category": "MAIN"
+  },
+  {
+    "slug": "svinina-v-gorchichnom-souse",
+    "title": "Свинина в горчичном соусе",
+    "category": "MAIN"
+  },
+  {
+    "slug": "plov-iz-baraniny",
+    "title": "Плов из баранины",
+    "category": "MAIN"
+  },
+  {
+    "slug": "kurinye-bedra-v-duhovke",
+    "title": "Куриные бёдра в духовке",
+    "category": "MAIN"
+  },
+  {
+    "slug": "shashlyk-iz-kuricy",
+    "title": "Шашлык из курицы",
+    "category": "MAIN"
+  },
+  {
+    "slug": "kotlety-iz-kapusty",
+    "title": "Котлеты из капусты",
+    "category": "MAIN"
+  },
+  {
+    "slug": "zapekanka-iz-kabachkov",
+    "title": "Запеканка из кабачков",
+    "category": "MAIN"
+  },
+  {
+    "slug": "kartofel-s-gribami-v-gorshochke",
+    "title": "Картофель с грибами в горшочке",
+    "category": "MAIN"
+  },
+  {
+    "slug": "golubcy-v-multivarke",
+    "title": "Голубцы в мультиварке",
+    "category": "MAIN"
+  },
+  {
+    "slug": "ovoschi-gril",
+    "title": "Овощи гриль",
+    "category": "SIDE"
+  },
+  {
+    "slug": "batat-zapechennyy",
+    "title": "Батат запечённый",
+    "category": "SIDE"
+  },
+  {
+    "slug": "sharlotka-s-yablokami",
+    "title": "Шарлотка с яблоками",
+    "category": "DESSERT"
+  },
+  {
+    "slug": "kinoa-otvarnaya",
+    "title": "Киноа отварная",
+    "category": "SIDE"
+  },
+  {
+    "slug": "kapusta-cvetnaya-v-klyare",
+    "title": "Капуста цветная в кляре",
+    "category": "SIDE"
+  },
+  {
+    "slug": "morozhenoe-domashnee",
+    "title": "Мороженое домашнее",
+    "category": "DESSERT"
+  },
+  {
+    "slug": "bliny-s-varenem",
+    "title": "Блины с вареньем",
+    "category": "DESSERT"
+  },
+  {
+    "slug": "keks-tvorozhnyy",
+    "title": "Кекс творожный",
+    "category": "DESSERT"
+  },
+  {
+    "slug": "napoleon",
+    "title": "Наполеон",
+    "category": "DESSERT"
+  },
+  {
+    "slug": "panna-kotta",
+    "title": "Панна-котта",
+    "category": "DESSERT"
+  },
+  {
+    "slug": "tvorozhnyy-desert-s-yagodami",
+    "title": "Творожный десерт с ягодами",
+    "category": "DESSERT"
+  },
+  {
+    "slug": "fruktovyy-salat",
+    "title": "Фруктовый салат",
+    "category": "DESSERT"
+  },
+  {
+    "slug": "kisel-yagodnyy",
+    "title": "Кисель ягодный",
+    "category": "BEVERAGE"
+  },
+  {
+    "slug": "pirog-s-tvorogom",
+    "title": "Пирог с творогом",
+    "category": "DESSERT"
+  },
+  {
+    "slug": "maffiny-s-chernikoy",
+    "title": "Маффины с черникой",
+    "category": "DESSERT"
+  },
+  {
+    "slug": "chay-travyanoy",
+    "title": "Чай травяной",
+    "category": "BEVERAGE"
+  },
+  {
+    "slug": "kvas-domashniy",
+    "title": "Квас домашний",
+    "category": "BEVERAGE"
+  },
+  {
+    "slug": "sok-apelsinovyy-svezhevyzhatyy",
+    "title": "Сок апельсиновый свежевыжатый",
+    "category": "BEVERAGE"
+  },
+  {
+    "slug": "kakao-na-moloke",
+    "title": "Какао на молоке",
+    "category": "BEVERAGE"
+  },
+  {
+    "slug": "omlet-s-pomidorami",
+    "title": "Омлет с помидорами",
+    "category": "BREAKFAST"
+  },
+  {
+    "slug": "yaichnica-glazunya-s-bekonom",
+    "title": "Яичница-глазунья с беконом",
+    "category": "BREAKFAST"
+  },
+  {
+    "slug": "syrnyy-sup-s-kuricey",
+    "title": "Сырный суп с курицей",
+    "category": "SOUP"
+  },
+  {
+    "slug": "buterbrody-s-yaycom",
+    "title": "Бутерброды с яйцом",
+    "category": "BREAKFAST"
+  },
+  {
+    "slug": "bliny-na-moloke",
+    "title": "Блины на молоке",
+    "category": "BREAKFAST"
+  },
+  {
+    "slug": "oladi-na-kefire",
+    "title": "Оладьи на кефире",
+    "category": "BREAKFAST"
+  },
+  {
+    "slug": "grechnevaya-kasha-s-molokom",
+    "title": "Гречневая каша с молоком",
+    "category": "BREAKFAST"
+  },
+  {
+    "slug": "shurpa",
+    "title": "Шурпа",
+    "category": "SOUP"
+  },
+  {
+    "slug": "myusli-s-molokom-i-bananom",
+    "title": "Мюсли с молоком и бананом",
+    "category": "BREAKFAST"
+  },
+  {
+    "slug": "sendvich-s-kuricey",
+    "title": "Сэндвич с курицей",
+    "category": "BREAKFAST"
+  },
+  {
+    "slug": "kasha-risovaya-molochnaya",
+    "title": "Каша рисовая молочная",
+    "category": "BREAKFAST"
+  },
+  {
+    "slug": "kruassan-s-vetchinoy-i-syrom",
+    "title": "Круассан с ветчиной и сыром",
+    "category": "BREAKFAST"
+  },
+  {
+    "slug": "kasha-perlovaya-s-gribami",
+    "title": "Каша перловая с грибами",
+    "category": "BREAKFAST"
+  },
+  {
+    "slug": "sup-s-kleckami",
+    "title": "Суп с клёцками",
+    "category": "SOUP"
+  },
+  {
+    "slug": "tosty-s-avokado",
+    "title": "Тосты с авокадо",
+    "category": "BREAKFAST"
+  },
+  {
+    "slug": "kasha-ovsyanaya-s-grushey",
+    "title": "Каша овсяная с грушей",
+    "category": "BREAKFAST"
+  },
+  {
+    "slug": "schi-zelenye",
+    "title": "Щи зелёные",
+    "category": "SOUP"
+  },
+  {
+    "slug": "rassolnik-s-perlovkoy",
+    "title": "Рассольник с перловкой",
+    "category": "SOUP"
+  },
+  {
+    "slug": "sup-s-frikadelkami",
+    "title": "Суп с фрикадельками",
+    "category": "SOUP"
+  },
+  {
+    "slug": "salat-s-tuncom",
+    "title": "Салат с тунцом",
+    "category": "SALAD"
+  },
+  {
+    "slug": "schi-iz-svezhey-kapusty",
+    "title": "Щи из свежей капусты",
+    "category": "SOUP"
+  },
+  {
+    "slug": "chihirtma",
+    "title": "Чихиртма",
+    "category": "SOUP"
+  },
+  {
+    "slug": "tom-yam",
+    "title": "Том ям",
+    "category": "SOUP"
+  },
+  {
+    "slug": "lagman",
+    "title": "Лагман",
+    "category": "SOUP"
+  },
+  {
+    "slug": "sup-pyure-iz-cvetnoy-kapusty",
+    "title": "Суп-пюре из цветной капусты",
+    "category": "SOUP"
+  },
+  {
+    "slug": "okroshka-na-kvase",
+    "title": "Окрошка на квасе",
+    "category": "SOUP"
+  },
+  {
+    "slug": "plov-s-kuricey",
+    "title": "Плов с курицей",
+    "category": "MAIN"
+  },
+  {
+    "slug": "kurinyy-sup-s-lapshoy",
+    "title": "Куриный суп с лапшой",
+    "category": "SOUP"
+  },
+  {
+    "slug": "salat-s-kukuruzoy-i-ogurcom",
+    "title": "Салат с кукурузой и огурцом",
+    "category": "SALAD"
+  },
+  {
+    "slug": "salat-s-baklazhanami",
+    "title": "Салат с баклажанами",
+    "category": "SALAD"
+  },
+  {
+    "slug": "ovoschnoy-sup-s-tomatnoy-pastoy",
+    "title": "Овощной суп с томатной пастой",
+    "category": "SOUP"
+  },
+  {
+    "slug": "bulon-s-yaycom",
+    "title": "Бульон с яйцом",
+    "category": "SOUP"
+  },
+  {
+    "slug": "salat-s-redisom-i-zelenyu",
+    "title": "Салат с редисом и зеленью",
+    "category": "SALAD"
+  },
+  {
+    "slug": "sup-s-kopchenoy-kolbasoy",
+    "title": "Суп с копчёной колбасой",
+    "category": "SOUP"
+  },
+  {
+    "slug": "seledka-pod-shuboy",
+    "title": "Селёдка под шубой",
+    "category": "SALAD"
+  },
+  {
+    "slug": "yaichnyy-pashtet-s-lukom-i-hlebom",
+    "title": "Яичный паштет с луком и хлебом",
+    "category": "SALAD"
+  },
+  {
+    "slug": "ris-otvarnoy",
+    "title": "Рис отварной",
+    "category": "MAIN"
+  },
+  {
+    "slug": "salat-iz-morkovi-s-chesnokom",
+    "title": "Салат из моркови с чесноком",
+    "category": "SALAD"
+  },
+  {
+    "slug": "salat-s-syrom-feta-i-ovoschami",
+    "title": "Салат с сыром фета и овощами",
+    "category": "SALAD"
+  },
+  {
+    "slug": "plov-s-izyumom",
+    "title": "Плов с изюмом",
+    "category": "MAIN"
+  },
+  {
+    "slug": "bigos",
+    "title": "Бигос",
+    "category": "MAIN"
+  },
+  {
+    "slug": "salat-iz-cvetnoy-kapusty-s-yaycom",
+    "title": "Салат из цветной капусты с яйцом",
+    "category": "SALAD"
+  },
+  {
+    "slug": "plov-uzbekskiy",
+    "title": "Плов узбекский",
+    "category": "MAIN"
+  },
+  {
+    "slug": "farshirovannye-percy-s-risom",
+    "title": "Фаршированные перцы с рисом",
+    "category": "MAIN"
+  },
+  {
+    "slug": "hinkali",
+    "title": "Хинкали",
+    "category": "MAIN"
+  },
+  {
+    "slug": "borsch-ukrainskiy",
+    "title": "Борщ украинский",
+    "category": "SOUP"
+  },
+  {
+    "slug": "lyulya-kebab",
+    "title": "Люля-кебаб",
+    "category": "MAIN"
+  },
+  {
+    "slug": "shashlyk-iz-svininy",
+    "title": "Шашлык из свинины",
+    "category": "MAIN"
+  },
+  {
+    "slug": "befstroganov",
+    "title": "Бефстроганов",
+    "category": "MAIN"
+  },
+  {
+    "slug": "makarony-s-teftelyami",
+    "title": "Макароны с тефтелями",
+    "category": "MAIN"
+  },
+  {
+    "slug": "kotlety-grechnevye",
+    "title": "Котлеты гречневые",
+    "category": "MAIN"
+  },
+  {
+    "slug": "tefteli-v-tomatnom-souse",
+    "title": "Тефтели в томатном соусе",
+    "category": "MAIN"
+  },
+  {
+    "slug": "sup-s-frikadelkami-i-risom",
+    "title": "Суп с фрикадельками и рисом",
+    "category": "SOUP"
+  },
+  {
+    "slug": "rizotto-s-gribami",
+    "title": "Ризотто с грибами",
+    "category": "MAIN"
+  },
+  {
+    "slug": "lazanya",
+    "title": "Лазанья",
+    "category": "MAIN"
+  },
+  {
+    "slug": "picca-pepperoni",
+    "title": "Пицца пепперони",
+    "category": "MAIN"
+  },
+  {
+    "slug": "kartofel-fri",
+    "title": "Картофель фри",
+    "category": "MAIN"
+  },
+  {
+    "slug": "kurica-zapechennaya-s-kartofelem",
+    "title": "Курица запечённая с картофелем",
+    "category": "MAIN"
+  },
+  {
+    "slug": "kurinye-kotlety-parovye",
+    "title": "Куриные котлеты паровые",
+    "category": "MAIN"
+  },
+  {
+    "slug": "krolik-v-smetane",
+    "title": "Кролик в сметане",
+    "category": "MAIN"
+  },
+  {
+    "slug": "draniki",
+    "title": "Драники",
+    "category": "MAIN"
+  },
+  {
+    "slug": "ragu-ovoschnoe",
+    "title": "Рагу овощное",
+    "category": "MAIN"
+  },
+  {
+    "slug": "frittata-s-ovoschami",
+    "title": "Фриттата с овощами",
+    "category": "MAIN"
+  },
+  {
+    "slug": "salat-s-yablokom-i-seldereem",
+    "title": "Салат с яблоком и сельдереем",
+    "category": "SALAD"
+  },
+  {
+    "slug": "kapusta-tushenaya-s-kolbasoy",
+    "title": "Капуста тушёная с колбасой",
+    "category": "MAIN"
+  },
+  {
+    "slug": "makarony-po-flotski",
+    "title": "Макароны по-флотски",
+    "category": "MAIN"
+  },
+  {
+    "slug": "utka-s-yablokami",
+    "title": "Утка с яблоками",
+    "category": "MAIN"
+  },
+  {
+    "slug": "baklazhany-po-grecheski",
+    "title": "Баклажаны по-гречески",
+    "category": "MAIN"
+  },
+  {
+    "slug": "lyulya-iz-indeyki",
+    "title": "Люля из индейки",
+    "category": "MAIN"
+  },
+  {
+    "slug": "kurica-s-risom-v-gorshochke",
+    "title": "Курица с рисом в горшочке",
+    "category": "MAIN"
+  },
+  {
+    "slug": "plov-s-suhofruktami",
+    "title": "Плов с сухофруктами",
+    "category": "MAIN"
+  },
+  {
+    "slug": "kotlety-iz-indeyki",
+    "title": "Котлеты из индейки",
+    "category": "MAIN"
+  },
+  {
+    "slug": "shashlyk-v-duhovke",
+    "title": "Шашлык в духовке",
+    "category": "MAIN"
+  },
+  {
+    "slug": "befstroganov-iz-kuricy",
+    "title": "Бефстроганов из курицы",
+    "category": "MAIN"
+  },
+  {
+    "slug": "myaso-po-francuzski",
+    "title": "Мясо по-французски",
+    "category": "MAIN"
+  },
+  {
+    "slug": "kurica-v-kislo-sladkom-souse",
+    "title": "Курица в кисло-сладком соусе",
+    "category": "MAIN"
+  },
+  {
+    "slug": "plov-s-indeykoy",
+    "title": "Плов с индейкой",
+    "category": "MAIN"
+  },
+  {
+    "slug": "zrazy-myasnye",
+    "title": "Зразы мясные",
+    "category": "MAIN"
+  },
+  {
+    "slug": "befstroganov-iz-svininy",
+    "title": "Бефстроганов из свинины",
+    "category": "MAIN"
+  },
+  {
+    "slug": "kabachki-farshirovannye",
+    "title": "Кабачки фаршированные",
+    "category": "MAIN"
+  },
+  {
+    "slug": "baklazhany-farshirovannye",
+    "title": "Баклажаны фаршированные",
+    "category": "MAIN"
+  },
+  {
+    "slug": "kotlety-kurinye-v-duhovke",
+    "title": "Котлеты куриные в духовке",
+    "category": "MAIN"
+  },
+  {
+    "slug": "kotlety-svekolnye",
+    "title": "Котлеты свекольные",
+    "category": "MAIN"
+  },
+  {
+    "slug": "kotlety-morkovnye",
+    "title": "Котлеты морковные",
+    "category": "MAIN"
+  },
+  {
+    "slug": "tushenaya-govyadina-s-ovoschami",
+    "title": "Тушёная говядина с овощами",
+    "category": "MAIN"
+  },
+  {
+    "slug": "myaso-s-chernoslivom",
+    "title": "Мясо с черносливом",
+    "category": "MAIN"
+  },
+  {
+    "slug": "ovoschi-na-paru",
+    "title": "Овощи на пару",
+    "category": "SIDE"
+  },
+  {
+    "slug": "fasol-struchkovaya-s-chesnokom",
+    "title": "Фасоль стручковая с чесноком",
+    "category": "SIDE"
+  },
+  {
+    "slug": "shpinat-tushenyy-so-slivkami",
+    "title": "Шпинат тушёный со сливками",
+    "category": "SIDE"
+  },
+  {
+    "slug": "ris-s-ovoschami-po-aziatski",
+    "title": "Рис с овощами по-азиатски",
+    "category": "SIDE"
+  },
+  {
+    "slug": "kuskus-s-ovoschami",
+    "title": "Кускус с овощами",
+    "category": "SIDE"
+  },
+  {
+    "slug": "chizkeyk",
+    "title": "Чизкейк",
+    "category": "DESSERT"
+  },
+  {
+    "slug": "chizkeyk-nyu-york",
+    "title": "Чизкейк нью-йорк",
+    "category": "DESSERT"
+  },
+  {
+    "slug": "medovik",
+    "title": "Медовик",
+    "category": "DESSERT"
+  },
+  {
+    "slug": "eklery",
+    "title": "Эклеры",
+    "category": "DESSERT"
+  },
+  {
+    "slug": "tiramisu",
+    "title": "Тирамису",
+    "category": "DESSERT"
+  },
+  {
+    "slug": "zapekanka-iz-tvoroga-s-izyumom",
+    "title": "Запеканка из творога с изюмом",
+    "category": "DESSERT"
+  },
+  {
+    "slug": "syrniki-s-varenem",
+    "title": "Сырники с вареньем",
+    "category": "DESSERT"
+  },
+  {
+    "slug": "oladi-s-medom",
+    "title": "Оладьи с мёдом",
+    "category": "DESSERT"
+  },
+  {
+    "slug": "keks-shokoladnyy",
+    "title": "Кекс шоколадный",
+    "category": "DESSERT"
+  },
+  {
+    "slug": "krem-bryule",
+    "title": "Крем-брюле",
+    "category": "DESSERT"
+  },
+  {
+    "slug": "pechene-ovsyanoe",
+    "title": "Печенье овсяное",
+    "category": "DESSERT"
+  },
+  {
+    "slug": "pechene-pesochnoe",
+    "title": "Печенье песочное",
+    "category": "DESSERT"
+  },
+  {
+    "slug": "pankeyki",
+    "title": "Панкейки",
+    "category": "DESSERT"
+  },
+  {
+    "slug": "zhele-yagodnoe",
+    "title": "Желе ягодное",
+    "category": "DESSERT"
+  },
+  {
+    "slug": "pirog-s-vishney",
+    "title": "Пирог с вишней",
+    "category": "DESSERT"
+  },
+  {
+    "slug": "mors-klyukvennyy",
+    "title": "Морс клюквенный",
+    "category": "BEVERAGE"
+  },
+  {
+    "slug": "limonad-domashniy",
+    "title": "Лимонад домашний",
+    "category": "BEVERAGE"
+  },
+  {
+    "slug": "samsa",
+    "title": "Самса",
+    "category": "MAIN"
+  },
+  {
+    "slug": "kofe-amerikano",
+    "title": "Кофе американо",
+    "category": "BEVERAGE"
+  },
+  {
+    "slug": "kompot-yablochnyy",
+    "title": "Компот яблочный",
+    "category": "BEVERAGE"
+  },
+  {
+    "slug": "goryachiy-shokolad",
+    "title": "Горячий шоколад",
+    "category": "BEVERAGE"
+  },
+  {
+    "slug": "omlet-s-syrom-i-zelenyu",
+    "title": "Омлет с сыром и зеленью",
+    "category": "BREAKFAST"
+  },
+  {
+    "slug": "krem-sup-iz-tykvy",
+    "title": "Крем-суп из тыквы",
+    "category": "SOUP"
+  },
+  {
+    "slug": "olive-klassicheskiy",
+    "title": "Оливье классический",
+    "category": "SALAD"
+  },
+  {
+    "slug": "salat-s-avokado-i-ogurcom",
+    "title": "Салат с авокадо и огурцом",
+    "category": "SALAD"
+  },
+  {
+    "slug": "zharkoe-po-domashnemu",
+    "title": "Жаркое по-домашнему",
+    "category": "MAIN"
+  },
+  {
+    "slug": "mitboly-v-slivochnom-souse",
+    "title": "Митболы в сливочном соусе",
+    "category": "MAIN"
+  },
+  {
+    "slug": "smuzi-zelenyy",
+    "title": "Смузи зелёный",
+    "category": "BEVERAGE"
+  },
+  {
+    "slug": "ovsyanaya-kasha-na-moloke",
+    "title": "Овсяная каша на молоке",
+    "category": "BREAKFAST"
+  },
+  {
+    "slug": "zapekanka-tvorozhnaya",
+    "title": "Запеканка творожная",
+    "category": "BREAKFAST"
+  },
+  {
+    "slug": "chay-zelenyy-s-myatoy",
+    "title": "Чай зелёный с мятой",
+    "category": "BEVERAGE"
+  },
+  {
+    "slug": "pshennaya-kasha-s-tykvoy",
+    "title": "Пшённая каша с тыквой",
+    "category": "BREAKFAST"
+  },
+  {
+    "slug": "skrembl-s-syrom",
+    "title": "Скрэмбл с сыром",
+    "category": "BREAKFAST"
+  },
+  {
+    "slug": "krem-sup-iz-brokkoli",
+    "title": "Крем-суп из брокколи",
+    "category": "SOUP"
+  },
+  {
+    "slug": "sup-gorohovyy-s-kopchenostyami",
+    "title": "Суп гороховый с копчёностями",
+    "category": "SOUP"
+  },
+  {
+    "slug": "salat-stolichnyy",
+    "title": "Салат столичный",
+    "category": "SALAD"
+  },
+  {
+    "slug": "salat-s-kuricey-i-cherri",
+    "title": "Салат с курицей и черри",
+    "category": "SALAD"
+  },
+  {
+    "slug": "pelmeni-domashnie",
+    "title": "Пельмени домашние",
+    "category": "MAIN"
+  },
+  {
+    "slug": "golubcy-lenivye",
+    "title": "Голубцы ленивые",
+    "category": "MAIN"
+  },
+  {
+    "slug": "grechka-s-myasom",
+    "title": "Гречка с мясом",
+    "category": "MAIN"
+  },
+  {
+    "slug": "kotlety-domashnie",
+    "title": "Котлеты домашние",
+    "category": "MAIN"
+  },
+  {
+    "slug": "pasta-karbonara",
+    "title": "Паста карбонара",
+    "category": "MAIN"
+  },
+  {
+    "slug": "kartofelnye-zrazy-s-gribami",
+    "title": "Картофельные зразы с грибами",
+    "category": "MAIN"
+  },
+  {
+    "slug": "kabachkovaya-ikra",
+    "title": "Кабачковая икра",
+    "category": "MAIN"
+  },
+  {
+    "slug": "plov-v-multivarke",
+    "title": "Плов в мультиварке",
+    "category": "MAIN"
+  },
+  {
+    "slug": "salat-s-fasolyu-i-suharikami",
+    "title": "Салат с фасолью и сухариками",
+    "category": "SALAD"
+  },
+  {
+    "slug": "govyadina-v-slivochnom-souse",
+    "title": "Говядина в сливочном соусе",
+    "category": "MAIN"
+  },
+  {
+    "slug": "plov-s-nutom",
+    "title": "Плов с нутом",
+    "category": "MAIN"
+  },
+  {
+    "slug": "gus-s-kapustoy",
+    "title": "Гусь с капустой",
+    "category": "MAIN"
+  },
+  {
+    "slug": "pyure-iz-cvetnoy-kapusty",
+    "title": "Пюре из цветной капусты",
+    "category": "SIDE"
+  },
+  {
+    "slug": "brauni",
+    "title": "Брауни",
+    "category": "DESSERT"
+  },
+  {
+    "slug": "pirog-s-yablokami",
+    "title": "Пирог с яблоками",
+    "category": "DESSERT"
+  },
+  {
+    "slug": "tort-smetannyy",
+    "title": "Торт сметанный",
+    "category": "DESSERT"
+  },
+  {
+    "slug": "smuzi-yagodnyy",
+    "title": "Смузи ягодный",
+    "category": "BEVERAGE"
+  },
+  {
+    "slug": "syrnyy-krem-sup",
+    "title": "Сырный крем-суп",
+    "category": "SOUP"
+  },
+  {
+    "slug": "salat-s-grushey-i-syrom",
+    "title": "Салат с грушей и сыром",
+    "category": "SALAD"
+  },
+  {
+    "slug": "ezhiki-s-risom",
+    "title": "Ёжики с рисом",
+    "category": "MAIN"
+  },
+  {
+    "slug": "kartofelnoe-pyure",
+    "title": "Картофельное пюре",
+    "category": "MAIN"
+  },
+  {
+    "slug": "ovsyanka-s-yagodami-i-medom",
+    "title": "Овсянка с ягодами и мёдом",
+    "category": "BREAKFAST"
+  },
+  {
+    "slug": "kukuruznaya-kasha-s-syrom",
+    "title": "Кукурузная каша с сыром",
+    "category": "BREAKFAST"
+  },
+  {
+    "slug": "salat-vitaminnyy-s-morkovyu-i-yablokom",
+    "title": "Салат витаминный с морковью и яблоком",
+    "category": "SALAD"
+  },
+  {
+    "slug": "sup-s-teftelyami",
+    "title": "Суп с тефтелями",
+    "category": "SOUP"
+  },
+  {
+    "slug": "salat-zimniy-vitaminnyy",
+    "title": "Салат зимний витаминный",
+    "category": "SALAD"
+  },
+  {
+    "slug": "ris-s-ovoschami",
+    "title": "Рис с овощами",
+    "category": "MAIN"
+  },
+  {
+    "slug": "tushenaya-kapusta-s-myasom",
+    "title": "Тушёная капуста с мясом",
+    "category": "MAIN"
+  },
+  {
+    "slug": "tefteli-v-multivarke",
+    "title": "Тефтели в мультиварке",
+    "category": "MAIN"
+  },
+  {
+    "slug": "smuzi-ovsyanyy",
+    "title": "Смузи овсяный",
+    "category": "BEVERAGE"
+  },
+  {
+    "slug": "molochnyy-kokteyl-s-bananom",
+    "title": "Молочный коктейль с бананом",
+    "category": "BEVERAGE"
+  },
+  {
+    "slug": "syrniki-iz-duhovki",
+    "title": "Сырники из духовки",
+    "category": "BREAKFAST"
+  },
+  {
+    "slug": "bliny-s-tvorogom",
+    "title": "Блины с творогом",
+    "category": "BREAKFAST"
+  },
+  {
+    "slug": "vinegret-klassicheskiy",
+    "title": "Винегрет классический",
+    "category": "SALAD"
+  },
+  {
+    "slug": "burgery-domashnie",
+    "title": "Бургеры домашние",
+    "category": "MAIN"
+  },
+  {
+    "slug": "otbivnye-iz-svininy",
+    "title": "Отбивные из свинины",
+    "category": "MAIN"
+  },
+  {
+    "slug": "yayca-pashot-na-toste",
+    "title": "Яйца пашот на тосте",
+    "category": "BREAKFAST"
+  },
+  {
+    "slug": "kurinyy-bulon",
+    "title": "Куриный бульон",
+    "category": "SOUP"
+  },
+  {
+    "slug": "tykvennyy-sup-pyure-s-imbirem",
+    "title": "Тыквенный суп-пюре с имбирём",
+    "category": "SOUP"
+  },
+  {
+    "slug": "grecheskiy-salat",
+    "title": "Греческий салат",
+    "category": "SALAD"
+  },
+  {
+    "slug": "salat-s-fasolyu-i-percem",
+    "title": "Салат с фасолью и перцем",
+    "category": "SALAD"
+  },
+  {
+    "slug": "pelmeni-zapechennye-s-syrom",
+    "title": "Пельмени запечённые с сыром",
+    "category": "MAIN"
+  },
+  {
+    "slug": "grechka-otvarnaya",
+    "title": "Гречка отварная",
+    "category": "MAIN"
+  },
+  {
+    "slug": "kurinaya-grudka-v-klyare",
+    "title": "Куриная грудка в кляре",
+    "category": "MAIN"
+  },
+  {
+    "slug": "pyure-s-molokom-i-chesnokom",
+    "title": "Пюре с молоком и чесноком",
+    "category": "SIDE"
+  },
+  {
+    "slug": "granola-domashnyaya-s-yogurtom",
+    "title": "Гранола домашняя с йогуртом",
+    "category": "BREAKFAST"
+  },
+  {
+    "slug": "cezar-s-kuricey",
+    "title": "Цезарь с курицей",
+    "category": "SALAD"
+  },
+  {
+    "slug": "ezhiki-pod-smetanoy",
+    "title": "Ежики под сметаной",
+    "category": "MAIN"
+  },
+  {
+    "slug": "chay-chernyy-s-limonom",
+    "title": "Чай чёрный с лимоном",
+    "category": "BEVERAGE"
+  },
+  {
+    "slug": "govyazhiy-sup-s-vermishelyu",
+    "title": "Говяжий суп с вермишелью",
+    "category": "SOUP"
+  },
+  {
+    "slug": "gribnoy-krem-sup",
+    "title": "Грибной крем-суп",
+    "category": "SOUP"
+  },
+  {
+    "slug": "vareniki-s-tvorogom",
+    "title": "Вареники с творогом",
+    "category": "MAIN"
+  },
+  {
+    "slug": "pechen-po-stroganovski",
+    "title": "Печень по-строгановски",
+    "category": "MAIN"
+  },
+  {
+    "slug": "kompot-iz-suhofruktov",
+    "title": "Компот из сухофруктов",
+    "category": "BEVERAGE"
+  },
+  {
+    "slug": "kofe-latte",
+    "title": "Кофе латте",
+    "category": "BEVERAGE"
+  },
+  {
+    "slug": "ovoschnoy-sup-so-struchkovoy-fasolyu",
+    "title": "Овощной суп со стручковой фасолью",
+    "category": "SOUP"
+  },
+  {
+    "slug": "pelmeni-otvarnye",
+    "title": "Пельмени отварные",
+    "category": "MAIN"
+  },
+  {
+    "slug": "ovoschi-zapechennye-v-duhovke",
+    "title": "Овощи запечённые в духовке",
+    "category": "MAIN"
+  },
+  {
+    "slug": "kasha-pshennaya-s-izyumom",
+    "title": "Каша пшённая с изюмом",
+    "category": "BREAKFAST"
+  },
+  {
+    "slug": "sup-pyure-iz-shampinonov",
+    "title": "Суп-пюре из шампиньонов",
+    "category": "SOUP"
+  },
+  {
+    "slug": "hachapuri-po-adzharski",
+    "title": "Хачапури по-аджарски",
+    "category": "MAIN"
+  },
+  {
+    "slug": "grechka-po-kupecheski",
+    "title": "Гречка по-купечески",
+    "category": "MAIN"
+  },
+  {
+    "slug": "zapekanka-makaronnaya",
+    "title": "Запеканка макаронная",
+    "category": "MAIN"
+  },
+  {
+    "slug": "bulgur-otvarnoy",
+    "title": "Булгур отварной",
+    "category": "SIDE"
+  }
+]
