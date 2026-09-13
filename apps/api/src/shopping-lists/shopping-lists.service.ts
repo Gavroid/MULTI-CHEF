@@ -7,6 +7,7 @@
 // the row, DROP_OPTIONAL deletes it) and recomputes the total.
 
 import { Injectable, Optional } from '@nestjs/common';
+import { randomUUID } from 'node:crypto';
 import { getPrisma } from '@multichef/database';
 import {
   fitBudgetProposals,
@@ -190,7 +191,7 @@ export class ShoppingListsService {
         } else {
           await tx.pantryItem.create({
             data: {
-              id: `${item.id}-pantry`,
+              id: randomUUID(),
               householdId,
               ingredientId: item.ingredientId,
               quantity: item.packageQuantity,
