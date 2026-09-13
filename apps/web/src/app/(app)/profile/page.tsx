@@ -34,17 +34,15 @@ export default function ProfilePage(): React.ReactElement {
         if (cancelled) return;
         if (sessionRes.ok) {
           const s = await sessionRes.json();
-          if (s.data) {
-            setAuthed(true);
-            setEmail(s.data.email ?? '');
-          }
+          setAuthed(true);
+          setEmail(s.email ?? s.user?.email ?? '');
         }
         if (householdRes.ok) {
           const h = await householdRes.json();
-          if (h.data) {
-            setHouseholdName(h.data.name ?? '');
-            setPeopleCount(h.data.defaultPeopleCount ?? 2);
-            setBudgetWeekKopecks(h.data.budgetWeekKopecks ?? null);
+          if (h.name) {
+            setHouseholdName(h.name);
+            setPeopleCount(h.defaultPeopleCount ?? 2);
+            setBudgetWeekKopecks(h.budgetWeekKopecks ?? null);
           }
         }
       } catch {
@@ -98,7 +96,9 @@ export default function ProfilePage(): React.ReactElement {
           <p className="text-body text-[var(--color-text-muted)]">
             {householdName}
             {peopleCount > 0 ? ` · ${peopleCount} чел.` : ''}
-            {budgetWeekKopecks ? ` · бюджет ${Math.round(budgetWeekKopecks / 100)} ₽/нед` : ''}
+            {budgetWeekKopecks
+              ? ` · бюджет ${Math.round(budgetWeekKopecks / 100)} ₽/нед`
+              : ''}
           </p>
         ) : null}
       </Card>
