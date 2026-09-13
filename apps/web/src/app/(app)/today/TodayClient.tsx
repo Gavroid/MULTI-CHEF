@@ -53,7 +53,6 @@ function toUrgentItems(items: PantryItem[]): UrgentItem[] {
   }));
 }
 
-
 /** Audit round-7: UpcomingMeals was previously hardwired to null — the
  * active plan (MC-051) is now the real source. Only entries from today
  * onward are shown, mapped into the component's shape. */
