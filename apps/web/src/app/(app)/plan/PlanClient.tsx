@@ -17,9 +17,14 @@ import { TabTitle } from '@/components/TabTitle';
 export const DEFAULT_DAILY_TARGET = 2000;
 
 /** Percent (0..110 capped) of the daily target consumed by a day. */
-export function kcalPercent(totalCalories: number, target = DEFAULT_DAILY_TARGET): number {
+export function kcalPercent(
+  totalCalories: number,
+  target = DEFAULT_DAILY_TARGET,
+  peopleCount = 1,
+): number {
   if (target <= 0) return 0;
-  return Math.min(110, Math.round((totalCalories / target) * 100));
+  const perPerson = totalCalories / Math.max(1, peopleCount);
+  return Math.min(110, Math.round((perPerson / target) * 100));
 }
 
 const MEAL_LABELS: Record<string, string> = {
@@ -125,7 +130,7 @@ export function PlanClient({ deps: depsOverride }: PlanClientProps): React.React
       </TabTitle>
       <div className="flex flex-col gap-3" data-testid="plan-days">
         {plan.days.map((day) => {
-          const percent = kcalPercent(day.totalCalories);
+          const percent = kcalPercent(day.totalCalories, DEFAULT_DAILY_TARGET, plan.peopleCount);
           return (
             <Card key={day.id} data-testid="plan-day">
               <div className="mb-2 flex items-center justify-between">
@@ -137,7 +142,7 @@ export function PlanClient({ deps: depsOverride }: PlanClientProps): React.React
                   })}
                 </h3>
                 <span className="text-caption text-[var(--color-text-muted)]">
-                  {Math.round(day.totalCalories)} ккал/день
+                  {Math.round(day.totalCalories / Math.max(1, plan.peopleCount))} ккал/день/чел.
                 </span>
               </div>
               <div

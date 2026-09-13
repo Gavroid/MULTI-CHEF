@@ -74,7 +74,7 @@ export function ResultClient({ deps: depsOverride }: ResultClientProps): React.R
         return;
       }
       toast.show({ message: 'План создан!', tone: 'success' });
-      router.push(`/shopping/${result.data.shoppingListId}`);
+      router.push('/shopping');
     },
     [deps, router, session],
   );

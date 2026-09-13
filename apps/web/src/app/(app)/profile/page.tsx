@@ -115,8 +115,10 @@ export default function ProfilePage(): React.ReactElement {
           disabled={loggingOut}
           onClick={() => {
             setLoggingOut(true);
+            // Audit: clear marker BEFORE the API call so the client
+            // AuthGuard does not flash the authed view during logout.
+            window.localStorage.removeItem('mc_user');
             void logout().then(() => {
-              window.localStorage.removeItem('mc_user');
               window.location.assign('/auth/login');
             });
           }}
