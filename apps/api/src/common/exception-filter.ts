@@ -96,6 +96,7 @@ function mapHttpStatusToError(status: number, inner: unknown): ErrorInput {
   if (status === 404) return { code: 'NOT_FOUND', message };
   if (status === 409) return { code: 'CONFLICT', message };
   if (status === 429) return { code: 'RATE_LIMITED', message };
+  if (status === 503) return { code: 'SERVICE_UNAVAILABLE', message };
   if (status === 400 || status === 422) {
     return { code: 'VALIDATION_ERROR', message, details: extractDetails(inner) };
   }
