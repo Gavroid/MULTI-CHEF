@@ -18,7 +18,7 @@ interface ReadyResponse {
 }
 interface NotReadyResponse {
   status: 'not-ready';
-  reason: 'db';
+  reason: 'db' | 'redis';
 }
 
 @Controller('health')
@@ -40,6 +40,27 @@ export class HealthController {
       console.error(`health/ready: postgres unreachable: ${message}`);
       const body: NotReadyResponse = { status: 'not-ready', reason: 'db' };
       throw new HttpException(body, HttpStatus.SERVICE_UNAVAILABLE);
+    }
+    // Audit round-11: the worker and the sync recommendation endpoints
+    // depend on Redis (BullMQ queue) — readiness must reflect it too.
+    const redisUrl = process.env['REDIS_URL'];
+    if (redisUrl) {
+      try {
+        const { default: IORedis } = await import('ioredis');
+        const redis = new IORedis(redisUrl, {
+          lazyConnect: true,
+          connectTimeout: 2000,
+          maxRetriesPerRequest: 1,
+        });
+        await redis.connect();
+        await redis.ping();
+        await redis.quit();
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        console.error(`health/ready: redis unreachable: ${message}`);
+        const body: NotReadyResponse = { status: 'not-ready', reason: 'redis' };
+        throw new HttpException(body, HttpStatus.SERVICE_UNAVAILABLE);
+      }
     }
     return { status: 'ready' };
   }

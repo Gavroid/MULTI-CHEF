@@ -34,6 +34,8 @@ export type ErrorCode =
   | 'REJECT_LIMIT_REACHED'
   // MC-033 CSRF double-submit
   | 'CSRF_MISMATCH'
+  // MC-010 health/ready degraded dependencies
+  | 'SERVICE_UNAVAILABLE'
   | 'PREFERENCE_NOT_FOUND'
   | 'NUTRITION_PROFILE_NOT_FOUND'
   | 'ITEM_NOT_ARCHIVED';
@@ -60,6 +62,7 @@ export const STATUS_BY_CODE: Record<ErrorCode, number> = {
   ROULETTE_EMPTY: 422,
   REJECT_LIMIT_REACHED: 409,
   CSRF_MISMATCH: 403,
+  SERVICE_UNAVAILABLE: 503,
   PREFERENCE_NOT_FOUND: 404,
   NUTRITION_PROFILE_NOT_FOUND: 404,
   CONFLICT: 409,
@@ -148,6 +151,8 @@ function defaultMessageFor(code: ErrorCode): string {
     case 'FORBIDDEN':
     case 'CSRF_MISMATCH':
       return 'Access denied';
+    case 'SERVICE_UNAVAILABLE':
+      return 'Service unavailable';
     case 'NOT_FOUND':
     case 'INGREDIENT_NOT_FOUND':
     case 'RECIPE_NOT_FOUND':

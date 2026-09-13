@@ -325,9 +325,19 @@ export async function runPlanWeek(
             },
           })
         : [];
+    // Audit round-12: a household can hold SEVERAL rows of the same
+    // ingredient (two packs of butter opened at different times) —
+    // sum their grams instead of letting a Map key collision drop stock.
+    const pantryGramsById = new Map<string, number>();
+    for (const r of pantryRows) {
+      pantryGramsById.set(
+        r.ingredientId,
+        (pantryGramsById.get(r.ingredientId) ?? 0) + r.estimatedGrams.toNumber(),
+      );
+    }
     const listDrafts = buildShoppingList({
       requiredGrams: new Map([...required.entries()].map(([id, v]) => [id, v.grams])),
-      pantryGrams: new Map(pantryRows.map((r) => [r.ingredientId, r.estimatedGrams.toNumber()])),
+      pantryGrams: pantryGramsById,
       staples: new Set(
         pantryRows.filter((r) => r.priority === 'STAPLE').map((r) => r.ingredientId),
       ),
