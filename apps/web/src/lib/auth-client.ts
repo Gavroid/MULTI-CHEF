@@ -96,7 +96,13 @@ export function login(
 }
 
 export function register(
-  body: { email: string; password: string; householdName?: string },
+  body: {
+    email: string;
+    password: string;
+    householdName?: string;
+    /** Audit round-5: optional onboarding budget (kopecks/week). */
+    guestProfile?: { budgetWeekKopecks?: number };
+  },
   options: FetchOptions = {},
 ): Promise<ApiResponse<AuthSuccess>> {
   return request<AuthSuccess>(authUrl('/auth/register'), 'POST', body, options);

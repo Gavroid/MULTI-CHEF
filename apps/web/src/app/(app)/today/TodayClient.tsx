@@ -13,11 +13,12 @@
 // empty-state CTA, no profile → empty preferences, no plan → block
 // hidden (red flags #2/#9/#11).
 
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { TabTitle } from '@/components/TabTitle';
 import { listItems, type PantryItem } from '@/lib/pantry-client';
 import { usePantry } from '@/hooks/usePantry';
 import { usePreferences } from '@/hooks/usePreferences';
+import { getHousehold } from '@/lib/household-client';
 import { Greeting } from './components/Greeting';
 import { UrgentBlock, type UrgentItem } from './components/UrgentBlock';
 import { BudgetProgress } from './components/BudgetProgress';
@@ -28,9 +29,10 @@ import { RouletteLink } from './components/RouletteLink';
 
 export interface TodayClientDeps {
   listItems: typeof listItems;
+  getHousehold: typeof getHousehold;
 }
 
-const defaultDeps: TodayClientDeps = { listItems };
+const defaultDeps: TodayClientDeps = { listItems, getHousehold };
 
 export interface TodayClientProps {
   deps?: Partial<TodayClientDeps>;
@@ -56,6 +58,22 @@ export function TodayClient({ deps: depsOverride, now }: TodayClientProps): Reac
     [depsOverride],
   );
   const pantry = usePantry({ listItems: deps.listItems });
+  // Audit round-5: the weekly budget comes from the household record
+  // (filled by onboarding registration or PATCH /household).
+  const [budgetWeekKopecks, setBudgetWeekKopecks] = useState<number | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    void deps
+      .getHousehold()
+      .then((res) => {
+        if (cancelled || res.error) return;
+        setBudgetWeekKopecks(res.data.budgetWeekKopecks ?? null);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [deps]);
   // Preferences feed BudgetProgress/urgent logic in later milestones
   // (MC-040+); the hook is mounted here so the 60s cache warms early
   // and failures degrade silently (manager default #2).
@@ -66,7 +84,7 @@ export function TodayClient({ deps: depsOverride, now }: TodayClientProps): Reac
       <TabTitle sublabel="Главный экран">Сегодня</TabTitle>
       <Greeting {...(now ? { now } : {})} />
       <UrgentBlock items={toUrgentItems(pantry.items)} {...(now ? { now } : {})} />
-      <BudgetProgress budgetWeekKopecks={null} />
+      <BudgetProgress budgetWeekKopecks={budgetWeekKopecks} />
       <HeroButton pantrySize={pantry.items.length} />
       <QuickScenarios />
       <UpcomingMeals activePlan={null} />

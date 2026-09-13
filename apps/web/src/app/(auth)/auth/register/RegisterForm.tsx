@@ -10,7 +10,12 @@ import type { ApiResponse, AuthSuccess } from '@/lib/auth-client';
 
 export interface RegisterFormDeps {
   submit: (
-    body: { email: string; password: string; householdName?: string },
+    body: {
+      email: string;
+      password: string;
+      householdName?: string;
+      guestProfile?: { budgetWeekKopecks?: number };
+    },
     options: { signal?: AbortSignal },
   ) => Promise<ApiResponse<AuthSuccess>>;
   navigate: (href: string) => void;
@@ -32,6 +37,7 @@ export function RegisterForm({ deps, onSuccess }: RegisterFormProps): ReactEleme
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [householdName, setHouseholdName] = useState('');
+  const [budgetRoubles, setBudgetRoubles] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [submitting, setSubmitting] = useState(false);
@@ -56,12 +62,23 @@ export function RegisterForm({ deps, onSuccess }: RegisterFormProps): ReactEleme
       return;
     }
 
-    const payload: { email: string; password: string; householdName?: string } = {
+    const payload: {
+      email: string;
+      password: string;
+      householdName?: string;
+      guestProfile?: { budgetWeekKopecks?: number };
+    } = {
       email: email.trim(),
       password,
     };
     const trimmedName = householdName.trim();
     if (trimmedName) payload.householdName = trimmedName;
+    // Audit round-5: onboarding budget reaches Household.budgetWeekKopecks
+    // (previously silently dropped — /today budget bar had no source).
+    const budgetInput = Number.parseInt(budgetRoubles, 10);
+    if (Number.isFinite(budgetInput) && budgetInput > 0) {
+      payload.guestProfile = { budgetWeekKopecks: budgetInput * 100 };
+    }
 
     const ac = new AbortController();
     abortRef.current = ac;
@@ -130,6 +147,14 @@ export function RegisterForm({ deps, onSuccess }: RegisterFormProps): ReactEleme
         required
         helper="Минимум 8 символов, буква + цифра"
         {...(fieldErrors.password ? { error: fieldErrors.password } : {})}
+      />
+      <Input
+        label="Бюджет на неделю, ₽"
+        type="number"
+        min={0}
+        placeholder="Необязательно — для прогресс-бара на «Сегодня»"
+        value={budgetRoubles}
+        onChange={(e) => setBudgetRoubles(e.target.value)}
       />
       <Input
         label="Название семьи"
