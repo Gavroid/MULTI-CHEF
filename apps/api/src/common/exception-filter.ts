@@ -9,16 +9,28 @@
 import { Catch, HttpException, Logger } from '@nestjs/common';
 import type { ArgumentsHost, ExceptionFilter } from '@nestjs/common';
 import type { ErrorCode, ErrorInput } from './error-envelope.js';
-import { envelopeFromRequest, type ErrorBody } from './error-envelope.js';
+import { envelopeFromRequest, STATUS_BY_CODE, type ErrorBody } from './error-envelope.js';
 export class AppHttpException extends HttpException {
   readonly code: ErrorCode | string;
   readonly details?: Record<string, unknown> | null | undefined;
 
   constructor(input: ErrorInput) {
-    // We compute the body lazily inside the filter; here we just need
-    // an HttpException carrying the error code as a marker so that
-    // tests can assert on `e.code` without calling getResponse().
-    super(input.code ?? 'INTERNAL_ERROR', 500);
+    // Audit fix (round 3, 2026-09-13): the previous constructor passed
+    // only the CODE string into HttpException with a hardcoded 500 —
+    // the filter then lost message/details AND every domain error
+    // (INGREDIENT_NOT_FOUND, JOB_NOT_FOUND, CSRF_MISMATCH, ...) came
+    // out as 500 INTERNAL_ERROR on the wire. Now the full envelope is
+    // carried and the HTTP status is derived from STATUS_BY_CODE.
+    const status =
+      STATUS_BY_CODE[(input.code ?? 'INTERNAL_ERROR') as keyof typeof STATUS_BY_CODE] ?? 500;
+    super(
+      {
+        code: input.code ?? 'INTERNAL_ERROR',
+        message: input.message,
+        ...(input.details ? { details: input.details } : {}),
+      },
+      status,
+    );
     this.code = input.code;
     this.details = input.details;
   }

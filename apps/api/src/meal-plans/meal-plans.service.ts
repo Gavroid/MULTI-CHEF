@@ -139,10 +139,12 @@ export class MealPlansService {
       update: { targetMinutes: INTENSITY_TARGET_MINUTES[intensity], intensity },
     });
     await prisma.prepTask.deleteMany({ where: { prepSessionId: session.id } });
-    for (const d of drafts) {
+    // Audit fix: id by position — sequence repeats across per-recipe
+    // cooking tasks (all get sequence=3), which broke the unique id.
+    for (const [index, d] of drafts.entries()) {
       await prisma.prepTask.create({
         data: {
-          id: `${session.id}-t${d.sequence}`,
+          id: `${session.id}-t${index}`,
           prepSessionId: session.id,
           title: d.title,
           durationMinutes: d.durationMinutes,
@@ -157,15 +159,14 @@ export class MealPlansService {
       mealPlanId: session.mealPlanId,
       intensity,
       targetMinutes: INTENSITY_TARGET_MINUTES[intensity],
-      tasks: drafts.map((d, i) => ({
-        id: `${session.id}-t${d.sequence}`,
+      tasks: drafts.map((d, index) => ({
+        id: `${session.id}-t${index}`,
         title: d.title,
         durationMinutes: d.durationMinutes,
         sequence: d.sequence,
         parallelGroup: d.parallelGroup,
         instructions: d.instructions,
         done: false,
-        ...(i === -1 ? { done: false } : {}),
       })),
     };
   }
