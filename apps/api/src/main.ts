@@ -73,17 +73,22 @@ async function bootstrap(): Promise<void> {
     .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'ULID-26' }, 'session-token')
     .addCookieAuth('mc_session', { type: 'apiKey', in: 'cookie', name: 'mc_session' })
     .build();
-  const document = SwaggerModule.createDocument(app, swaggerConfig);
-  // MC-033 (QA blocker #2): register Zod-derived OpenAPI schemas so
-  // the recipes/recommendations wire DTOs appear in Swagger.
-  for (const [name, schema] of Object.entries(swaggerSchemas)) {
-    document.components ??= {};
-    document.components.schemas ??= {};
-    document.components.schemas[name] = schema as never;
+  // Audit round-6 (ops): the full API contract (models, paths) is an
+  // internal artefact — do not expose it on internet/LAN deployments.
+  // Swagger stays available in non-production for development.
+  if (env.NODE_ENV !== 'production') {
+    const document = SwaggerModule.createDocument(app, swaggerConfig);
+    // MC-033 (QA blocker #2): register Zod-derived OpenAPI schemas so
+    // the recipes/recommendations wire DTOs appear in Swagger.
+    for (const [name, schema] of Object.entries(swaggerSchemas)) {
+      document.components ??= {};
+      document.components.schemas ??= {};
+      document.components.schemas[name] = schema as never;
+    }
+    SwaggerModule.setup('api/v1/docs', app, document, {
+      swaggerOptions: { persistAuthorization: false },
+    });
   }
-  SwaggerModule.setup('api/v1/docs', app, document, {
-    swaggerOptions: { persistAuthorization: false },
-  });
 
   await app.listen(env.API_PORT, '0.0.0.0');
   console.log(`env: ok (NODE_ENV=${env.NODE_ENV}, CORS=${env.CORS_ORIGINS.length} origins)`);
