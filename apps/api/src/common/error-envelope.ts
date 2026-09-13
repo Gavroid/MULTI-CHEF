@@ -24,11 +24,21 @@ export type ErrorCode =
   | 'SESSION_NOT_FOUND'
   | 'PANTRY_ITEM_NOT_FOUND'
   | 'SHOPPING_LIST_NOT_FOUND'
+  | 'SHOPPING_ITEM_NOT_FOUND'
+  | 'JOB_NOT_FOUND'
+  | 'PLAN_NOT_FOUND'
+  | 'PREP_TASK_NOT_FOUND'
+  // MC-040/042 domain codes
+  | 'EMPTY_RESCUE'
+  | 'ROULETTE_EMPTY'
+  | 'REJECT_LIMIT_REACHED'
+  // MC-033 CSRF double-submit
+  | 'CSRF_MISMATCH'
   | 'PREFERENCE_NOT_FOUND'
   | 'NUTRITION_PROFILE_NOT_FOUND'
   | 'ITEM_NOT_ARCHIVED';
 
-const STATUS_BY_CODE: Record<ErrorCode, number> = {
+export const STATUS_BY_CODE: Record<ErrorCode, number> = {
   VALIDATION_ERROR: 400,
   BAD_REQUEST: 400,
   UNAUTHORIZED: 401,
@@ -42,6 +52,14 @@ const STATUS_BY_CODE: Record<ErrorCode, number> = {
   SESSION_NOT_FOUND: 404,
   PANTRY_ITEM_NOT_FOUND: 404,
   SHOPPING_LIST_NOT_FOUND: 404,
+  SHOPPING_ITEM_NOT_FOUND: 404,
+  JOB_NOT_FOUND: 404,
+  PLAN_NOT_FOUND: 404,
+  PREP_TASK_NOT_FOUND: 404,
+  EMPTY_RESCUE: 422,
+  ROULETTE_EMPTY: 422,
+  REJECT_LIMIT_REACHED: 409,
+  CSRF_MISMATCH: 403,
   PREFERENCE_NOT_FOUND: 404,
   NUTRITION_PROFILE_NOT_FOUND: 404,
   CONFLICT: 409,
@@ -128,6 +146,7 @@ function defaultMessageFor(code: ErrorCode): string {
     case 'UNAUTHORIZED':
       return 'Authentication required';
     case 'FORBIDDEN':
+    case 'CSRF_MISMATCH':
       return 'Access denied';
     case 'NOT_FOUND':
     case 'INGREDIENT_NOT_FOUND':
@@ -138,13 +157,21 @@ function defaultMessageFor(code: ErrorCode): string {
     case 'SESSION_NOT_FOUND':
     case 'PANTRY_ITEM_NOT_FOUND':
     case 'SHOPPING_LIST_NOT_FOUND':
+    case 'SHOPPING_ITEM_NOT_FOUND':
+    case 'JOB_NOT_FOUND':
+    case 'PLAN_NOT_FOUND':
+    case 'PREP_TASK_NOT_FOUND':
     case 'PREFERENCE_NOT_FOUND':
     case 'NUTRITION_PROFILE_NOT_FOUND':
       return 'Resource not found';
     case 'CONFLICT':
+    case 'REJECT_LIMIT_REACHED':
       return 'Resource conflict';
     case 'RATE_LIMITED':
       return 'Too many requests';
+    case 'EMPTY_RESCUE':
+    case 'ROULETTE_EMPTY':
+      return 'Подходящих рецептов не нашлось';
     case 'JOB_FAILED':
       return 'Job failed';
     case 'ITEM_NOT_ARCHIVED':
