@@ -19,7 +19,7 @@ import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import fastifyCookie from '@fastify/cookie';
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PantryModule } from '../pantry/pantry.module.js';
 import { AuthModule } from '../auth/auth.module.js';
