@@ -21,7 +21,8 @@
     "check:adr-coverage": "node scripts/check-adr-coverage.mjs",
     "commitlint": "commitlint --edit",
     "prepare": "husky",
-    "clean": "turbo run clean && rm -rf node_modules"
+    "clean": "turbo run clean && rm -rf node_modules",
+    "check:schema-drift": "node scripts/check-schema-drift.mjs"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.6.0",
