@@ -14,11 +14,11 @@
 
 import { Injectable } from '@nestjs/common';
 import argon2 from 'argon2';
-import { Prisma } from '@prisma/client';
 import { getPrisma } from '@multichef/database';
 import { loadServerEnv } from '@multichef/config';
 import { generateSessionToken, generateUlid, hashSessionToken } from './session-token.js';
 import { AppHttpException } from '../common/exception-filter.js';
+import { isUniqueConstraintOn } from '../common/prisma-errors.js';
 
 export interface AuthenticatedUser {
   id: string;
@@ -140,12 +140,7 @@ export class AuthService {
       // unique index on User.email is the real arbiter. Map the
       // loser's P2002 onto the same 409 CONFLICT the pre-check
       // produces instead of letting it surface as a 500.
-      if (
-        err instanceof Prisma.PrismaClientKnownRequestError &&
-        err.code === 'P2002' &&
-        Array.isArray(err.meta?.['target']) &&
-        (err.meta['target'] as string[]).includes('email')
-      ) {
+      if (isUniqueConstraintOn(err, 'email')) {
         throw new AppHttpException({
           code: 'CONFLICT',
           message: 'Email already registered',

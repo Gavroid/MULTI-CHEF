@@ -11,7 +11,6 @@
 //   * Money is always stored as Int kopecks; UI converts.
 
 import { Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
 import { getPrisma } from '@multichef/database';
 // APPLIANCE_VALUES / PREFERENCE_KIND_VALUES are exported as `as const`
 // tuples; the service derives the union type via `(typeof X)[number]`
@@ -26,6 +25,7 @@ import {
 } from './profile.dto.js';
 import { generateUlid } from '../auth/session-token.js';
 import { AppHttpException } from '../common/exception-filter.js';
+import { isUniqueConstraintOn } from '../common/prisma-errors.js';
 
 export interface ProfileView {
   user: {
@@ -66,21 +66,6 @@ export interface ProfileView {
 
 export type PreferenceKind = (typeof PREFERENCE_KIND_VALUES)[number];
 export type Appliance = (typeof APPLIANCE_VALUES)[number];
-
-/**
- * T14-A: true when the error is the unique-index violation on
- * (userId, kind, ingredientId) — i.e. another concurrent request won
- * the insert race. Any other P2002 (or non-Prisma error) is rethrown
- * by the callers.
- */
-function isPreferenceUniqueViolation(err: unknown): boolean {
-  return (
-    err instanceof Prisma.PrismaClientKnownRequestError &&
-    err.code === 'P2002' &&
-    Array.isArray(err.meta?.['target']) &&
-    (err.meta['target'] as string[]).includes('ingredientId')
-  );
-}
 
 @Injectable()
 export class ProfileService {
@@ -279,7 +264,7 @@ export class ProfileService {
     } catch (err) {
       // Lost the insert race — return the winner's row so the replay
       // stays idempotent (same shape as the findFirst hit above).
-      if (isPreferenceUniqueViolation(err)) {
+      if (isUniqueConstraintOn(err, 'ingredientId')) {
         const winner = await getPrisma().preference.findFirstOrThrow({
           where: { userId, kind: body.kind, ingredientId: body.ingredientId ?? null },
         });
@@ -389,7 +374,7 @@ export class ProfileService {
             // (userId, kind, ingredientId) after our findFirst — the
             // unique index keeps one row, treat it as already-present
             // (don't count it: this request didn't create it).
-            if (!isPreferenceUniqueViolation(err)) throw err;
+            if (!isUniqueConstraintOn(err, 'ingredientId')) throw err;
           }
         }
       };
