@@ -43,7 +43,7 @@ async function setupApp(): Promise<void> {
   }
 
   execSync(
-    'pnpm exec prisma migrate deploy --schema ../../packages/database/prisma/schema.prisma',
+    'pnpm --filter @multichef/database exec prisma migrate deploy --schema prisma/schema.prisma',
     {
       cwd: PKG_ROOT,
       env: { ...process.env, DATABASE_URL: url },

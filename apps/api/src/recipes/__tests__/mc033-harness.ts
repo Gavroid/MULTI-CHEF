@@ -48,7 +48,7 @@ export async function setup(): Promise<Mc033Harness> {
   if (!url) throw new Error('INTEGRATION_DATABASE_URL is required');
 
   execSync(
-    'pnpm exec prisma migrate deploy --schema ../../packages/database/prisma/schema.prisma',
+    'pnpm --filter @multichef/database exec prisma migrate deploy --schema prisma/schema.prisma',
     {
       cwd: PKG_ROOT,
       env: { ...process.env, DATABASE_URL: url },
