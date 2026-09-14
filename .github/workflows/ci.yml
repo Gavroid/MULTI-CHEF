@@ -179,6 +179,11 @@ jobs:
       - name: Apply migrations
         run: pnpm --filter @multichef/database prisma migrate deploy
 
+      - name: Schema drift check (T17-A)
+        # Fails when schema.prisma and the database disagree on anything
+        # beyond the documented DB-only invariants.
+        run: pnpm check:schema-drift
+
       - name: Unit tests
         # CI-fix v2 for PR #21 (MC-035): turbo's default parallel scheduling
         # causes flaky failures in node:test under heavy CPU contention

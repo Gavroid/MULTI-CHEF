@@ -208,6 +208,10 @@ test('store failure degrades to pass-through (fail-open)', async () => {
     set: async () => {
       throw new Error('ECONNREFUSED');
     },
+    tryLock: async () => {
+      throw new Error('ECONNREFUSED');
+    },
+    unlock: async () => {},
   };
   const interceptor = new IdempotencyReplayInterceptor(failingStore);
   const spy = { calls: 0 };

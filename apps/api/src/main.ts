@@ -93,9 +93,12 @@ async function bootstrap(): Promise<void> {
   }
 
   await app.listen(env.API_PORT, '0.0.0.0');
-  console.log(`env: ok (NODE_ENV=${env.NODE_ENV}, CORS=${env.CORS_ORIGINS.length} origins)`);
-  console.log(`api listening on http://localhost:${env.API_PORT}/api/v1`);
-  console.log(`openapi:   http://localhost:${env.API_PORT}/api/v1/docs`);
+  // T18-F (audit round 18): banner through the Nest logger so boot
+  // lines share one format with the rest of the application log.
+  const bootstrap = new Logger('Bootstrap');
+  bootstrap.log(`env: ok (NODE_ENV=${env.NODE_ENV}, CORS=${env.CORS_ORIGINS.length} origins)`);
+  bootstrap.log(`api listening on http://localhost:${env.API_PORT}/api/v1`);
+  bootstrap.log(`openapi:   http://localhost:${env.API_PORT}/api/v1/docs`);
 }
 
 void bootstrap();

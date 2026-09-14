@@ -84,6 +84,15 @@ export class AppHttpExceptionFilter implements ExceptionFilter {
     }
 
     const body: ErrorBody = envelopeFromRequest(request, input);
+    // WP-6.2 (#16 recommendation): greppable 5xx marker per response —
+    // the seed for a Prometheus counter until real metrics land.
+    if (body.status >= 500) {
+      const path =
+        (request as { url?: string } | undefined)?.url ??
+        (request as { raw?: { url?: string } } | undefined)?.raw?.url ??
+        'unknown';
+      this.logger.warn(`metric_5xx path=${path} code=${body.error.code}`);
+    }
     sendErrorResponse(response, body);
   }
 }

@@ -28,9 +28,9 @@ import { Injectable, Logger } from '@nestjs/common';
 import type { CallHandler, ExecutionContext, NestInterceptor } from '@nestjs/common';
 import type { FastifyReply } from 'fastify';
 import IORedis from 'ioredis';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import type { Observable } from 'rxjs';
-import { mergeMap } from 'rxjs/operators';
+import { catchError, mergeMap } from 'rxjs/operators';
 import { createHash } from 'node:crypto';
 import { loadServerEnv } from '@multichef/config';
 import { AppHttpException } from './exception-filter.js';
@@ -41,10 +41,20 @@ export const IDEMPOTENCY_TTL_SECONDS = 86_400;
 
 const CACHE_PREFIX = 'idem:';
 const SKIP_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
+/** How long a caller waits for an in-flight duplicate before failing open. */
+const INFLIGHT_WAIT_MS = 8_000;
+/** In-flight lock lifetime — outlives slow handlers, dies on its own. */
+const IDEMPOTENCY_LOCK_TTL_SECONDS = 60;
 
 export interface IdempotencyStore {
   get(key: string): Promise<string | null>;
   set(key: string, value: string, ttlSeconds: number): Promise<void>;
+  /**
+   * In-flight lock (6.3): true when THIS caller acquired it. Atomic on
+   * the underlying store so concurrent callers serialise.
+   */
+  tryLock(key: string, ttlSeconds: number): Promise<boolean>;
+  unlock(key: string): Promise<void>;
 }
 
 interface SetCookieCall {
@@ -70,12 +80,22 @@ export class RedisIdempotencyStore implements IdempotencyStore {
   async set(key: string, value: string, ttlSeconds: number): Promise<void> {
     await this.client.set(key, value, 'EX', ttlSeconds);
   }
+
+  async tryLock(key: string, ttlSeconds: number): Promise<boolean> {
+    const ok = await this.client.set(key, '1', 'EX', ttlSeconds, 'NX');
+    return ok === 'OK';
+  }
+
+  async unlock(key: string): Promise<void> {
+    await this.client.del(key);
+  }
 }
 
 /** Single-process fallback for tests / Redis-less dev runs. */
 export class InMemoryIdempotencyStore implements IdempotencyStore {
   /** Public for tests — lets them assert that nothing was cached. */
   readonly entries = new Map<string, { value: string; expiresAt: number }>();
+  private readonly lockExpiry = new Map<string, number>();
 
   async get(key: string): Promise<string | null> {
     const hit = this.entries.get(key);
@@ -89,6 +109,17 @@ export class InMemoryIdempotencyStore implements IdempotencyStore {
 
   async set(key: string, value: string, ttlSeconds: number): Promise<void> {
     this.entries.set(key, { value, expiresAt: Date.now() + ttlSeconds * 1000 });
+  }
+
+  async tryLock(key: string, ttlSeconds: number): Promise<boolean> {
+    const expiresAt = this.lockExpiry.get(key);
+    if (expiresAt !== undefined && expiresAt > Date.now()) return false;
+    this.lockExpiry.set(key, Date.now() + ttlSeconds * 1000);
+    return true;
+  }
+
+  async unlock(key: string): Promise<void> {
+    this.lockExpiry.delete(key);
   }
 }
 
@@ -182,32 +213,49 @@ export class IdempotencyReplayInterceptor implements NestInterceptor {
 
     const fingerprint = fingerprintOf(method, req.url ?? '', req.body);
     const cacheKey = `${CACHE_PREFIX}${key}`;
+    const lockKey = `${CACHE_PREFIX}lock:${key}`;
 
-    let raw: string | null = null;
-    try {
-      raw = await store.get(cacheKey);
-    } catch (err) {
-      this.warnUnavailable(err);
-      return next.handle();
-    }
-    if (raw !== null) {
-      let cached: CachedEntry;
+    // T20-B/6.3: bounded wait behind an in-flight executor before
+    // giving up and executing anyway (fail-open).
+    let polls = 0;
+    for (;;) {
+      let raw: string | null | 'unavailable' = null;
       try {
-        cached = JSON.parse(raw) as CachedEntry;
+        raw = await store.get(cacheKey);
       } catch {
-        return next.handle(); // corrupt entry — execute for real
+        raw = 'unavailable';
       }
-      if (cached.fingerprint !== fingerprint) {
-        throw new AppHttpException({
-          code: 'IDEMPOTENT_REPLAY',
-          message: 'Idempotency-Key was already used with a different request',
-          details: { 'Idempotency-Key': key },
-        });
+      if (raw === 'unavailable') {
+        this.warnUnavailable(new Error('cache read failed'));
+        if (++polls >= 2) return next.handle();
+        await this.sleep(150);
+        continue;
       }
-      for (const call of cached.cookies ?? []) {
-        reply.setCookie(call.name, call.value, call.options);
+      if (raw !== null) {
+        let cached: CachedEntry;
+        try {
+          cached = JSON.parse(raw) as CachedEntry;
+        } catch {
+          return next.handle(); // corrupt entry — execute for real
+        }
+        if (cached.fingerprint !== fingerprint) {
+          throw new AppHttpException({
+            code: 'IDEMPOTENT_REPLAY',
+            message: 'Idempotency-Key was already used with a different request',
+            details: { 'Idempotency-Key': key },
+          });
+        }
+        for (const call of cached.cookies ?? []) {
+          reply.setCookie(call.name, call.value, call.options);
+        }
+        return of(cached.body);
       }
-      return of(cached.body);
+
+      const owner = await this.safeTryLock(store, lockKey);
+      if (owner) break; // we own execution
+      if (Date.now() >= this.deadlineFor(polls)) return next.handle(); // fail-open
+      await this.sleep(100);
+      polls += 1;
     }
 
     // Record setCookie side effects so the replay can restore them.
@@ -227,9 +275,43 @@ export class IdempotencyReplayInterceptor implements NestInterceptor {
         } catch (err) {
           this.warnUnavailable(err);
         }
+        // Release the in-flight lock: the cached response now serves replays.
+        try {
+          await store.unlock(lockKey);
+        } catch {
+          /* lock TTL cleans up */
+        }
         return body;
       }),
+      catchError((err: unknown) => {
+        // Handler failed without caching — release the lock so a retry
+        // can execute instead of waiting out the lock TTL.
+        void store
+          .unlock(lockKey)
+          .catch(() => {
+            /* fail-open */
+          })
+          .catch(() => undefined);
+        return throwError(() => err);
+      }),
     );
+  }
+
+  private sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  private deadlineFor(polls: number): number {
+    void polls;
+    return Date.now() + INFLIGHT_WAIT_MS;
+  }
+
+  private async safeTryLock(store: IdempotencyStore, lockKey: string): Promise<boolean> {
+    try {
+      return await store.tryLock(lockKey, IDEMPOTENCY_LOCK_TTL_SECONDS);
+    } catch {
+      return false;
+    }
   }
 
   private warnUnavailable(err: unknown): void {
