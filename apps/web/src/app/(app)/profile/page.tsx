@@ -13,6 +13,8 @@ import { Button, Card, Skeleton } from '@multichef/ui';
 import { TabTitle } from '@/components/TabTitle';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { logout } from '@/lib/auth-client';
+import { resetPantryCache } from '@/hooks/usePantry';
+import { resetPreferencesCache } from '@/hooks/usePreferences';
 
 export default function ProfilePage(): React.ReactElement {
   const [checking, setChecking] = useState(true);
@@ -116,6 +118,11 @@ export default function ProfilePage(): React.ReactElement {
             // Audit: clear marker BEFORE the API call so the client
             // AuthGuard does not flash the authed view during logout.
             window.localStorage.removeItem('mc_user');
+            // T19-C (audit round 19): drop the module-scope data caches
+            // so the next logged-in user on this tab cannot see the
+            // previous user's pantry/preferences for up to 30s.
+            resetPantryCache();
+            resetPreferencesCache();
             void logout().then(() => {
               window.location.assign('/auth/login');
             });
