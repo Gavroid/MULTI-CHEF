@@ -161,24 +161,33 @@ test('landing page shows Войти + Создать аккаунт CTAs (MC-013
   assert.match(src, /Семейный планировщик питания/);
 });
 
-test('middleware.ts protects /profile only (per MC-013 spec)', () => {
+test('middleware.ts protects every authenticated screen (T19-B, MC-014 policy)', () => {
   const mw = read('src/middleware.ts');
   assert.match(mw, /mc_session/);
   assert.match(mw, /\/auth\/login/);
   assert.match(mw, /PROTECTED_PREFIXES/);
-  // /today, /fridge, /plan, /shopping are NOT in the protected list —
-  // guests can browse the empty-state UI (PRD §2.3.2).
+  // All (app) screens are gated server-side — no SSR flash of private
+  // content for logged-out visitors.
   const protectedSection = mw.match(/PROTECTED_PREFIXES\s*=\s*\[([^\]]+)\]/);
   assert.ok(protectedSection, 'PROTECTED_PREFIXES array literal should be parseable');
   const body = protectedSection?.[1] ?? '';
-  assert.match(body, /'\/profile'/);
-  assert.ok(!/'\/today'/.test(body), '/today should NOT be protected');
-  assert.ok(!/'\/fridge'/.test(body), '/fridge should NOT be protected');
+  for (const prefix of ['/profile', '/today', '/fridge', '/plan', '/shopping', '/recipe']) {
+    assert.match(
+      body,
+      new RegExp(`'${prefix.replace('/', '\\/')}'`),
+      `${prefix} must be protected`,
+    );
+  }
+  // Landing + design demo stay public (PRD §2.3.2 guest browsing).
+  assert.ok(!/'\/'/.test(body), "the landing '/' must stay public");
+  assert.ok(!/'\/design'/.test(body), '/design must stay public');
 });
 
-test('middleware matcher covers /profile/:path*', () => {
+test('middleware matcher covers every protected prefix and subpaths', () => {
   const mw = read('src/middleware.ts');
-  assert.match(mw, /matcher:\s*\[[^\]]*\/profile[^\]]*\]/);
+  for (const prefix of ['profile', 'today', 'fridge', 'plan', 'shopping', 'recipe']) {
+    assert.match(mw, new RegExp(`'\\/${prefix}\\/:path\\*'.*`), `${prefix}/:path* matcher`);
+  }
 });
 
 test('BottomTabBar package source is intact (regression guard)', () => {

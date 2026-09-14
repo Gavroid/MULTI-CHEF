@@ -247,9 +247,16 @@ test('RegisterPage wires register() + saveLocalUser + delegates to /today', () =
   assert.match(formSrc, /deps\.navigate\(['"]\/today['"]\)/);
 });
 
-test('AuthGuard continues to read the mc_user localStorage key', () => {
+test('AuthGuard verifies the server session, not the localStorage marker (T19-A)', () => {
   const src = readSrc('src/components/AuthGuard.tsx');
-  assert.match(src, /mc_user/);
+  // The redirect decision must come from a server probe (mc_session
+  // cookie attached), never from the mc_user hint in localStorage.
+  assert.match(src, /getSession/);
+  assert.match(src, /mc_session\s+HttpOnly cookie/);
+  // Stale marker is cleared when the server rejects the session.
+  assert.match(src, /clearLocalUser/);
+  // The old guard redirected straight from the raw marker string.
+  assert.doesNotMatch(src, /getItem\(STORAGE_KEY\)/);
 });
 
 /* ---------------- FormErrorBanner behaviour ---------------- */

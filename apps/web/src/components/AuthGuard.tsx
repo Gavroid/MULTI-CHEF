@@ -1,41 +1,52 @@
 'use client';
 
 // AuthGuard — client boundary that redirects unauthenticated users to
-// /auth/login. Until MC-014 lands the real auth integration, "logged in"
-// means a `mc_user` key in localStorage (set by the auth screens after
-// MC-014). For MC-013 we render the children during SSR + first paint
-// and redirect post-hydration if no marker is present — that way search
-// engines + curl see real content, and we don't ship a skeleton-only
-// page to logged-out users.
+// /auth/login.
 //
-// Why client-side and not middleware: middleware.ts runs on the Edge and
-// can only inspect request headers — localStorage isn't available there.
-// Until MC-014 wires real cookie auth, server-side redirect via middleware
-// is only possible for /profile (already wired). MC-014 will replace this
-// guard with a real session-cookie check.
+// T19-A (audit round 19): the redirect decision is made against the
+// SERVER session — a GET /auth/session probe carrying the
+// mc_session HttpOnly cookie — not against the `mc_user` localStorage
+// marker. Those two sources of truth used to diverge (cleared cookies
+// but stale marker → "logged-in" UI with 401s everywhere; cleared
+// marker but valid cookie → premature redirect that killed a live
+// session). Children still render during the probe so SSR + first
+// paint show real content and curl/search engines see the page; only
+// a definitive auth error redirects. Network failures keep the user
+// on-screen — the API calls themselves will surface the problem.
+//
+// `mc_user` remains a non-authoritative UX hint (BottomTabBar
+// highlighting, per auth-storage.ts). middleware.ts protects these
+// routes server-side as well, so this guard is defence-in-depth for
+// client navigations, not the primary boundary.
 
 import { useEffect, useState, type ReactElement, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-
-const STORAGE_KEY = 'mc_user';
+import { getSession } from '@/lib/auth-client';
+import { clearLocalUser } from '@/lib/auth-storage';
 
 export function AuthGuard({ children }: { children: ReactNode }): ReactElement {
   const router = useRouter();
-  // `null` means we haven't checked yet. We render children during this
-  // window so SSR + first paint show real content. After hydration we
-  // re-evaluate and redirect if the user has no marker.
+  // We render children during the probe window so SSR + first paint
+  // show real content.
   const [redirected, setRedirected] = useState(false);
 
   useEffect(() => {
-    try {
-      const raw = window.localStorage.getItem(STORAGE_KEY);
-      if (!raw && !redirected) {
+    if (redirected) return;
+    const controller = new AbortController();
+    getSession({ signal: controller.signal })
+      .then((result) => {
+        if (controller.signal.aborted) return;
+        // Network errors (status 0) are not proof of a dead session —
+        // stay on-screen. An auth error from the server is definitive.
+        if (!result.error || result.error.error.code === 'NETWORK_ERROR') return;
+        clearLocalUser();
         setRedirected(true);
         router.replace('/auth/login');
-      }
-    } catch {
-      // localStorage blocked — render as if logged-in (best-effort UX).
-    }
+      })
+      .catch(() => {
+        // AbortError on unmount — nothing to do.
+      });
+    return () => controller.abort();
   }, [router, redirected]);
 
   return <>{children}</>;
@@ -45,7 +56,7 @@ export function AuthGuard({ children }: { children: ReactNode }): ReactElement {
 export function hasLocalUser(): boolean {
   if (typeof window === 'undefined') return false;
   try {
-    return Boolean(window.localStorage.getItem(STORAGE_KEY));
+    return Boolean(window.localStorage.getItem('mc_user'));
   } catch {
     return false;
   }
