@@ -1,5 +1,6 @@
 import { Controller, Get, HttpException, HttpStatus } from '@nestjs/common';
 import { pingDatabase } from '@multichef/database';
+import { loadServerEnv } from '@multichef/config';
 
 // Health endpoints under the global /api/v1 prefix (configured in main.ts).
 //
@@ -43,24 +44,32 @@ export class HealthController {
     }
     // Audit round-11: the worker and the sync recommendation endpoints
     // depend on Redis (BullMQ queue) — readiness must reflect it too.
-    const redisUrl = process.env['REDIS_URL'];
-    if (redisUrl) {
-      try {
-        const { default: IORedis } = await import('ioredis');
-        const redis = new IORedis(redisUrl, {
-          lazyConnect: true,
-          connectTimeout: 2000,
-          maxRetriesPerRequest: 1,
-        });
-        await redis.connect();
-        await redis.ping();
-        await redis.quit();
-      } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        console.error(`health/ready: redis unreachable: ${message}`);
-        const body: NotReadyResponse = { status: 'not-ready', reason: 'redis' };
-        throw new HttpException(body, HttpStatus.SERVICE_UNAVAILABLE);
-      }
+    // T18-C (audit round 18): the URL now comes from the validated env
+    // schema like every other consumer. The previous direct
+    // process.env read silently SKIPPED the Redis probe when the
+    // variable was unset or mistyped, reporting "ready" with a dead
+    // queue dependency. REDIS_URL is required by serverEnvSchema, so
+    // an invalid env surfaces as not-ready/redis instead.
+    const redisUrl = loadServerEnv().REDIS_URL;
+    if (!redisUrl) {
+      const body: NotReadyResponse = { status: 'not-ready', reason: 'redis' };
+      throw new HttpException(body, HttpStatus.SERVICE_UNAVAILABLE);
+    }
+    try {
+      const { default: IORedis } = await import('ioredis');
+      const redis = new IORedis(redisUrl, {
+        lazyConnect: true,
+        connectTimeout: 2000,
+        maxRetriesPerRequest: 1,
+      });
+      await redis.connect();
+      await redis.ping();
+      await redis.quit();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error(`health/ready: redis unreachable: ${message}`);
+      const body: NotReadyResponse = { status: 'not-ready', reason: 'redis' };
+      throw new HttpException(body, HttpStatus.SERVICE_UNAVAILABLE);
     }
     return { status: 'ready' };
   }
