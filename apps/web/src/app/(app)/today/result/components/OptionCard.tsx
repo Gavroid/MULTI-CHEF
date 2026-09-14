@@ -65,10 +65,16 @@ export function OptionCard({
       <div className="mb-3 flex gap-3">
         <div className="h-16 w-16 shrink-0 overflow-hidden rounded-[var(--radius-sm)] bg-[var(--color-surface-2)]">
           {recipe.imageKey && !imageFailed ? (
+            // T3: below-the-fold thumbnail is lazy and decoded off-thread;
+            // explicit 64x64 (h-16 w-16) dimensions keep CLS at 0.
             <img
               src={recipe.imageKey}
               alt={recipe.title}
               className="h-full w-full object-cover"
+              loading="lazy"
+              decoding="async"
+              width={64}
+              height={64}
               onError={() => setImageFailed(true)}
             />
           ) : (
