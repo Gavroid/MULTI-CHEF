@@ -10,9 +10,18 @@
 // boundary imported here. AuthGuard runs in a separate client boundary
 // so the server layout stays fast.
 
+import type { Metadata } from 'next';
 import type { ReactElement, ReactNode } from 'react';
 import { BottomTabBar } from '@/components/BottomTabBar';
 import { AuthGuard } from '@/components/AuthGuard';
+
+// T19-B/T1: (app) screens are private (mc_session gate) — noindex
+// keeps them out of search indexes; titles per page override this
+// fallback via the %s template from the root layout.
+export const metadata: Metadata = {
+  title: 'MULTI-CHEF',
+  robots: { index: false, follow: false },
+};
 
 export default function AppLayout({ children }: { children: ReactNode }): ReactElement {
   return (

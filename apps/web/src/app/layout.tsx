@@ -3,9 +3,24 @@ import type { ReactNode } from 'react';
 import { PwaRegister } from '@/components/PwaRegister';
 import './globals.css';
 
+// T1 (audit round 3): title template gives every page a unique
+// "<page> — MULTI-CHEF" title, openGraph fills the public OG tags,
+// metadataBase anchors the relative OG/sitemap URLs to the public
+// origin (NEXT_PUBLIC_APP_BASE_URL is inlined at build time).
 export const metadata: Metadata = {
-  title: 'MULTI-CHEF',
+  metadataBase: new URL(process.env['NEXT_PUBLIC_APP_BASE_URL'] ?? 'http://localhost:3001'),
+  title: {
+    default: 'MULTI-CHEF — семейный планировщик питания',
+    template: '%s — MULTI-CHEF',
+  },
   description: 'Семейный планировщик питания — рецепты из того, что уже есть дома.',
+  openGraph: {
+    type: 'website',
+    siteName: 'MULTI-CHEF',
+    locale: 'ru_RU',
+    title: 'MULTI-CHEF — семейный планировщик питания',
+    description: 'Семейный планировщик питания — рецепты из того, что уже есть дома.',
+  },
   manifest: '/manifest.webmanifest',
   icons: { icon: '/icons/icon.svg' },
 };

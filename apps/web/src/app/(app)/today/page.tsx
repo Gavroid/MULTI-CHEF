@@ -4,6 +4,9 @@
 // hooks with deps injection); wizard/loading/result are separate
 // sub-routes per the URL-driven state machine in the ADR.
 
+import type { Metadata } from 'next';
+export const metadata: Metadata = { title: 'Сегодня' };
+
 import { TodayClient } from './TodayClient';
 
 export default function TodayPage(): React.JSX.Element {

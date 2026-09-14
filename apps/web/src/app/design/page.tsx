@@ -5,6 +5,9 @@
 // Lives at /_design — the underscore prefix marks it as internal/dev-only.
 // Real product routes will land in MC-030+.
 
+import type { Metadata } from 'next';
+export const metadata: Metadata = { title: 'Дизайн-система' };
+
 import { Badge, Button, Card, Chip, Input, Skeleton, ToastProvider } from '@multichef/ui';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { DesignDemoClient } from './_DesignDemoClient';
