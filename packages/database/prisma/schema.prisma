@@ -269,6 +269,11 @@ model Preference {
   user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   ingredient Ingredient? @relation(fields: [ingredientId], references: [id])
 
+  // T14-A (audit round 14): enforce the (userId, kind, ingredientId)
+  // dedup at the DB level. ingredientId is nullable, and Postgres
+  // UNIQUE treats NULLs as distinct, so free-form note-only rows
+  // (no ingredientId) stay unconstrained by design.
+  @@unique([userId, kind, ingredientId])
   @@index([userId, kind])
   @@map("Preference")
 }
@@ -591,17 +596,17 @@ model PreparedPortion {
 }
 
 model Job {
-  id        String    @id
-  userId    String
-  type      JobType
-  status    JobStatus @default(QUEUED)
-  progress  Int       @default(0)
-  stage     String?
-  resultRef String?
-  error     String?
+  id         String    @id
+  userId     String
+  type       JobType
+  status     JobStatus @default(QUEUED)
+  progress   Int       @default(0)
+  stage      String?
+  resultRef  String?
+  error      String?
   paramsHash String?
-  createdAt DateTime  @default(now()) @db.Timestamptz(6)
-  updatedAt DateTime  @updatedAt @db.Timestamptz(6)
+  createdAt  DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt  DateTime  @updatedAt @db.Timestamptz(6)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

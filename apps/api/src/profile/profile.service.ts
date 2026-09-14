@@ -11,6 +11,7 @@
 //   * Money is always stored as Int kopecks; UI converts.
 
 import { Injectable, Logger } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { getPrisma } from '@multichef/database';
 // APPLIANCE_VALUES / PREFERENCE_KIND_VALUES are exported as `as const`
 // tuples; the service derives the union type via `(typeof X)[number]`
@@ -65,6 +66,21 @@ export interface ProfileView {
 
 export type PreferenceKind = (typeof PREFERENCE_KIND_VALUES)[number];
 export type Appliance = (typeof APPLIANCE_VALUES)[number];
+
+/**
+ * T14-A: true when the error is the unique-index violation on
+ * (userId, kind, ingredientId) — i.e. another concurrent request won
+ * the insert race. Any other P2002 (or non-Prisma error) is rethrown
+ * by the callers.
+ */
+function isPreferenceUniqueViolation(err: unknown): boolean {
+  return (
+    err instanceof Prisma.PrismaClientKnownRequestError &&
+    err.code === 'P2002' &&
+    Array.isArray(err.meta?.['target']) &&
+    (err.meta['target'] as string[]).includes('ingredientId')
+  );
+}
 
 @Injectable()
 export class ProfileService {
@@ -223,36 +239,57 @@ export class ProfileService {
           message: 'Ingredient not found',
         });
       }
-      // Idempotency at the application level: don't double-insert
-      // (userId, kind, ingredientId). The schema doesn't have a unique
-      // index on this tuple, so we look it up first.
-      const existing = await getPrisma().preference.findFirst({
-        where: { userId, kind: body.kind, ingredientId: body.ingredientId },
-      });
-      if (existing) {
+    }
+    try {
+      // T14-A (audit round 14): the whole check-then-act runs inside one
+      // transaction; the @@unique([userId, kind, ingredientId]) index is
+      // the final arbiter when two concurrent adds both miss findFirst.
+      return await getPrisma().$transaction(async (tx) => {
+        if (body.ingredientId) {
+          const existing = await tx.preference.findFirst({
+            where: { userId, kind: body.kind, ingredientId: body.ingredientId },
+          });
+          if (existing) {
+            return {
+              id: existing.id,
+              kind: existing.kind,
+              ingredientId: existing.ingredientId,
+              note: existing.note,
+            };
+          }
+        }
+        const created = await tx.preference.create({
+          data: {
+            id: generateUlid(),
+            userId,
+            ...(body.ingredientId !== undefined ? { ingredientId: body.ingredientId } : {}),
+            kind: body.kind,
+            ...(body.note !== undefined ? { note: body.note } : {}),
+          },
+        });
         return {
-          id: existing.id,
-          kind: existing.kind,
-          ingredientId: existing.ingredientId,
-          note: existing.note,
+          id: created.id,
+          kind: created.kind,
+          ingredientId: created.ingredientId,
+          note: created.note,
+        };
+      });
+    } catch (err) {
+      // Lost the insert race — return the winner's row so the replay
+      // stays idempotent (same shape as the findFirst hit above).
+      if (isPreferenceUniqueViolation(err)) {
+        const winner = await getPrisma().preference.findFirstOrThrow({
+          where: { userId, kind: body.kind, ingredientId: body.ingredientId ?? null },
+        });
+        return {
+          id: winner.id,
+          kind: winner.kind,
+          ingredientId: winner.ingredientId,
+          note: winner.note,
         };
       }
+      throw err;
     }
-    const created = await getPrisma().preference.create({
-      data: {
-        id: generateUlid(),
-        userId,
-        ...(body.ingredientId !== undefined ? { ingredientId: body.ingredientId } : {}),
-        kind: body.kind,
-        ...(body.note !== undefined ? { note: body.note } : {}),
-      },
-    });
-    return {
-      id: created.id,
-      kind: created.kind,
-      ingredientId: created.ingredientId,
-      note: created.note,
-    };
   }
 
   async removePreference(userId: string, preferenceId: string): Promise<void> {
@@ -335,15 +372,23 @@ export class ProfileService {
             where: { userId, kind, ingredientId },
           });
           if (existing) continue;
-          await tx.preference.create({
-            data: {
-              id: generateUlid(),
-              userId,
-              kind,
-              ingredientId,
-            },
-          });
-          preferencesCreated += 1;
+          try {
+            await tx.preference.create({
+              data: {
+                id: generateUlid(),
+                userId,
+                kind,
+                ingredientId,
+              },
+            });
+            preferencesCreated += 1;
+          } catch (err) {
+            // T14-A: a concurrent onboarding may have inserted the same
+            // (userId, kind, ingredientId) after our findFirst — the
+            // unique index keeps one row, treat it as already-present
+            // (don't count it: this request didn't create it).
+            if (!isPreferenceUniqueViolation(err)) throw err;
+          }
         }
       };
       await insertPreferences('ALLERGY', body.allergies);
