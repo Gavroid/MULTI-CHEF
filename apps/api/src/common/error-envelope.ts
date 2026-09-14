@@ -42,7 +42,10 @@ export type ErrorCode =
   | 'SERVICE_UNAVAILABLE'
   | 'PREFERENCE_NOT_FOUND'
   | 'NUTRITION_PROFILE_NOT_FOUND'
-  | 'ITEM_NOT_ARCHIVED';
+  | 'ITEM_NOT_ARCHIVED'
+  // T15-B: PATCH on a soft-deleted (archived) pantry item — the row
+  // exists but the caller must restore it before modifying.
+  | 'PANTRY_ITEM_ARCHIVED';
 
 export const STATUS_BY_CODE: Record<ErrorCode, number> = {
   VALIDATION_ERROR: 400,
@@ -78,6 +81,9 @@ export const STATUS_BY_CODE: Record<ErrorCode, number> = {
   // doesn't currently have. Future variants of this code (e.g.
   // ITEM_ALREADY_ARCHIVED) can share the 400 mapping.
   ITEM_NOT_ARCHIVED: 400,
+  // T15-B: the archived row exists — 409 signals a state conflict
+  // (restore first), not a missing resource.
+  PANTRY_ITEM_ARCHIVED: 409,
   INTERNAL_ERROR: 500,
 };
 
@@ -188,6 +194,8 @@ function defaultMessageFor(code: ErrorCode): string {
       return 'Job failed';
     case 'ITEM_NOT_ARCHIVED':
       return 'Item is not archived';
+    case 'PANTRY_ITEM_ARCHIVED':
+      return 'Item is archived';
     case 'INTERNAL_ERROR':
       return 'Internal server error';
   }

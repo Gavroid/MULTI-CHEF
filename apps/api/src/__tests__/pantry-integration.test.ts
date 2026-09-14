@@ -43,7 +43,7 @@ async function setupApp(): Promise<void> {
   if (!url) throw new Error('INTEGRATION_DATABASE_URL is required');
 
   execSync(
-    'pnpm exec prisma migrate deploy --schema ../../packages/database/prisma/schema.prisma',
+    'pnpm --filter @multichef/database exec prisma migrate deploy --schema prisma/schema.prisma',
     {
       cwd: PKG_ROOT,
       env: { ...process.env, DATABASE_URL: url },
@@ -603,6 +603,50 @@ test('PATCH /pantry/items/:id can update notes', async (t) => {
   assert.equal(res.statusCode, 200);
   const body = res.body as { data: { notes: string | null } };
   assert.equal(body.data.notes, 'second');
+});
+
+test('PATCH on an archived item → 409 PANTRY_ITEM_ARCHIVED (T15-B), restore-first flow', async (t) => {
+  if (!process.env['RUN_DB_INTEGRATION']) {
+    t.skip('RUN_DB_INTEGRATION not set');
+    return;
+  }
+  const jar = await registerAndLogin();
+  const ingId = await firstIngredientId();
+  const created = await inject('POST', '/api/v1/pantry/items', {
+    token: jar.token,
+    idemKey: 'mc022-archivepatch-key-1',
+    body: { ingredientId: ingId, quantityG: 100 },
+  });
+  const itemId = (created.body as { data: { id: string } }).data.id;
+
+  const archived = await inject('DELETE', `/api/v1/pantry/items/${itemId}`, {
+    token: jar.token,
+    idemKey: 'mc022-archivepatch-key-2',
+  });
+  assert.equal(archived.statusCode, 204);
+
+  const patched = await inject('PATCH', `/api/v1/pantry/items/${itemId}`, {
+    token: jar.token,
+    idemKey: 'mc022-archivepatch-key-3',
+    body: { notes: 'zombie edit' },
+  });
+  assert.equal(patched.statusCode, 409);
+  const errBody = patched.body as { error: { code: string } };
+  assert.equal(errBody.error.code, 'PANTRY_ITEM_ARCHIVED');
+
+  // Restore-first flow works again afterwards.
+  const restored = await inject('POST', `/api/v1/pantry/items/${itemId}/restore`, {
+    token: jar.token,
+    idemKey: 'mc022-archivepatch-key-4',
+  });
+  assert.equal(restored.statusCode, 200);
+  const repatched = await inject('PATCH', `/api/v1/pantry/items/${itemId}`, {
+    token: jar.token,
+    idemKey: 'mc022-archivepatch-key-5',
+    body: { notes: 'after restore' },
+  });
+  assert.equal(repatched.statusCode, 200);
+  assert.equal((repatched.body as { data: { notes: string | null } }).data.notes, 'after restore');
 });
 
 test('POST /pantry/items with notes length 501 → 400 VALIDATION_ERROR', async (t) => {

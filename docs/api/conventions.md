@@ -35,18 +35,19 @@
 
 ### Коды ошибок
 
-| HTTP | code                  | Когда                                                                                                                                                    |
-| ---- | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 400  | `VALIDATION_ERROR`    | DTO не прошёл Zod/class-validator                                                                                                                        |
-| 400  | `BAD_REQUEST`         | Синтаксическая ошибка в запросе                                                                                                                          |
-| 401  | `UNAUTHORIZED`        | Нет сессии или токен невалиден                                                                                                                           |
-| 403  | `FORBIDDEN`           | Сессия есть, но нет прав на ресурс                                                                                                                       |
-| 404  | `NOT_FOUND`           | Ресурс не найден **или** не принадлежит householdId из сессии (PM-prompt #3: 404 вместо 403, чтобы не утекала информация о существовании чужих ресурсов) |
-| 409  | `CONFLICT`            | Уникальность нарушена, ресурс уже существует                                                                                                             |
-| 409  | `IDEMPOTENT_REPLAY`   | Idempotency-Key уже использован с другим телом запроса                                                                                                   |
-| 429  | `RATE_LIMITED`        | Превышен rate limit (см. env-coverage RATE_LIMIT_*)                                                                                                      |
-| 500  | `INTERNAL_ERROR`      | Непредвиденная ошибка сервера                                                                                                                            |
-| 503  | `SERVICE_UNAVAILABLE` | БД / Redis / внешний сервис недоступен                                                                                                                   |
+| HTTP | code                   | Когда                                                                                                                                                    |
+| ---- | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 400  | `VALIDATION_ERROR`     | DTO не прошёл Zod/class-validator                                                                                                                        |
+| 400  | `BAD_REQUEST`          | Синтаксическая ошибка в запросе                                                                                                                          |
+| 401  | `UNAUTHORIZED`         | Нет сессии или токен невалиден                                                                                                                           |
+| 403  | `FORBIDDEN`            | Сессия есть, но нет прав на ресурс                                                                                                                       |
+| 404  | `NOT_FOUND`            | Ресурс не найден **или** не принадлежит householdId из сессии (PM-prompt #3: 404 вместо 403, чтобы не утекала информация о существовании чужих ресурсов) |
+| 409  | `CONFLICT`             | Уникальность нарушена, ресурс уже существует                                                                                                             |
+| 409  | `IDEMPOTENT_REPLAY`    | Idempotency-Key уже использован с другим телом запроса                                                                                                   |
+| 409  | `PANTRY_ITEM_ARCHIVED` | Ресурс в архиве (soft-delete): сначала `POST /pantry/items/:id/restore`, затем PATCH                                                                     |
+| 429  | `RATE_LIMITED`         | Превышен rate limit (см. env-coverage RATE_LIMIT_*)                                                                                                      |
+| 500  | `INTERNAL_ERROR`       | Непредвиденная ошибка сервера                                                                                                                            |
+| 503  | `SERVICE_UNAVAILABLE`  | БД / Redis / внешний сервис недоступен                                                                                                                   |
 
 В development режиме (`NODE_ENV=development`) `error.details` может содержать `stack: string[]`. В production — **никогда**.
 
@@ -97,7 +98,7 @@ GET-запросы идемпотентны по определению и не 
 ```bash
 curl -X POST http://localhost:3001/api/v1/meal-plans \
   -H "Authorization: Session ..." \
-  -H "Idempotency-Key: 01HMZ8X9R6K7P3WXY5T2N0V4J8" \
+  -H "Idempotency-Key: 01HFAKEFAKEFAKEFAKEFAKEFAKE" \
   -H "Content-Type: application/json" \
   -d '{"startDate":"2026-09-15", ...}'
 ```

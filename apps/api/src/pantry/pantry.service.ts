@@ -190,6 +190,16 @@ export class PantryService {
         details: { id },
       });
     }
+    // T15-B (audit round 15): archive is a soft delete — silently
+    // editing an archived row contradicted the restore-first flow.
+    // Require an explicit POST /:id/restore before PATCH.
+    if (existing.archivedAt !== null) {
+      throw new AppHttpException({
+        code: 'PANTRY_ITEM_ARCHIVED',
+        message: 'Cannot modify an archived item; restore it first',
+        details: { id },
+      });
+    }
 
     const data: Prisma.PantryItemUpdateInput = {};
     if (body.quantityG !== undefined) {
