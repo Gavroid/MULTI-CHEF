@@ -8,8 +8,14 @@
 
 import { Catch, HttpException, Logger } from '@nestjs/common';
 import type { ArgumentsHost, ExceptionFilter } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import type { ErrorCode, ErrorInput } from './error-envelope.js';
-import { envelopeFromRequest, STATUS_BY_CODE, type ErrorBody } from './error-envelope.js';
+import {
+  envelopeFromRequest,
+  redactSecrets,
+  STATUS_BY_CODE,
+  type ErrorBody,
+} from './error-envelope.js';
 export class AppHttpException extends HttpException {
   readonly code: ErrorCode | string;
   readonly details?: Record<string, unknown> | null | undefined;
@@ -54,18 +60,24 @@ export class AppHttpExceptionFilter implements ExceptionFilter {
       const inner = exception.getResponse();
       input = mapHttpStatusToError(status, inner);
     } else {
-      // T18-A (audit round 18): log ONE structured line and pass the
-      // stack string only. The previous call handed the raw exception
-      // object as the 2nd argument, which Nest's Logger pretty-printed
-      // — dumping PrismaClientKnownRequestError meta (modelName,
-      // target, clientVersion, absolute dist paths) into the journal
-      // next to the prisma:error line. DB-level detail is already
-      // covered by Prisma's own error log; the filter keeps a single
-      // compact record.
+      // T18-A: ONE compact record + the stack string — never the raw
+      // exception object (Nest pretty-printed it, dumping Prisma meta,
+      // clientVersion and dist paths into the journal next to the
+      // prisma:error line).
+      // T18-D: the record passes through redactSecrets so secret-shaped
+      // keys in error payloads cannot reach the journal ahead of the
+      // structured-logging migration.
       const name = exception instanceof Error ? exception.name : 'unknown';
       const message = exception instanceof Error ? exception.message : String(exception);
+      const record = redactSecrets({
+        type: name,
+        message,
+        ...(exception instanceof Prisma.PrismaClientKnownRequestError
+          ? { prismaCode: exception.code, target: exception.meta?.['target'] }
+          : {}),
+      });
       this.logger.error(
-        `unhandled exception: ${name}: ${message}`,
+        `unhandled exception: ${JSON.stringify(record)}`,
         exception instanceof Error ? exception.stack : undefined,
       );
       input = { code: 'INTERNAL_ERROR', message: 'Internal server error' };

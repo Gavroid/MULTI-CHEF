@@ -115,7 +115,10 @@ const SECRET_KEYS = new Set([
   'secret',
 ]);
 
-function redactSecrets(input: unknown): unknown {
+// Exported for the exception filter, which redacts the same key set
+// from its server-side log records (T18-D) — the outgoing response
+// and the journal must agree on what counts as a secret.
+export function redactSecrets(input: unknown): unknown {
   if (input === null || typeof input !== 'object') return input;
   if (Array.isArray(input)) return input.map(redactSecrets);
   const out: Record<string, unknown> = {};
