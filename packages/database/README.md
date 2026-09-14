@@ -87,6 +87,45 @@ The CI `prisma validate` step plus `grep -E 'Float|Real|Double'
 schema.prisma` are the only acceptance checks for this rule — keep
 them green.
 
+## DB-only invariants (not representable in schema.prisma)
+
+T17-A (audit round 17): the live database contains indexes that
+Prisma **cannot model**. They are created in hand-written migrations
+(`mc003_initial`, `mc085`) and enforced by Postgres, but
+`schema.prisma` does not — and cannot — declare them. If you drop or
+recreate the database by hand, re-check this list; `prisma migrate
+deploy` recreates them only through the original migration files.
+
+| Index                        | Table     | Definition                                                       | Business invariant                                             |
+| ---------------------------- | --------- | ---------------------------------------------------------------- | -------------------------------------------------------------- |
+| `one_active_plan`            | `MealPlan`| `CREATE UNIQUE INDEX ... ON ("householdId") WHERE status='ACTIVE'`| Exactly ONE active meal plan per household (enforced at DB level)|
+| `Recipe_title_lower_key`     | `Recipe`  | `CREATE UNIQUE INDEX ... USING btree (lower("title"))`            | Recipe titles are unique case-insensitively                     |
+| `idx_ingredient_canonical_trgm` | `Ingredient` | GIN (`canonicalName gin_trgm_ops`)                          | Fuzzy search for ingredients                                    |
+| `idx_alias_trgm`             | `IngredientAlias` | GIN (`alias gin_trgm_ops`)                                | Fuzzy alias resolution (search `?q=`)                           |
+| `Recipe_title_trgm_idx`      | `Recipe`  | GIN (`title gin_trgm_ops`)                                       | Fuzzy recipe search                                             |
+
+Why Prisma cannot express them:
+
+- **Partial UNIQUE** (`one_active_plan`) — Prisma has no `WHERE` on
+  `@@unique`; partial `WHERE` exists only for non-unique `@@index`
+  (and cannot make it unique).
+- **Functional indexes** (`lower("title")`) — no expression support
+  in `@@unique` / `@@index`.
+- **`gin_trgm_ops` operator classes** — `@@index(..., type: Gin)`
+  exists, but only over plain columns, not with a trigram operator
+  class.
+
+Consequences for day-to-day work:
+
+- Violating `one_active_plan` or `Recipe_title_lower_key` throws a
+  raw `P2002` whose `meta.target` names the index, not a Prisma
+  field — map it explicitly where a 409 is expected.
+- `prisma migrate diff` / `db pull` silently ignore these indexes.
+  The only source of truth for them is this table + the migrations.
+- `Recipe.tags` GIN (`idx_recipe_tags`) IS now declared in
+  `schema.prisma` (plain-column GIN is representable) — it is **not**
+  part of the unrepresentable set.
+
 ## ENV
 
 The package reads `DATABASE_URL` exclusively through `@multichef/config`

@@ -397,6 +397,14 @@ model Recipe {
   nutrition   RecipeNutrition?
   entries     MealPlanEntry[]
 
+  // T17-A (audit round 17): declare the GIN index that has existed in
+  // the DB since mc003_initial under the name "idx_recipe_tags" so
+  // the schema no longer drifts from the live database. The remaining
+  // DB-only indexes (partial UNIQUE one_active_plan, functional UNIQUE
+  // Recipe_title_lower_key, the three pg_trgm GINs) are NOT
+  // representable in Prisma — documented in
+  // packages/database/README.md ("DB-only invariants").
+  @@index([tags], type: Gin, map: "idx_recipe_tags")
   @@map("Recipe")
 }
 
