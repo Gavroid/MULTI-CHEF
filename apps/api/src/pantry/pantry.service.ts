@@ -12,6 +12,11 @@
 //     if the row was already active.
 //   - ?includeArchived filters the list query.
 //
+// ADR-0023 phase 2: PantryItem is the RLS pilot table — every
+// tenant operation runs inside withTenantContext(), which installs
+// app.household_id / app.user_id for the transaction. The RLS
+// policies (mc087) + ENABLE/FORCE (mc088) then isolate households at
+// the database level, on top of the app-level householdId filters.
 // Cross-household behavior: every per-id lookup adds householdId
 // to the WHERE clause. If the row exists but belongs to another
 // household, the lookup returns null → controller throws 404
@@ -21,7 +26,7 @@
 import { Injectable } from '@nestjs/common';
 import { randomBytes } from 'node:crypto';
 import { Prisma } from '@prisma/client';
-import { getPrisma } from '@multichef/database';
+import { getPrisma, withTenantContext } from '@multichef/database';
 import { AppHttpException } from '../common/exception-filter.js';
 import type { CreatePantryItemBody, ListPantryQuery, PatchPantryItemBody } from './pantry.dto.js';
 
@@ -105,180 +110,188 @@ export class PantryService {
       });
     }
     const householdId = await this.requireOwnedHouseholdId(userId);
-    const row = await PRISMA.pantryItem.create({
-      data: {
-        id: generateId(),
-        householdId,
-        ingredientId: body.ingredientId,
-        quantity: new Prisma.Decimal(body.quantityG),
-        unit: body.unit,
-        estimatedGrams: new Prisma.Decimal(body.quantityG),
-        amountStatus: body.amountStatus,
-        priority: body.priority,
-        storageLocation: body.storageLocation,
-        opened: body.opened,
-        ...(body.expiresAt ? { expiresAt: new Date(body.expiresAt) } : {}),
-        ...(body.purchaseDate ? { purchaseDate: new Date(body.purchaseDate) } : {}),
-        ...(body.notes !== undefined ? { notes: body.notes } : {}),
-      },
-      include: { ingredient: { select: { canonicalName: true } } },
+    // ADR-0023: PantryItem is RLS-protected — run with tenant context.
+    return withTenantContext({ householdId, userId }, async (tx) => {
+      const row = await tx.pantryItem.create({
+        data: {
+          id: generateId(),
+          householdId,
+          ingredientId: body.ingredientId,
+          quantity: new Prisma.Decimal(body.quantityG),
+          unit: body.unit,
+          estimatedGrams: new Prisma.Decimal(body.quantityG),
+          amountStatus: body.amountStatus,
+          priority: body.priority,
+          storageLocation: body.storageLocation,
+          opened: body.opened,
+          ...(body.expiresAt ? { expiresAt: new Date(body.expiresAt) } : {}),
+          ...(body.purchaseDate ? { purchaseDate: new Date(body.purchaseDate) } : {}),
+          ...(body.notes !== undefined ? { notes: body.notes } : {}),
+        },
+        include: { ingredient: { select: { canonicalName: true } } },
+      });
+      return toView(row);
     });
-    return toView(row);
   }
 
   async listItems(userId: string, query: ListPantryQuery): Promise<PantryItemView[]> {
     const householdId = await this.requireOwnedHouseholdId(userId);
-    // ADR-0021: includeArchived=false (default) hides soft-deleted rows.
-    const where: Prisma.PantryItemWhereInput = {
-      householdId,
-      ...(query.includeArchived ? {} : { archivedAt: null }),
-      ...(query.ingredientId ? { ingredientId: query.ingredientId } : {}),
-    };
-    const orderBy: Prisma.PantryItemOrderByWithRelationInput = (() => {
-      switch (query.sort) {
-        case 'expiresAt':
-          return { expiresAt: query.order };
-        case 'quantityG':
-          // Decimal column is named `quantity` in the schema.
-          return { quantity: query.order };
-        case 'createdAt':
-        default:
-          return { createdAt: query.order };
-      }
-    })();
+    // ADR-0023: PantryItem is RLS-protected — run with tenant context.
+    return withTenantContext({ householdId, userId }, async (tx) => {
+      const where: Prisma.PantryItemWhereInput = {
+        householdId,
+        ...(query.includeArchived ? {} : { archivedAt: null }),
+        ...(query.ingredientId ? { ingredientId: query.ingredientId } : {}),
+      };
+      const orderBy: Prisma.PantryItemOrderByWithRelationInput = (() => {
+        switch (query.sort) {
+          case 'expiresAt':
+            return { expiresAt: query.order };
+          case 'quantityG':
+            // Decimal column is named `quantity` in the schema.
+            return { quantity: query.order };
+          case 'createdAt':
+          default:
+            return { createdAt: query.order };
+        }
+      })();
 
-    const rows = await PRISMA.pantryItem.findMany({
-      where,
-      orderBy,
-      take: query.limit,
-      skip: query.offset,
-      include: { ingredient: { select: { canonicalName: true } } },
+      const rows = await tx.pantryItem.findMany({
+        where,
+        orderBy,
+        take: query.limit,
+        skip: query.offset,
+        include: { ingredient: { select: { canonicalName: true } } },
+      });
+      return rows.map(toView);
     });
-    return rows.map(toView);
   }
 
   async getItem(userId: string, id: string): Promise<PantryItemView> {
     const householdId = await this.requireOwnedHouseholdId(userId);
-    // householdId is part of the WHERE — we never return items from
-    // other households, even if id exists.
-    const row = await PRISMA.pantryItem.findFirst({
-      where: { id, householdId },
-      include: { ingredient: { select: { canonicalName: true } } },
-    });
-    if (!row) {
-      throw new AppHttpException({
-        code: 'PANTRY_ITEM_NOT_FOUND',
-        message: 'Pantry item not found',
-        details: { id },
+    // ADR-0023: RLS-protected read inside the tenant transaction — a
+    // foreign household id still 404s (no existence leak).
+    return withTenantContext({ householdId, userId }, async (tx) => {
+      const row = await tx.pantryItem.findFirst({
+        where: { id, householdId },
+        include: { ingredient: { select: { canonicalName: true } } },
       });
-    }
-    return toView(row);
+      if (!row) {
+        throw new AppHttpException({
+          code: 'PANTRY_ITEM_NOT_FOUND',
+          message: 'Pantry item not found',
+          details: { id },
+        });
+      }
+      return toView(row);
+    });
   }
 
   async updateItem(userId: string, id: string, body: PatchPantryItemBody): Promise<PantryItemView> {
     const householdId = await this.requireOwnedHouseholdId(userId);
-    // Confirm existence + ownership first (so we can return 404 even
-    // if the row would otherwise produce 0 affected rows).
-    const existing = await PRISMA.pantryItem.findFirst({
-      where: { id, householdId },
-      include: { ingredient: { select: { canonicalName: true } } },
-    });
-    if (!existing) {
-      throw new AppHttpException({
-        code: 'PANTRY_ITEM_NOT_FOUND',
-        message: 'Pantry item not found',
-        details: { id },
+    // ADR-0023: RLS-protected read + write inside the tenant transaction.
+    return withTenantContext({ householdId, userId }, async (tx) => {
+      // Confirm existence + ownership first (so we can return 404 even
+      // if the row would otherwise produce 0 affected rows).
+      const existing = await tx.pantryItem.findFirst({
+        where: { id, householdId },
+        include: { ingredient: { select: { canonicalName: true } } },
       });
-    }
-    // T15-B (audit round 15): archive is a soft delete — silently
-    // editing an archived row contradicted the restore-first flow.
-    // Require an explicit POST /:id/restore before PATCH.
-    if (existing.archivedAt !== null) {
-      throw new AppHttpException({
-        code: 'PANTRY_ITEM_ARCHIVED',
-        message: 'Cannot modify an archived item; restore it first',
-        details: { id },
+      if (!existing) {
+        throw new AppHttpException({
+          code: 'PANTRY_ITEM_NOT_FOUND',
+          message: 'Pantry item not found',
+          details: { id },
+        });
+      }
+      // T15-B (audit round 15): archive is a soft delete — silently
+      // editing an archived row contradicted the restore-first flow.
+      // Require an explicit POST /:id/restore before PATCH.
+      if (existing.archivedAt !== null) {
+        throw new AppHttpException({
+          code: 'PANTRY_ITEM_ARCHIVED',
+          message: 'Cannot modify an archived item; restore it first',
+          details: { id },
+        });
+      }
+
+      const data: Prisma.PantryItemUpdateInput = {};
+      if (body.quantityG !== undefined) {
+        data.quantity = new Prisma.Decimal(body.quantityG);
+        data.estimatedGrams = new Prisma.Decimal(body.quantityG);
+      }
+      if (body.amountStatus !== undefined) data.amountStatus = body.amountStatus;
+      if (body.priority !== undefined) data.priority = body.priority;
+      if (body.storageLocation !== undefined) data.storageLocation = body.storageLocation;
+      if (body.opened !== undefined) data.opened = body.opened;
+      if (body.expiresAt !== undefined) {
+        data.expiresAt = body.expiresAt === null ? null : new Date(body.expiresAt);
+      }
+      if (body.notes !== undefined) {
+        data.notes = body.notes;
+      }
+
+      const row = await tx.pantryItem.update({
+        where: { id },
+        data,
+        include: { ingredient: { select: { canonicalName: true } } },
       });
-    }
-
-    const data: Prisma.PantryItemUpdateInput = {};
-    if (body.quantityG !== undefined) {
-      data.quantity = new Prisma.Decimal(body.quantityG);
-      data.estimatedGrams = new Prisma.Decimal(body.quantityG);
-    }
-    if (body.amountStatus !== undefined) data.amountStatus = body.amountStatus;
-    if (body.priority !== undefined) data.priority = body.priority;
-    if (body.storageLocation !== undefined) data.storageLocation = body.storageLocation;
-    if (body.opened !== undefined) data.opened = body.opened;
-    if (body.expiresAt !== undefined) {
-      data.expiresAt = body.expiresAt === null ? null : new Date(body.expiresAt);
-    }
-    if (body.notes !== undefined) {
-      data.notes = body.notes;
-    }
-
-    const row = await PRISMA.pantryItem.update({
-      where: { id },
-      data,
-      include: { ingredient: { select: { canonicalName: true } } },
+      return toView(row);
     });
-    return toView(row);
   }
 
   async deleteItem(userId: string, id: string): Promise<void> {
     const householdId = await this.requireOwnedHouseholdId(userId);
-    // ADR-0021: soft delete — set archivedAt = now() instead of
-    // physically removing the row. Use a guarded update so we can
-    // return 404 when (id, householdId) doesn't match.
-    const result = await PRISMA.pantryItem.updateMany({
-      where: { id, householdId },
-      data: { archivedAt: new Date() },
-    });
-    if (result.count === 0) {
-      throw new AppHttpException({
-        code: 'PANTRY_ITEM_NOT_FOUND',
-        message: 'Pantry item not found',
-        details: { id },
+    // ADR-0021 + ADR-0023: soft delete inside the tenant transaction.
+    // Use a guarded update so we can return 404 when (id, householdId)
+    // doesn't match.
+    return withTenantContext({ householdId, userId }, async (tx) => {
+      const result = await tx.pantryItem.updateMany({
+        where: { id, householdId },
+        data: { archivedAt: new Date() },
       });
-    }
+      if (result.count === 0) {
+        throw new AppHttpException({
+          code: 'PANTRY_ITEM_NOT_FOUND',
+          message: 'Pantry item not found',
+          details: { id },
+        });
+      }
+    });
   }
 
   async restoreItem(userId: string, id: string): Promise<PantryItemView> {
     const householdId = await this.requireOwnedHouseholdId(userId);
     // ADR-0021: restore only makes sense if the row is currently
     // archived. If archivedAt is null we return 400 ITEM_NOT_ARCHIVED.
-    const existing = await PRISMA.pantryItem.findFirst({
-      where: { id, householdId },
-      include: { ingredient: { select: { canonicalName: true } } },
-    });
-    if (!existing) {
-      throw new AppHttpException({
-        code: 'PANTRY_ITEM_NOT_FOUND',
-        message: 'Pantry item not found',
-        details: { id },
+    return withTenantContext({ householdId, userId }, async (tx) => {
+      const existing = await tx.pantryItem.findFirst({
+        where: { id, householdId },
+        include: { ingredient: { select: { canonicalName: true } } },
       });
-    }
-    if (existing.archivedAt === null) {
-      throw new AppHttpException({
-        code: 'ITEM_NOT_ARCHIVED',
-        message: 'Item is not archived',
-        details: { id },
+      if (!existing) {
+        throw new AppHttpException({
+          code: 'PANTRY_ITEM_NOT_FOUND',
+          message: 'Pantry item not found',
+          details: { id },
+        });
+      }
+      if (existing.archivedAt === null) {
+        throw new AppHttpException({
+          code: 'ITEM_NOT_ARCHIVED',
+          message: 'Item is not archived',
+          details: { id },
+        });
+      }
+      const row = await tx.pantryItem.update({
+        where: { id },
+        data: { archivedAt: null },
+        include: { ingredient: { select: { canonicalName: true } } },
       });
-    }
-    const row = await PRISMA.pantryItem.update({
-      where: { id },
-      data: { archivedAt: null },
-      include: { ingredient: { select: { canonicalName: true } } },
+      return toView(row);
     });
-    return toView(row);
   }
 
-  /**
-   * Resolve the user's OWNER-role household id. If the user doesn't
-   * own a household, returns 403 — pantry is meaningless without one.
-   * (Should never happen for a registered user; register() creates
-   * the OWNER member row in the same transaction as User+Household.)
-   */
   private async requireOwnedHouseholdId(userId: string): Promise<string> {
     const membership = await PRISMA.householdMember.findFirst({
       where: { userId, role: 'OWNER' },

@@ -11,7 +11,7 @@
 // moves behind a stable boundary — drift is covered by planner tests
 // using package fixtures only.
 
-import { getPrisma } from '@multichef/database';
+import { getPrisma, withTenantContext } from '@multichef/database';
 import {
   buildShoppingList,
   mulberry32,
@@ -152,10 +152,14 @@ export async function runPlanWeek(
         nutrition: true,
       },
     }),
-    prisma.pantryItem.findMany({
-      where: { householdId: data.householdId, archivedAt: null, estimatedGrams: { gt: 0 } },
-      select: { ingredientId: true, estimatedGrams: true, priority: true, expiresAt: true },
-    }),
+    // ADR-0023 phase 3: PantryItem is RLS-protected (ENABLE+FORCE) —
+    // read it inside the tenant context of the job's household.
+    withTenantContext({ householdId: data.householdId, userId: data.userId }, (tx) =>
+      tx.pantryItem.findMany({
+        where: { householdId: data.householdId, archivedAt: null, estimatedGrams: { gt: 0 } },
+        select: { ingredientId: true, estimatedGrams: true, priority: true, expiresAt: true },
+      }),
+    ),
     prisma.preference.findMany({
       where: { userId: data.userId, ingredientId: { not: null } },
       select: { kind: true, ingredientId: true },

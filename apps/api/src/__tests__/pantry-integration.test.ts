@@ -101,6 +101,21 @@ function db(): PrismaClient {
   return prisma;
 }
 
+/**
+ * ADR-0023 phase 3: PantryItem is RLS-protected — direct DB reads in
+ * assertions must install the household context the same way the API
+ * transaction does.
+ */
+function rowWithContext<T>(
+  householdId: string,
+  fn: (tx: Prisma.TransactionClient) => Promise<T>,
+): Promise<T> {
+  return db().$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT set_config('app.household_id', ${householdId}, true)`;
+    return fn(tx);
+  });
+}
+
 interface CookieJar {
   token: string;
   householdId: string;
@@ -431,7 +446,9 @@ test('DELETE /pantry/items/:id for own item → 204 + soft-delete (archivedAt is
   });
   assert.equal(res.statusCode, 204);
   // Verify the row STILL EXISTS but with archivedAt set (soft delete).
-  const row = await db().pantryItem.findUnique({ where: { id: itemId } });
+  const row = await rowWithContext(jar.householdId, (tx) =>
+    tx.pantryItem.findUnique({ where: { id: itemId } }),
+  );
   assert.ok(row);
   assert.ok(row.archivedAt);
   assert.ok(row.archivedAt instanceof Date);
@@ -482,7 +499,9 @@ test('Soft-delete + restore round-trip: DELETE → 204, restore → 200, archive
     idemKey: 'mc022-rt-002-zzz-test-id',
   });
   assert.equal(delRes.statusCode, 204);
-  let row = await db().pantryItem.findUnique({ where: { id: itemId } });
+  let row = await rowWithContext(jar.householdId, (tx) =>
+    tx.pantryItem.findUnique({ where: { id: itemId } }),
+  );
   assert.ok(row?.archivedAt);
 
   // Restore
@@ -496,7 +515,9 @@ test('Soft-delete + restore round-trip: DELETE → 204, restore → 200, archive
   assert.equal(restoreBody.data.archivedAt, null);
 
   // DB state
-  row = await db().pantryItem.findUnique({ where: { id: itemId } });
+  row = await rowWithContext(jar.householdId, (tx) =>
+    tx.pantryItem.findUnique({ where: { id: itemId } }),
+  );
   assert.equal(row?.archivedAt, null);
 });
 

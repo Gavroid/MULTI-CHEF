@@ -8,7 +8,7 @@
 // All consumers should pull DATABASE_URL from @multichef/config — we
 // never read process.env directly here.
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { loadServerEnv } from '@multichef/config';
 
@@ -32,6 +32,34 @@ export function getPrisma(): PrismaClient {
     log: env.LOG_LEVEL === 'debug' ? ['query', 'warn', 'error'] : ['warn', 'error'],
   });
   return cached;
+}
+
+// ADR-0023 phase 2 — tenant context for Row-Level Security.
+//
+// mc087/mc088 install the tenant_isolation policies and enable RLS on
+// "PantryItem". Every query against an RLS-enabled table must run with
+// the session variables app.user_id / app.household_id set, otherwise
+// it fails closed (sees nothing). `withTenantContext` opens an
+// interactive transaction, installs the context with
+// `set_config(..., true)` (transaction-local — pool-safe by design)
+// and runs the callback on the transaction client.
+//
+// Tables without RLS enabled are unaffected: the transaction is
+// transparent for them.
+
+export interface TenantContext {
+  householdId?: string;
+  userId?: string;
+}
+
+export async function withTenantContext<T>(
+  ctx: TenantContext,
+  fn: (tx: Prisma.TransactionClient) => Promise<T>,
+): Promise<T> {
+  return getPrisma().$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT set_config('app.household_id', ${ctx.householdId ?? ''}, true), set_config('app.user_id', ${ctx.userId ?? ''}, true)`;
+    return fn(tx);
+  });
 }
 
 /**
