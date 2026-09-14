@@ -50,8 +50,12 @@ export async function getActiveShoppingList(
     undefined,
     {},
   );
-  if (result.error) return result;
-  if (result.data == null) return { data: null };
+  // T16-A: "no active list" is now a typed 404 envelope from the API
+  // (was: raw null body) — normalize SHOPPING_LIST_NOT_FOUND to null.
+  if (result.error) {
+    if (result.error.error.code === 'SHOPPING_LIST_NOT_FOUND') return { data: null };
+    return result;
+  }
   const parsed = ListSchema.safeParse(result.data);
   if (!parsed.success) {
     return {

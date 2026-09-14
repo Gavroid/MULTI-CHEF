@@ -11,6 +11,7 @@
 //   * Money is always stored as Int kopecks; UI converts.
 
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { getPrisma } from '@multichef/database';
 // APPLIANCE_VALUES / PREFERENCE_KIND_VALUES are exported as `as const`
 // tuples; the service derives the union type via `(typeof X)[number]`
@@ -133,8 +134,15 @@ export class ProfileService {
   }
 
   async getNutrition(userId: string): Promise<ProfileView['nutritionProfile']> {
+    // T16-A (audit round 16): typed 404 instead of a raw null body.
     const np = await getPrisma().nutritionProfile.findUnique({ where: { userId } });
-    return np ? this.toNutritionView(np) : null;
+    if (!np) {
+      throw new AppHttpException({
+        code: 'NUTRITION_PROFILE_NOT_FOUND',
+        message: 'Nutrition profile not found',
+      });
+    }
+    return this.toNutritionView(np);
   }
 
   async putNutrition(

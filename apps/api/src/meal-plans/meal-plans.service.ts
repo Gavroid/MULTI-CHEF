@@ -48,7 +48,15 @@ export class MealPlansService {
         },
       },
     });
-    if (!plan) return null;
+    // T16-A (audit round 16): "no active plan" is a typed 404 like the
+    // storage/prep siblings — raw null bodies were the envelope-mix
+    // anti-pattern. The web client maps PLAN_NOT_FOUND back to null.
+    if (!plan) {
+      throw new AppHttpException({
+        code: 'PLAN_NOT_FOUND',
+        message: 'Активный план не найден',
+      });
+    }
     return {
       id: plan.id,
       startDate: plan.startDate.toISOString(),

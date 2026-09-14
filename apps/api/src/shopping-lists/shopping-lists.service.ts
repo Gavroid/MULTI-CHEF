@@ -31,7 +31,7 @@ export class ShoppingListsService {
     return this.prismaOverride ?? getPrisma();
   }
 
-  /** The household's ACTIVE shopping list (or null). */
+  /** The household's ACTIVE shopping list; 404 when there is none. */
   async getActiveForUser(userId: string) {
     const householdId = await this.requireOwnedHouseholdId(userId);
     const list = await this.db.shoppingList.findFirst({
@@ -44,7 +44,14 @@ export class ShoppingListsService {
         },
       },
     });
-    if (!list) return null;
+    // T16-A (audit round 16): typed 404 instead of a raw null body —
+    // the web client maps SHOPPING_LIST_NOT_FOUND back to null.
+    if (!list) {
+      throw new AppHttpException({
+        code: 'SHOPPING_LIST_NOT_FOUND',
+        message: 'Активный список покупок не найден',
+      });
+    }
     return {
       ...list,
       items: list.items.map((item) => ({

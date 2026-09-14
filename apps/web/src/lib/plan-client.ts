@@ -64,8 +64,13 @@ export async function getActivePlan(
     undefined,
     {},
   );
-  if (result.error) return result;
-  if (result.data == null) return { data: null };
+  // T16-A: "no active plan" is now a typed 404 envelope from the API
+  // (was: raw null body). Normalize PLAN_NOT_FOUND to our null so the
+  // empty-state flow in Today/Plan clients stays unchanged.
+  if (result.error) {
+    if (result.error.error.code === 'PLAN_NOT_FOUND') return { data: null };
+    return result;
+  }
   const parsed = ActivePlanDtoSchema.safeParse(result.data);
   if (!parsed.success) {
     return {

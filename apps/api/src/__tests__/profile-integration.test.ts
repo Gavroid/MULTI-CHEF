@@ -247,15 +247,16 @@ test('PUT /profile/nutrition upserts (create + update)', async (t) => {
   assert.equal(np2.skillLevel, 'CONFIDENT');
 });
 
-test('GET /profile/nutrition returns null until upserted', async (t) => {
+test('GET /profile/nutrition before upsert → 404 NUTRITION_PROFILE_NOT_FOUND (T16-A)', async (t) => {
   if (!process.env['RUN_DB_INTEGRATION']) {
     t.skip('RUN_DB_INTEGRATION not set');
     return;
   }
   const jar = await registerAndLogin();
   const res = await inject('GET', '/api/v1/profile/nutrition', { token: jar.token });
-  assert.equal(res.statusCode, 200);
-  assert.equal(res.body, null);
+  assert.equal(res.statusCode, 404);
+  const body = res.body as { error: { code: string } };
+  assert.equal(body.error.code, 'NUTRITION_PROFILE_NOT_FOUND');
 });
 
 test('POST /profile/preferences creates a Preference; GET returns it', async (t) => {
