@@ -35,7 +35,7 @@ export default function RegisterPage(): ReactElement {
       </Card>
       <p className="text-caption text-text-muted text-center mt-4">
         Уже есть аккаунт?{' '}
-        <a href="/auth/login" className="text-[var(--color-primary)] hover:underline">
+        <a href="/auth/login" className="underline text-[var(--color-primary)] hover:no-underline">
           Войти
         </a>
       </p>

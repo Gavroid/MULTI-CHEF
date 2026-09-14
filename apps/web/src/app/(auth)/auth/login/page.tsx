@@ -61,7 +61,10 @@ function LoginBody(): ReactElement {
       </Card>
       <p className="text-caption text-text-muted text-center mt-4">
         Нет аккаунта?{' '}
-        <a href="/auth/register" className="text-[var(--color-primary)] hover:underline">
+        <a
+          href="/auth/register"
+          className="underline text-[var(--color-primary)] hover:no-underline"
+        >
           Зарегистрироваться
         </a>
       </p>

@@ -16,23 +16,26 @@
 /* ---------- Light theme (default) ------------------------------------- */
 :root,
 [data-theme='light'] {
-  /* §2.5.1 colors — warm white surfaces, orange CTA. */
+  /* §2.5.1 colors — warm white surfaces, orange CTA.
+   * U1 (audit round 3): tone/muted/primary values are the WCAG AA
+   * accessible variants (>=4.5:1 against their soft surfaces); the
+   * PRD originals remain the brand accents for non-text usage. */
   --color-bg: #fffdf9;
   --color-surface: #ffffff;
   --color-surface-2: #f7f3ec;
   --color-border: #e8e0d4;
   --color-text: #26221c;
-  --color-text-muted: #8a8177;
-  --color-primary: #e8590c;
-  --color-primary-press: #d9480f;
+  --color-text-muted: #6f665c;
+  --color-primary: #c2410c;
+  --color-primary-press: #b23e0a;
   --color-primary-soft: #fff0e5;
-  --color-fresh: #2f9e44;
+  --color-fresh: #1f7a33;
   --color-fresh-soft: #e7f5ea;
-  --color-warning: #f08c00;
+  --color-warning: #9a6300;
   --color-warning-soft: #fff4e0;
-  --color-danger: #e03131;
+  --color-danger: #c92a2a;
   --color-danger-soft: #fdecec;
-  --color-info: #1971c2;
+  --color-info: #1864ab;
   --color-info-soft: #e7f0fa;
 
   /* §2.5.2 typography. */
