@@ -54,8 +54,20 @@ export class AppHttpExceptionFilter implements ExceptionFilter {
       const inner = exception.getResponse();
       input = mapHttpStatusToError(status, inner);
     } else {
+      // T18-A (audit round 18): log ONE structured line and pass the
+      // stack string only. The previous call handed the raw exception
+      // object as the 2nd argument, which Nest's Logger pretty-printed
+      // — dumping PrismaClientKnownRequestError meta (modelName,
+      // target, clientVersion, absolute dist paths) into the journal
+      // next to the prisma:error line. DB-level detail is already
+      // covered by Prisma's own error log; the filter keeps a single
+      // compact record.
+      const name = exception instanceof Error ? exception.name : 'unknown';
       const message = exception instanceof Error ? exception.message : String(exception);
-      this.logger.error(`unhandled exception: ${message}`, exception);
+      this.logger.error(
+        `unhandled exception: ${name}: ${message}`,
+        exception instanceof Error ? exception.stack : undefined,
+      );
       input = { code: 'INTERNAL_ERROR', message: 'Internal server error' };
     }
 
