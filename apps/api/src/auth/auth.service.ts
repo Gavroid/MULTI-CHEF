@@ -14,6 +14,7 @@
 
 import { Injectable, Logger } from '@nestjs/common';
 import argon2 from 'argon2';
+import { Prisma } from '@prisma/client';
 import { getPrisma } from '@multichef/database';
 import { loadServerEnv } from '@multichef/config';
 import { generateSessionToken, generateUlid, hashSessionToken } from './session-token.js';
@@ -93,43 +94,63 @@ export class AuthService {
     const expiresAt = new Date(Date.now() + env.SESSION_TTL_SECONDS * 1000);
 
     // Single transaction: user + household + membership + session.
-    await getPrisma().$transaction(async (tx) => {
-      await tx.user.create({
-        data: {
-          id: userId,
-          email,
-          passwordHash,
-        },
+    try {
+      await getPrisma().$transaction(async (tx) => {
+        await tx.user.create({
+          data: {
+            id: userId,
+            email,
+            passwordHash,
+          },
+        });
+        // Audit round-5: persist onboarding data (family name, headcount,
+        // weekly budget) — previously silently dropped.
+        await tx.household.create({
+          data: {
+            id: householdId,
+            ownerId: userId,
+            name: input.householdName ?? 'Моя семья',
+            defaultPeopleCount: input.guestProfile?.peopleCount ?? 2,
+            ...(input.guestProfile?.budgetWeekKopecks
+              ? { budgetWeekKopecks: input.guestProfile.budgetWeekKopecks }
+              : {}),
+          },
+        });
+        await tx.householdMember.create({
+          data: {
+            householdId,
+            userId,
+            role: 'OWNER',
+          },
+        });
+        await tx.session.create({
+          data: {
+            id: sessionId,
+            userId,
+            tokenHash,
+            expiresAt,
+          },
+        });
       });
-      // Audit round-5: persist onboarding data (family name, headcount,
-      // weekly budget) — previously silently dropped.
-      await tx.household.create({
-        data: {
-          id: householdId,
-          ownerId: userId,
-          name: input.householdName ?? 'Моя семья',
-          defaultPeopleCount: input.guestProfile?.peopleCount ?? 2,
-          ...(input.guestProfile?.budgetWeekKopecks
-            ? { budgetWeekKopecks: input.guestProfile.budgetWeekKopecks }
-            : {}),
-        },
-      });
-      await tx.householdMember.create({
-        data: {
-          householdId,
-          userId,
-          role: 'OWNER',
-        },
-      });
-      await tx.session.create({
-        data: {
-          id: sessionId,
-          userId,
-          tokenHash,
-          expiresAt,
-        },
-      });
-    });
+    } catch (err) {
+      // T13-A (audit round 13): two concurrent registrations with the
+      // same email both pass the findUnique check above; the DB's
+      // unique index on User.email is the real arbiter. Map the
+      // loser's P2002 onto the same 409 CONFLICT the pre-check
+      // produces instead of letting it surface as a 500.
+      if (
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === 'P2002' &&
+        Array.isArray(err.meta?.['target']) &&
+        (err.meta['target'] as string[]).includes('email')
+      ) {
+        throw new AppHttpException({
+          code: 'CONFLICT',
+          message: 'Email already registered',
+        });
+      }
+      throw err;
+    }
 
     return {
       user: this.toUser({
