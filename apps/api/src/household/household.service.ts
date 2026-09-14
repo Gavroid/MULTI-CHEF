@@ -3,7 +3,7 @@
 // (or the request is rejected with 403). MC-011 is single-user-per
 // household; multi-member households are a future MC.
 
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { getPrisma } from '@multichef/database';
 import type { HouseholdPatchBody } from '../profile/profile.dto.js';
 import { AppHttpException } from '../common/exception-filter.js';
@@ -19,7 +19,9 @@ export interface HouseholdView {
 
 @Injectable()
 export class HouseholdService {
-  private readonly logger = new Logger(HouseholdService.name);
+  // T18-B (audit round 18): no service-level logger — request-scoped
+  // errors are handled (once, structured) by AppHttpExceptionFilter.
+  // Re-add a Logger only with a concrete log statement that needs it.
 
   async getCurrent(userId: string): Promise<HouseholdView> {
     const household = await this.requireOwnedHousehold(userId);

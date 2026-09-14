@@ -12,7 +12,7 @@
 //   * Cookies (handled by the controller) carry HttpOnly +
 //     SameSite=Lax/Strict + Secure-in-prod + Domain from env.
 
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import argon2 from 'argon2';
 import { Prisma } from '@prisma/client';
 import { getPrisma } from '@multichef/database';
@@ -71,7 +71,9 @@ function getDummyHash(): Promise<string> {
 
 @Injectable()
 export class AuthService {
-  private readonly logger = new Logger(AuthService.name);
+  // T18-B (audit round 18): no service-level logger — request-scoped
+  // errors are handled (once, structured) by AppHttpExceptionFilter.
+  // Re-add a Logger only with a concrete log statement that needs it.
 
   async register(input: RegisterInput): Promise<AuthResult> {
     const email = input.email.trim().toLowerCase();

@@ -10,7 +10,7 @@
 //     (userId, kind, ingredientId) when ingredientId is set).
 //   * Money is always stored as Int kopecks; UI converts.
 
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { getPrisma } from '@multichef/database';
 // APPLIANCE_VALUES / PREFERENCE_KIND_VALUES are exported as `as const`
@@ -84,7 +84,9 @@ function isPreferenceUniqueViolation(err: unknown): boolean {
 
 @Injectable()
 export class ProfileService {
-  private readonly logger = new Logger(ProfileService.name);
+  // T18-B (audit round 18): no service-level logger — request-scoped
+  // errors are handled (once, structured) by AppHttpExceptionFilter.
+  // Re-add a Logger only with a concrete log statement that needs it.
 
   async getProfile(userId: string): Promise<ProfileView> {
     const user = await getPrisma().user.findUniqueOrThrow({
