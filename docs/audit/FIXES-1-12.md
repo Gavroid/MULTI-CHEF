@@ -61,13 +61,21 @@
   `@multichef/database` — интерактивная транзакция + `set_config(..., true)`;
   pantry-сервис переведён (все 6 операций), worker `plan-week` читает
   pantry в контексте household джобы.
-- **Фаза 3 (реализовано для пилота):** миграция `mc088` —
-  `ENABLE + FORCE ROW LEVEL SECURITY` на `PantryItem`.
-  Приёмка на проде: юзер A видит свой item (1), список B пуст,
-  GET B на item A → 404; SQL-проба: без контекста 0 строк (fail-closed),
-  с контекстом household A — ровно строки A (суперюзер видит все 154 —
-  только для отладки). Оставшиеся тенант-таблицы активируются по тому
-  же паттерну после перевода их сервисов (см. «Осталось осознанно»).
+- **Фаза 3 (пилот):** миграция `mc088` — `ENABLE + FORCE ROW LEVEL
+SECURITY` на `PantryItem`. Приёмка на проде: юзер A видит свой item (1),
+  список B пуст, GET B на item A → 404; SQL-проба: без контекста 0 строк
+  (fail-closed), с контекстом household A — ровно строки A (суперюзер
+  видит все 154 — только для отладки).
+- **Фаза 3 wave-2 (реализовано):** миграция `mc089` — `ENABLE + FORCE`
+  на MealPlan, MealPlanDay, MealPlanEntry, PrepSession, PrepTask,
+  PreparedPortion, ShoppingList, ShoppingListItem, Preference,
+  NutritionProfile. Приёмка (прод + SQL-пробы на multichef_test):
+  - API: PUT/GET nutrition 200, POST preference 201 (строки видны только
+    в своём контексте: Preference=1, NutritionProfile=1),
+    /meal-plans/active и /shopping-lists/active без данных → 404
+    (fail-closed), /recommendations/today → 200, 3 опции;
+  - SQL: без контекста 0 строк на всех 10 таблицах; интеграционная
+    suite 70 тестов зелёная при активном RLS.
 
 ## WP-6 — гигиена ✅ (обновлено: 6.3 и 6.1/6.2/6.4 добавлены)
 
