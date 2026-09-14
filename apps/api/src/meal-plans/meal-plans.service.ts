@@ -3,6 +3,7 @@
 // The actual planning is asynchronous; clients poll GET /jobs/:id.
 
 import { Inject, Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { getPrisma } from '@multichef/database';
 import {
   buildPrepTasks,
@@ -88,85 +89,142 @@ export class MealPlansService {
   /**
    * MC-060: build (or return the existing) prep session for the ACTIVE
    * plan. Tasks are deduplicated; intensity cuts active minutes.
+   *
+   * T20-A/T20-C (audit round 20): the whole build-and-persist path
+   * runs inside one Serializable transaction. The old read-then-write
+   * flow let two concurrent first-calls interleave their
+   * deleteMany/create loops — the deterministic task ids (T20-C)
+   * collided, the loser surfaced as P2002 → 500 and the winner's task
+   * list could be wiped. Inside the transaction both callers
+   * serialize on the PrepSession row via the upsert: the second one
+   * takes the update path and replaces the tasks atomically.
+   * P2034 (serialization failure) is retried with backoff; a caller
+   * that keeps losing serves the persisted winner's session instead
+   * of failing.
    */
   async generatePrepSession(userId: string, intensity: PrepIntensity): Promise<PrepSessionDto> {
     const plan = await this.getActivePlanRowOrThrow(userId);
     const prisma = getPrisma();
     const sessionId = `${plan.id}-prep-${intensity}`;
+
     const existing = await prisma.prepSession.findFirst({
       where: { id: sessionId },
       include: { tasks: { orderBy: { sequence: 'asc' } } },
     });
-    if (existing) {
-      return {
-        id: existing.id,
-        mealPlanId: existing.mealPlanId,
-        intensity: existing.intensity as PrepIntensity,
-        targetMinutes: existing.targetMinutes,
-        tasks: existing.tasks.map((t) => ({
-          id: t.id,
-          title: t.title,
-          durationMinutes: t.durationMinutes,
-          sequence: t.sequence,
-          parallelGroup: t.parallelGroup,
-          instructions: t.instructions,
-          done: t.done,
-        })),
-      };
+    if (existing) return this.toPrepSessionDto(existing);
+
+    for (let attempt = 1; ; attempt += 1) {
+      try {
+        return await prisma.$transaction(
+          async (tx) => {
+            const { entries, rules } = await this.loadPrepInputs(plan.id, tx);
+            const prepEntries: PrepEntryInput[] = entries.map((e) => ({
+              entryId: e.id,
+              recipeId: e.recipe.id,
+              title: e.recipe.title,
+              dayIndex: e.dayIndex,
+              servings: e.servings,
+              prepMinutes: e.prepMinutes,
+              cookMinutes: e.cookMinutes,
+              freezeOk: rules.freezeTags.some((tag) => e.recipe.tags.includes(tag)),
+              vegetableCount: e.vegetableCount,
+            }));
+            const drafts = buildPrepTasks(prepEntries, intensity);
+            const session = await tx.prepSession.upsert({
+              where: { id: sessionId },
+              create: {
+                id: sessionId,
+                mealPlanId: plan.id,
+                scheduledAt: new Date(),
+                targetMinutes: INTENSITY_TARGET_MINUTES[intensity],
+                intensity,
+              },
+              update: { targetMinutes: INTENSITY_TARGET_MINUTES[intensity], intensity },
+            });
+            await tx.prepTask.deleteMany({ where: { prepSessionId: session.id } });
+            // Audit fix: id by position — sequence repeats across per-recipe
+            // cooking tasks (all get sequence=3), which broke the unique id.
+            for (const [index, d] of drafts.entries()) {
+              await tx.prepTask.create({
+                data: {
+                  id: `${session.id}-t${index}`,
+                  prepSessionId: session.id,
+                  title: d.title,
+                  durationMinutes: d.durationMinutes,
+                  sequence: d.sequence,
+                  parallelGroup: d.parallelGroup,
+                  instructions: d.instructions,
+                },
+              });
+            }
+            return {
+              id: session.id,
+              mealPlanId: session.mealPlanId,
+              intensity,
+              targetMinutes: INTENSITY_TARGET_MINUTES[intensity],
+              tasks: drafts.map((d, index) => ({
+                id: `${session.id}-t${index}`,
+                title: d.title,
+                durationMinutes: d.durationMinutes,
+                sequence: d.sequence,
+                parallelGroup: d.parallelGroup,
+                instructions: d.instructions,
+                done: false,
+              })),
+            };
+          },
+          { isolationLevel: 'Serializable' },
+        );
+      } catch (err) {
+        const conflict =
+          err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2034';
+        if (!conflict) throw err;
+        if (attempt < 5) {
+          // Back off + jitter so concurrent builders stop colliding on
+          // the same PrepSession rows.
+          await new Promise((resolve) => setTimeout(resolve, 25 * attempt + Math.random() * 50));
+          continue;
+        }
+        // Exhausted retries — whoever kept winning the conflict has
+        // persisted the session; serve it instead of a 500.
+        const winner = await prisma.prepSession.findFirst({
+          where: { id: sessionId },
+          include: { tasks: { orderBy: { sequence: 'asc' } } },
+        });
+        if (winner) return this.toPrepSessionDto(winner);
+        throw err;
+      }
     }
-    const { entries, rules } = await this.loadPrepInputs(plan.id);
-    const prepEntries: PrepEntryInput[] = entries.map((e) => ({
-      entryId: e.id,
-      recipeId: e.recipe.id,
-      title: e.recipe.title,
-      dayIndex: e.dayIndex,
-      servings: e.servings,
-      prepMinutes: e.prepMinutes,
-      cookMinutes: e.cookMinutes,
-      freezeOk: rules.freezeTags.some((tag) => e.recipe.tags.includes(tag)),
-      vegetableCount: e.vegetableCount,
-    }));
-    const drafts = buildPrepTasks(prepEntries, intensity);
-    const session = await prisma.prepSession.upsert({
-      where: { id: sessionId },
-      create: {
-        id: sessionId,
-        mealPlanId: plan.id,
-        scheduledAt: new Date(),
-        targetMinutes: INTENSITY_TARGET_MINUTES[intensity],
-        intensity,
-      },
-      update: { targetMinutes: INTENSITY_TARGET_MINUTES[intensity], intensity },
-    });
-    await prisma.prepTask.deleteMany({ where: { prepSessionId: session.id } });
-    // Audit fix: id by position — sequence repeats across per-recipe
-    // cooking tasks (all get sequence=3), which broke the unique id.
-    for (const [index, d] of drafts.entries()) {
-      await prisma.prepTask.create({
-        data: {
-          id: `${session.id}-t${index}`,
-          prepSessionId: session.id,
-          title: d.title,
-          durationMinutes: d.durationMinutes,
-          sequence: d.sequence,
-          parallelGroup: d.parallelGroup,
-          instructions: d.instructions,
-        },
-      });
-    }
+  }
+
+  private toPrepSessionDto(row: {
+    id: string;
+    mealPlanId: string;
+    intensity: string;
+    targetMinutes: number;
+    tasks: Array<{
+      id: string;
+      title: string;
+      durationMinutes: number;
+      sequence: number;
+      parallelGroup: number | null;
+      instructions: string;
+      done: boolean;
+    }>;
+  }): PrepSessionDto {
     return {
-      id: session.id,
-      mealPlanId: session.mealPlanId,
-      intensity,
-      targetMinutes: INTENSITY_TARGET_MINUTES[intensity],
-      tasks: drafts.map((d, index) => ({
-        id: `${session.id}-t${index}`,
-        title: d.title,
-        durationMinutes: d.durationMinutes,
-        sequence: d.sequence,
-        parallelGroup: d.parallelGroup,
-        instructions: d.instructions,
-        done: false,
+      id: row.id,
+      mealPlanId: row.mealPlanId,
+      intensity: row.intensity as PrepIntensity,
+      targetMinutes: row.targetMinutes,
+      tasks: row.tasks.map((t) => ({
+        id: t.id,
+        title: t.title,
+        durationMinutes: t.durationMinutes,
+        sequence: t.sequence,
+        parallelGroup: t.parallelGroup,
+        instructions: t.instructions,
+        done: t.done,
       })),
     };
   }
@@ -214,8 +272,7 @@ export class MealPlansService {
     return buildStoragePlan(storageEntries, startIso);
   }
 
-  private async loadPrepInputs(planId: string) {
-    const prisma = getPrisma();
+  private async loadPrepInputs(planId: string, prisma: Prisma.TransactionClient = getPrisma()) {
     const plan = await prisma.mealPlan.findUniqueOrThrow({ where: { id: planId } });
     const days = await prisma.mealPlanDay.findMany({
       where: { mealPlanId: planId },
