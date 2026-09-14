@@ -303,6 +303,28 @@ export class ProfileService {
     userId: string,
     body: OnboardingBody,
   ): Promise<{ nutritionProfile: ProfileView['nutritionProfile']; preferencesCreated: number }> {
+    // T16-B (audit round 16): the onboarding transaction was observed
+    // to fail transiently under concurrent registrations (pool
+    // contention / row conflicts). The whole operation is idempotent —
+    // NutritionProfile upsert + dedup inserts — so a bounded retry is
+    // safe and converts the sporadic 500 into an eventual success.
+    for (let attempt = 1; ; attempt += 1) {
+      try {
+        return await this.runOnboardingTransaction(userId, body);
+      } catch (err) {
+        const transient =
+          err instanceof Prisma.PrismaClientKnownRequestError &&
+          (err.code === 'P2024' || err.code === 'P2034');
+        if (!transient || attempt >= 3) throw err;
+        await new Promise((resolve) => setTimeout(resolve, 50 * attempt + Math.random() * 50));
+      }
+    }
+  }
+
+  private async runOnboardingTransaction(
+    userId: string,
+    body: OnboardingBody,
+  ): Promise<{ nutritionProfile: ProfileView['nutritionProfile']; preferencesCreated: number }> {
     // Idempotent onboarding: upsert NutritionProfile, then for each
     // list (allergies → ALLERGY, liked → LOVE, disliked → DISLIKE)
     // dedupe by (userId, kind, ingredientId) before inserting.
