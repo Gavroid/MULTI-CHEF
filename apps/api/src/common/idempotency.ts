@@ -4,9 +4,9 @@
 // PATCH, DELETE) MUST carry an `Idempotency-Key` header. This module
 // enforces the *presence* and *format* of the header.
 //
-// Real cache-backed deduplication (24h TTL, request fingerprint
-// match, in-flight serialization) is MC-051 work. For MC-010 we
-// only validate the header.
+// The response-level deduplication promised by conventions.md §3
+// (24h TTL, request fingerprint match, cached replay) lives in
+// idempotency-cache.ts — applied globally via IdempotencyReplayInterceptor.
 
 import { Injectable } from '@nestjs/common';
 import type { CanActivate, ExecutionContext } from '@nestjs/common';
@@ -14,7 +14,7 @@ import { AppHttpException } from './exception-filter.js';
 
 export const IDEMPOTENCY_HEADER = 'idempotency-key';
 
-const MIN_LENGTH = 16;
+export const IDEMPOTENCY_MIN_LENGTH = 16;
 
 /**
  * Validate an incoming request's Idempotency-Key header.
@@ -35,13 +35,13 @@ export function requireIdempotencyKey(
       details: { fields: { 'Idempotency-Key': ['header is required'] } },
     });
   }
-  if (raw.length < MIN_LENGTH) {
+  if (raw.length < IDEMPOTENCY_MIN_LENGTH) {
     throw new AppHttpException({
       code: 'VALIDATION_ERROR',
       message: 'Idempotency-Key is too short',
       details: {
         fields: {
-          'Idempotency-Key': [`must be at least ${MIN_LENGTH} characters`],
+          'Idempotency-Key': [`must be at least ${IDEMPOTENCY_MIN_LENGTH} characters`],
         },
       },
     });

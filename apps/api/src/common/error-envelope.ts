@@ -10,6 +10,10 @@ export type ErrorCode =
   | 'FORBIDDEN'
   | 'NOT_FOUND'
   | 'CONFLICT'
+  // conventions.md §2.1: Idempotency-Key replayed with a different
+  // body (T15-A/T20-B — the code was specified in the docs but never
+  // emitted until the replay cache landed).
+  | 'IDEMPOTENT_REPLAY'
   | 'RATE_LIMITED'
   | 'JOB_FAILED'
   | 'INTERNAL_ERROR'
@@ -66,6 +70,7 @@ export const STATUS_BY_CODE: Record<ErrorCode, number> = {
   PREFERENCE_NOT_FOUND: 404,
   NUTRITION_PROFILE_NOT_FOUND: 404,
   CONFLICT: 409,
+  IDEMPOTENT_REPLAY: 409,
   RATE_LIMITED: 429,
   JOB_FAILED: 422,
   // ITEM_NOT_ARCHIVED is intentionally 400 (not 404) — the row
@@ -172,6 +177,8 @@ function defaultMessageFor(code: ErrorCode): string {
     case 'CONFLICT':
     case 'REJECT_LIMIT_REACHED':
       return 'Resource conflict';
+    case 'IDEMPOTENT_REPLAY':
+      return 'Idempotency-Key was already used with a different request';
     case 'RATE_LIMITED':
       return 'Too many requests';
     case 'EMPTY_RESCUE':

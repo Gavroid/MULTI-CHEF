@@ -1,9 +1,10 @@
 import 'reflect-metadata';
 import { Module } from '@nestjs/common';
-import { APP_GUARD, APP_FILTER } from '@nestjs/core';
+import { APP_GUARD, APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AppHttpExceptionFilter } from './common/exception-filter.js';
 import { IdempotencyKeyGuard } from './common/idempotency.js';
+import { IdempotencyReplayInterceptor } from './common/idempotency-cache.js';
 import { CSRF_GUARD_PROVIDER } from './common/csrf-guard.js';
 import { HealthModule } from './health/health.module.js';
 import { AuthModule } from './auth/auth.module.js';
@@ -48,6 +49,11 @@ import { ShoppingListsModule } from './shopping-lists/shopping-lists.module.js';
     // Global exception filter — converts every thrown error into the
     // docs/api/conventions.md §2 envelope.
     { provide: APP_FILTER, useClass: AppHttpExceptionFilter },
+    // T15-A/T20-B: replay cache — same Idempotency-Key + same body
+    // returns the cached response, same key + different body → 409
+    // IDEMPOTENT_REPLAY (conventions.md §3). Runs as the outermost
+    // interceptor; fail-open when Redis is unavailable.
+    { provide: APP_INTERCEPTOR, useFactory: () => new IdempotencyReplayInterceptor() },
     // Rate limit applies to every route by default; specific endpoints
     // can opt out with @ThrottlerSkip().
     { provide: APP_GUARD, useClass: ThrottlerGuard },
