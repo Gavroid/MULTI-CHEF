@@ -52,14 +52,23 @@ export interface TenantContext {
   userId?: string;
 }
 
+export interface WithTenantContextOptions {
+  /** e.g. 'Serializable' for flows that need strict isolation (T20-A). */
+  isolationLevel?: Prisma.TransactionIsolationLevel;
+}
+
 export async function withTenantContext<T>(
   ctx: TenantContext,
   fn: (tx: Prisma.TransactionClient) => Promise<T>,
+  options?: WithTenantContextOptions,
 ): Promise<T> {
-  return getPrisma().$transaction(async (tx) => {
-    await tx.$executeRaw`SELECT set_config('app.household_id', ${ctx.householdId ?? ''}, true), set_config('app.user_id', ${ctx.userId ?? ''}, true)`;
-    return fn(tx);
-  });
+  return getPrisma().$transaction(
+    async (tx) => {
+      await tx.$executeRaw`SELECT set_config('app.household_id', ${ctx.householdId ?? ''}, true), set_config('app.user_id', ${ctx.userId ?? ''}, true)`;
+      return fn(tx);
+    },
+    options?.isolationLevel ? { isolationLevel: options.isolationLevel } : undefined,
+  );
 }
 
 /**

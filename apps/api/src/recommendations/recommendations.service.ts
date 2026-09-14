@@ -5,7 +5,7 @@
 // → pickTop3() → explanations. No writes; read-only for MC-033.
 
 import { Inject, Injectable } from '@nestjs/common';
-import { getPrisma } from '@multichef/database';
+import { getPrisma, withTenantContext } from '@multichef/database';
 import { rank, rankRescue } from '@multichef/recommendation';
 import type { GenerationContext } from '@multichef/recommendation';
 import type {
@@ -45,50 +45,54 @@ export class RecommendationsService {
     input: TodayRequestDto,
     now: Date,
   ): Promise<TodayRecommendationDto> {
-    const prisma = getPrisma();
     const householdId = await this.requireOwnedHouseholdId(userId);
 
-    const [recipeRows, pantryRows, preferenceRows, profile, yesterdayProtein] = await Promise.all([
-      prisma.recipe.findMany({
-        where: { sourceType: 'CURATED', status: 'PUBLISHED' },
-        include: {
-          ingredients: {
-            include: { ingredient: { include: { category: { select: { name: true } } } } },
-          },
-          nutrition: true,
-        },
-      }),
-      prisma.pantryItem.findMany({
-        where: { householdId, archivedAt: null, estimatedGrams: { gt: 0 } },
-        select: { ingredientId: true, estimatedGrams: true, priority: true, expiresAt: true },
-      }),
-      prisma.preference.findMany({
-        where: { userId, ingredientId: { not: null } },
-        select: { kind: true, ingredientId: true },
-      }),
-      prisma.nutritionProfile.findUnique({
-        where: { userId },
-        select: {
-          dietType: true,
-          appliances: true,
-          targetCalories: true,
-          targetProteinG: true,
-          targetFatG: true,
-          targetCarbsG: true,
-          mealsPerDay: true,
-          preferredPrepMinutes: true,
-        },
-      }),
-      // Sequential block below is one call; keep Promise.all honest.
-      Promise.resolve(null),
-    ]);
+    // ADR-0023 phase 3: tenant reads (PantryItem/Preference/
+    // NutritionProfile are RLS-protected) run inside the tenant
+    // context; the catalog read rides along.
+    const [recipeRows, pantryRows, preferenceRows, profile, yesterdayProtein] =
+      await withTenantContext({ householdId, userId }, async (tx) => {
+        const [recipeRows, pantryRows, preferenceRows, profile, yesterdayProtein] =
+          await Promise.all([
+            tx.recipe.findMany({
+              where: { sourceType: 'CURATED', status: 'PUBLISHED' },
+              include: {
+                ingredients: {
+                  include: { ingredient: { include: { category: { select: { name: true } } } } },
+                },
+                nutrition: true,
+              },
+            }),
+            tx.pantryItem.findMany({
+              where: { householdId, archivedAt: null, estimatedGrams: { gt: 0 } },
+              select: { ingredientId: true, estimatedGrams: true, priority: true, expiresAt: true },
+            }),
+            tx.preference.findMany({
+              where: { userId, ingredientId: { not: null } },
+              select: { kind: true, ingredientId: true },
+            }),
+            tx.nutritionProfile.findUnique({
+              where: { userId },
+              select: {
+                dietType: true,
+                appliances: true,
+                targetCalories: true,
+                targetProteinG: true,
+                targetFatG: true,
+                targetCarbsG: true,
+                mealsPerDay: true,
+                preferredPrepMinutes: true,
+              },
+            }),
+            fetchYesterdayMainProtein(tx as never, householdId, now),
+          ]);
+        return [recipeRows, pantryRows, preferenceRows, profile, yesterdayProtein] as const;
+      });
 
-    void yesterdayProtein;
-    const protein = await fetchYesterdayMainProtein(prisma as never, householdId, now);
     // GenerationContext accepts 'NONE' too; package treats non-CHICKEN as
     // no-op for NOT_CHICKEN_AGAIN. 'OTHER' maps to 'NONE'.
     const proteinSignal: GenerationContext['yesterdayMainProtein'] =
-      protein === null ? 'NONE' : protein === 'OTHER' ? 'NONE' : protein;
+      yesterdayProtein === null || yesterdayProtein === 'OTHER' ? 'NONE' : yesterdayProtein;
 
     const settings = input.generationSettings ?? {};
     const maxMinutes = settings.maxMinutes ?? profile?.preferredPrepMinutes ?? 60;
@@ -155,63 +159,71 @@ export class RecommendationsService {
    * cooked from it.
    */
   async getRescue(userId: string, input: RescueRequestDto, now: Date): Promise<RescueResponseDto> {
-    const prisma = getPrisma();
     const householdId = await this.requireOwnedHouseholdId(userId);
 
     // Security invariant (ADR decision #8): the ingredient MUST be in
     // THIS household's pantry, otherwise 404 — existence must not leak.
-    const pantryItem = await prisma.pantryItem.findFirst({
-      where: {
-        householdId,
-        ingredientId: input.ingredientId,
-        archivedAt: null,
-        estimatedGrams: { gt: 0 },
-      },
-      include: { ingredient: { select: { canonicalName: true } } },
-    });
-    if (!pantryItem) {
-      throw new AppHttpException({
-        code: 'INGREDIENT_NOT_FOUND',
-        message: 'Продукт не найден в холодильнике',
-        details: { ingredientId: input.ingredientId },
+    // ADR-0023 phase 3: PantryItem is RLS-protected — probe in context.
+    const loaded = await withTenantContext({ householdId, userId }, async (tx) => {
+      const pantryItem = await tx.pantryItem.findFirst({
+        where: {
+          householdId,
+          ingredientId: input.ingredientId,
+          archivedAt: null,
+          estimatedGrams: { gt: 0 },
+        },
+        include: { ingredient: { select: { canonicalName: true } } },
       });
-    }
-
-    const [recipeRows, pantryRows, preferenceRows, profile] = await Promise.all([
-      prisma.recipe.findMany({
-        where: { sourceType: 'CURATED', status: 'PUBLISHED' },
-        include: {
-          ingredients: {
-            include: { ingredient: { include: { category: { select: { name: true } } } } },
+      if (!pantryItem) {
+        throw new AppHttpException({
+          code: 'INGREDIENT_NOT_FOUND',
+          message: 'Продукт не найден в холодильнике',
+          details: { ingredientId: input.ingredientId },
+        });
+      }
+      const [recipeRows, pantryRows, preferenceRows, profile] = await Promise.all([
+        tx.recipe.findMany({
+          where: { sourceType: 'CURATED', status: 'PUBLISHED' },
+          include: {
+            ingredients: {
+              include: { ingredient: { include: { category: { select: { name: true } } } } },
+            },
+            nutrition: true,
           },
-          nutrition: true,
-        },
-      }),
-      prisma.pantryItem.findMany({
-        where: { householdId, archivedAt: null, estimatedGrams: { gt: 0 } },
-        select: { ingredientId: true, estimatedGrams: true, priority: true, expiresAt: true },
-      }),
-      prisma.preference.findMany({
-        where: { userId, ingredientId: { not: null } },
-        select: { kind: true, ingredientId: true },
-      }),
-      prisma.nutritionProfile.findUnique({
-        where: { userId },
-        select: {
-          dietType: true,
-          appliances: true,
-          targetCalories: true,
-          targetProteinG: true,
-          targetFatG: true,
-          targetCarbsG: true,
-          mealsPerDay: true,
-          preferredPrepMinutes: true,
-        },
-      }),
-    ]);
+        }),
+        tx.pantryItem.findMany({
+          where: { householdId, archivedAt: null, estimatedGrams: { gt: 0 } },
+          select: { ingredientId: true, estimatedGrams: true, priority: true, expiresAt: true },
+        }),
+        tx.preference.findMany({
+          where: { userId, ingredientId: { not: null } },
+          select: { kind: true, ingredientId: true },
+        }),
+        tx.nutritionProfile.findUnique({
+          where: { userId },
+          select: {
+            dietType: true,
+            appliances: true,
+            targetCalories: true,
+            targetProteinG: true,
+            targetFatG: true,
+            targetCarbsG: true,
+            mealsPerDay: true,
+            preferredPrepMinutes: true,
+          },
+        }),
+      ]);
+      return { pantryItem, recipeRows, pantryRows, preferenceRows, profile } as const;
+    });
 
-    // NOT_CHICKEN_AGAIN can never fire (antiFilters is empty in rescue),
-    // so the yesterday-protein lookup is skipped for latency.
+    const { pantryItem } = loaded;
+    const [recipeRows, pantryRows, preferenceRows, profile] = [
+      loaded.recipeRows,
+      loaded.pantryRows,
+      loaded.preferenceRows,
+      loaded.profile,
+    ];
+
     const ctx: GenerationContext = {
       now,
       pantry: mapPantry(pantryRows),
@@ -221,16 +233,6 @@ export class RecommendationsService {
       antiFilters: [],
       yesterdayMainProtein: 'NONE',
       recentRecipeIds7d: [], // meal-plans history lands in MC-051
-      ...(profile?.targetCalories && profile.targetCalories > 0
-        ? {
-            targetDailyMacros: {
-              calories: profile.targetCalories,
-              proteinG: profile.targetProteinG ?? 0,
-              fatG: profile.targetFatG ?? 0,
-              carbsG: profile.targetCarbsG ?? 0,
-            },
-          }
-        : {}),
       mealsPerDay: profile?.mealsPerDay ?? 3,
     };
 
@@ -296,41 +298,46 @@ export class RecommendationsService {
     now: Date,
     rng: () => number = Math.random,
   ): Promise<RouletteDrawResponseDto> {
-    const prisma = getPrisma();
     const householdId = await this.requireOwnedHouseholdId(userId);
 
-    const [recipeRows, pantryRows, preferenceRows, profile] = await Promise.all([
-      prisma.recipe.findMany({
-        where: { sourceType: 'CURATED', status: 'PUBLISHED' },
-        include: {
-          ingredients: {
-            include: { ingredient: { include: { category: { select: { name: true } } } } },
-          },
-          nutrition: true,
-        },
-      }),
-      prisma.pantryItem.findMany({
-        where: { householdId, archivedAt: null, estimatedGrams: { gt: 0 } },
-        select: { ingredientId: true, estimatedGrams: true, priority: true, expiresAt: true },
-      }),
-      prisma.preference.findMany({
-        where: { userId, ingredientId: { not: null } },
-        select: { kind: true, ingredientId: true },
-      }),
-      prisma.nutritionProfile.findUnique({
-        where: { userId },
-        select: {
-          dietType: true,
-          appliances: true,
-          targetCalories: true,
-          targetProteinG: true,
-          targetFatG: true,
-          targetCarbsG: true,
-          mealsPerDay: true,
-          preferredPrepMinutes: true,
-        },
-      }),
-    ]);
+    const [recipeRows, pantryRows, preferenceRows, profile] = await withTenantContext(
+      { householdId, userId },
+      async (tx) => {
+        const [recipeRows, pantryRows, preferenceRows, profile] = await Promise.all([
+          tx.recipe.findMany({
+            where: { sourceType: 'CURATED', status: 'PUBLISHED' },
+            include: {
+              ingredients: {
+                include: { ingredient: { include: { category: { select: { name: true } } } } },
+              },
+              nutrition: true,
+            },
+          }),
+          tx.pantryItem.findMany({
+            where: { householdId, archivedAt: null, estimatedGrams: { gt: 0 } },
+            select: { ingredientId: true, estimatedGrams: true, priority: true, expiresAt: true },
+          }),
+          tx.preference.findMany({
+            where: { userId, ingredientId: { not: null } },
+            select: { kind: true, ingredientId: true },
+          }),
+          tx.nutritionProfile.findUnique({
+            where: { userId },
+            select: {
+              dietType: true,
+              appliances: true,
+              targetCalories: true,
+              targetProteinG: true,
+              targetFatG: true,
+              targetCarbsG: true,
+              mealsPerDay: true,
+              preferredPrepMinutes: true,
+            },
+          }),
+        ]);
+        return [recipeRows, pantryRows, preferenceRows, profile] as const;
+      },
+    );
 
     const ctx: GenerationContext = {
       now,

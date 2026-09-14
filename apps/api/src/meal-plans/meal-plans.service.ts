@@ -1,10 +1,16 @@
 // MC-051 — MealPlans service: validate the weekly-plan setup, record
 // the Job and enqueue GENERATE_PLAN (planned by the worker, MC-051).
 // The actual planning is asynchronous; clients poll GET /jobs/:id.
+//
+// ADR-0023 phase 2: every read/write against RLS-protected tenant
+// tables (MealPlan*, PrepSession, PrepTask) runs inside
+// withTenantContext(), which installs app.household_id / app.user_id
+// for the transaction. The prep build keeps its Serializable
+// transaction (T20-A) with the context installed in it.
 
 import { Inject, Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { getPrisma } from '@multichef/database';
+import { getPrisma, withTenantContext } from '@multichef/database';
 import {
   buildPrepTasks,
   buildStoragePlan,
@@ -39,59 +45,61 @@ export class MealPlansService {
   /** Fetch the household's active plan (web «План» tab, MC-055). */
   async getActiveForUser(userId: string) {
     const householdId = await this.requireOwnedHouseholdId(userId);
-    const plan = await getPrisma().mealPlan.findFirst({
-      where: { householdId, status: 'ACTIVE' },
-      include: {
-        days: {
-          orderBy: { date: 'asc' },
-          include: { entries: { orderBy: { position: 'asc' }, include: { recipe: true } } },
-        },
-      },
-    });
     // T16-A (audit round 16): "no active plan" is a typed 404 like the
     // storage/prep siblings — raw null bodies were the envelope-mix
     // anti-pattern. The web client maps PLAN_NOT_FOUND back to null.
-    if (!plan) {
-      throw new AppHttpException({
-        code: 'PLAN_NOT_FOUND',
-        message: 'Активный план не найден',
-      });
-    }
-    return {
-      id: plan.id,
-      startDate: plan.startDate.toISOString(),
-      endDate: plan.endDate.toISOString(),
-      peopleCount: plan.peopleCount,
-      status: plan.status,
-      days: plan.days.map((day) => ({
-        id: day.id,
-        date: day.date.toISOString(),
-        totalCalories: day.totalCalories.toNumber(),
-        totalProteinG: day.totalProteinG.toNumber(),
-        totalFatG: day.totalFatG.toNumber(),
-        totalCarbsG: day.totalCarbsG.toNumber(),
-        entries: day.entries.map((entry) => ({
-          id: entry.id,
-          mealType: entry.mealType,
-          recipe: {
-            id: entry.recipe.id,
-            title: entry.recipe.title,
-            description: entry.recipe.description,
-            imageKey: entry.recipe.imageKey,
-            servings: entry.recipe.servings,
-            prepMinutes: entry.recipe.prepMinutes,
-            cookMinutes: entry.recipe.cookMinutes,
-            difficulty: entry.recipe.difficulty,
-            mealTypes: entry.recipe.mealTypes,
-            tags: entry.recipe.tags,
-            requiredAppliances: entry.recipe.requiredAppliances,
+    return withTenantContext({ householdId, userId }, async (tx) => {
+      const plan = await tx.mealPlan.findFirst({
+        where: { householdId, status: 'ACTIVE' },
+        include: {
+          days: {
+            orderBy: { date: 'asc' },
+            include: { entries: { orderBy: { position: 'asc' }, include: { recipe: true } } },
           },
-          servings: entry.servings.toNumber(),
-          portionGrams: entry.portionGrams.toNumber(),
-          position: entry.position,
+        },
+      });
+      if (!plan) {
+        throw new AppHttpException({
+          code: 'PLAN_NOT_FOUND',
+          message: 'Активный план не найден',
+        });
+      }
+      return {
+        id: plan.id,
+        startDate: plan.startDate.toISOString(),
+        endDate: plan.endDate.toISOString(),
+        peopleCount: plan.peopleCount,
+        status: plan.status,
+        days: plan.days.map((day) => ({
+          id: day.id,
+          date: day.date.toISOString(),
+          totalCalories: day.totalCalories.toNumber(),
+          totalProteinG: day.totalProteinG.toNumber(),
+          totalFatG: day.totalFatG.toNumber(),
+          totalCarbsG: day.totalCarbsG.toNumber(),
+          entries: day.entries.map((entry) => ({
+            id: entry.id,
+            mealType: entry.mealType,
+            recipe: {
+              id: entry.recipe.id,
+              title: entry.recipe.title,
+              description: entry.recipe.description,
+              imageKey: entry.recipe.imageKey,
+              servings: entry.recipe.servings,
+              prepMinutes: entry.recipe.prepMinutes,
+              cookMinutes: entry.recipe.cookMinutes,
+              difficulty: entry.recipe.difficulty,
+              mealTypes: entry.recipe.mealTypes,
+              tags: entry.recipe.tags,
+              requiredAppliances: entry.recipe.requiredAppliances,
+            },
+            servings: entry.servings.toNumber(),
+            portionGrams: entry.portionGrams.toNumber(),
+            position: entry.position,
+          })),
         })),
-      })),
-    };
+      };
+    });
   }
 
   /**
@@ -99,31 +107,45 @@ export class MealPlansService {
    * plan. Tasks are deduplicated; intensity cuts active minutes.
    *
    * T20-A/T20-C (audit round 20): the whole build-and-persist path
-   * runs inside one Serializable transaction. The old read-then-write
-   * flow let two concurrent first-calls interleave their
-   * deleteMany/create loops — the deterministic task ids (T20-C)
-   * collided, the loser surfaced as P2002 → 500 and the winner's task
-   * list could be wiped. Inside the transaction both callers
-   * serialize on the PrepSession row via the upsert: the second one
-   * takes the update path and replaces the tasks atomically.
-   * P2034 (serialization failure) is retried with backoff; a caller
-   * that keeps losing serves the persisted winner's session instead
-   * of failing.
+   * runs inside one Serializable tenant transaction — both callers
+   * serialize on the PrepSession row via the upsert, the second one
+   * replaces the tasks atomically (no P2002/PK collision, no torn
+   * list). P2034 conflicts retry with backoff; a caller that keeps
+   * losing serves the persisted winner's session instead of failing.
    */
   async generatePrepSession(userId: string, intensity: PrepIntensity): Promise<PrepSessionDto> {
-    const plan = await this.getActivePlanRowOrThrow(userId);
+    const householdId = await this.requireOwnedHouseholdId(userId);
     const prisma = getPrisma();
+
+    // Resolve the household's ACTIVE plan (tenant-tx read, RLS-aware).
+    const plan = await withTenantContext({ householdId, userId }, async (tx) => {
+      const active = await tx.mealPlan.findFirst({
+        where: { householdId, status: 'ACTIVE' },
+        select: { id: true },
+      });
+      if (!active) {
+        throw new AppHttpException({
+          code: 'PLAN_NOT_FOUND',
+          message: 'Активный план не найден',
+        });
+      }
+      return active;
+    });
     const sessionId = `${plan.id}-prep-${intensity}`;
 
-    const existing = await prisma.prepSession.findFirst({
-      where: { id: sessionId },
-      include: { tasks: { orderBy: { sequence: 'asc' } } },
-    });
+    // Fast path: the session already exists (tenant-tx read).
+    const existing = await withTenantContext({ householdId, userId }, (tx) =>
+      tx.prepSession.findFirst({
+        where: { id: sessionId },
+        include: { tasks: { orderBy: { sequence: 'asc' } } },
+      }),
+    );
     if (existing) return this.toPrepSessionDto(existing);
 
     for (let attempt = 1; ; attempt += 1) {
       try {
-        return await prisma.$transaction(
+        return await withTenantContext(
+          { householdId, userId },
           async (tx) => {
             const { entries, rules } = await this.loadPrepInputs(plan.id, tx);
             const prepEntries: PrepEntryInput[] = entries.map((e) => ({
@@ -195,10 +217,12 @@ export class MealPlansService {
         }
         // Exhausted retries — whoever kept winning the conflict has
         // persisted the session; serve it instead of a 500.
-        const winner = await prisma.prepSession.findFirst({
-          where: { id: sessionId },
-          include: { tasks: { orderBy: { sequence: 'asc' } } },
-        });
+        const winner = await withTenantContext({ householdId, userId }, (tx) =>
+          tx.prepSession.findFirst({
+            where: { id: sessionId },
+            include: { tasks: { orderBy: { sequence: 'asc' } } },
+          }),
+        );
         if (winner) return this.toPrepSessionDto(winner);
         throw err;
       }
@@ -238,49 +262,71 @@ export class MealPlansService {
   }
 
   async togglePrepTask(userId: string, taskId: string, done: boolean): Promise<{ done: boolean }> {
-    const plan = await this.getActivePlanRowOrThrow(userId);
-    const prisma = getPrisma();
-    const task = await prisma.prepTask.findFirst({
-      where: { id: taskId, prepSession: { mealPlanId: plan.id } },
-      select: { id: true },
-    });
-    if (!task) {
-      throw new AppHttpException({
-        code: 'PREP_TASK_NOT_FOUND',
-        message: 'Задача не найдена',
-        details: { taskId },
+    const householdId = await this.requireOwnedHouseholdId(userId);
+    return withTenantContext({ householdId, userId }, async (tx) => {
+      const plan = await tx.mealPlan.findFirst({
+        where: { householdId, status: 'ACTIVE' },
+        select: { id: true },
       });
-    }
-    await prisma.prepTask.update({ where: { id: taskId }, data: { done } });
-    return { done };
+      if (!plan) {
+        throw new AppHttpException({
+          code: 'PLAN_NOT_FOUND',
+          message: 'Активный план не найден',
+        });
+      }
+      const task = await tx.prepTask.findFirst({
+        where: { id: taskId, prepSession: { mealPlanId: plan.id } },
+        select: { id: true },
+      });
+      if (!task) {
+        throw new AppHttpException({
+          code: 'PREP_TASK_NOT_FOUND',
+          message: 'Задача не найдена',
+          details: { taskId },
+        });
+      }
+      await tx.prepTask.update({ where: { id: taskId }, data: { done } });
+      return { done };
+    });
   }
 
   /** MC-061: containers + defrost calendar for the ACTIVE plan. */
   async getStoragePlan(userId: string): Promise<StoragePlanDto> {
-    const plan = await this.getActivePlanRowOrThrow(userId);
-    const { entries, rules } = await this.loadPrepInputs(plan.id);
-    const startIso = plan.startDate.toISOString().slice(0, 10);
-    const storageEntries: StorageEntryInput[] = entries.map((e) => {
-      const method = rules.freezeTags.some((tag) => e.recipe.tags.includes(tag))
-        ? 'FREEZE_OK'
-        : rules.noPrepTags.some((tag) => e.recipe.tags.includes(tag))
-          ? 'NO_PREP'
-          : 'FRIDGE_ONLY';
-      return {
-        entryId: e.id,
-        recipeId: e.recipe.id,
-        title: e.recipe.title,
-        dayIndex: e.dayIndex,
-        servings: e.servings,
-        portionGrams: e.portionGrams,
-        storageMethod: method,
-        maxHoursFridge: rules.maxHoursFridge,
-      };
+    const householdId = await this.requireOwnedHouseholdId(userId);
+    return withTenantContext({ householdId, userId }, async (tx) => {
+      const plan = await tx.mealPlan.findFirst({
+        where: { householdId, status: 'ACTIVE' },
+      });
+      if (!plan) {
+        throw new AppHttpException({
+          code: 'PLAN_NOT_FOUND',
+          message: 'Активный план не найден',
+        });
+      }
+      const { entries, rules } = await this.loadPrepInputs(plan.id, tx);
+      const startIso = plan.startDate.toISOString().slice(0, 10);
+      const storageEntries: StorageEntryInput[] = entries.map((e) => {
+        const method = rules.freezeTags.some((tag) => e.recipe.tags.includes(tag))
+          ? 'FREEZE_OK'
+          : rules.noPrepTags.some((tag) => e.recipe.tags.includes(tag))
+            ? 'NO_PREP'
+            : 'FRIDGE_ONLY';
+        return {
+          entryId: e.id,
+          recipeId: e.recipe.id,
+          title: e.recipe.title,
+          dayIndex: e.dayIndex,
+          servings: e.servings,
+          portionGrams: e.portionGrams,
+          storageMethod: method,
+          maxHoursFridge: rules.maxHoursFridge,
+        };
+      });
+      return buildStoragePlan(storageEntries, startIso);
     });
-    return buildStoragePlan(storageEntries, startIso);
   }
 
-  private async loadPrepInputs(planId: string, prisma: Prisma.TransactionClient = getPrisma()) {
+  private async loadPrepInputs(planId: string, prisma: Prisma.TransactionClient) {
     const plan = await prisma.mealPlan.findUniqueOrThrow({ where: { id: planId } });
     const days = await prisma.mealPlanDay.findMany({
       where: { mealPlanId: planId },
@@ -338,20 +384,6 @@ export class MealPlansService {
         maxHoursFridge: Math.max(24, ...allRules.map((r) => r.maxHoursFridge ?? 72)),
       },
     };
-  }
-
-  private async getActivePlanRowOrThrow(userId: string) {
-    const householdId = await this.requireOwnedHouseholdId(userId);
-    const plan = await getPrisma().mealPlan.findFirst({
-      where: { householdId, status: 'ACTIVE' },
-    });
-    if (!plan) {
-      throw new AppHttpException({
-        code: 'PLAN_NOT_FOUND',
-        message: 'Активный план не найден',
-      });
-    }
-    return plan;
   }
 
   private async requireOwnedHouseholdId(userId: string): Promise<string> {

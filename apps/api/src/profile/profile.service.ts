@@ -12,7 +12,7 @@
 
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { getPrisma } from '@multichef/database';
+import { getPrisma, withTenantContext } from '@multichef/database';
 // APPLIANCE_VALUES / PREFERENCE_KIND_VALUES are exported as `as const`
 // tuples; the service derives the union type via `(typeof X)[number]`
 // which makes them only used in type positions. The values still need
@@ -86,13 +86,16 @@ export class ProfileService {
       },
     });
     const household = await this.requireOwnedHousehold(userId);
-    const [nutritionProfile, preferences] = await Promise.all([
-      getPrisma().nutritionProfile.findUnique({ where: { userId } }),
-      getPrisma().preference.findMany({
-        where: { userId },
-        orderBy: [{ kind: 'asc' }, { id: 'asc' }],
-      }),
-    ]);
+    const [nutritionProfile, preferences] = await withTenantContext({ userId }, async (tx) => {
+      const [np, prefs] = await Promise.all([
+        tx.nutritionProfile.findUnique({ where: { userId } }),
+        tx.preference.findMany({
+          where: { userId },
+          orderBy: [{ kind: 'asc' }, { id: 'asc' }],
+        }),
+      ]);
+      return [np, prefs] as const;
+    });
     return {
       user,
       household: this.toHouseholdView(household),
@@ -135,14 +138,17 @@ export class ProfileService {
 
   async getNutrition(userId: string): Promise<ProfileView['nutritionProfile']> {
     // T16-A (audit round 16): typed 404 instead of a raw null body.
-    const np = await getPrisma().nutritionProfile.findUnique({ where: { userId } });
-    if (!np) {
-      throw new AppHttpException({
-        code: 'NUTRITION_PROFILE_NOT_FOUND',
-        message: 'Nutrition profile not found',
-      });
-    }
-    return this.toNutritionView(np);
+    // ADR-0023: NutritionProfile is RLS-protected — read in context.
+    return withTenantContext({ userId }, async (tx) => {
+      const np = await tx.nutritionProfile.findUnique({ where: { userId } });
+      if (!np) {
+        throw new AppHttpException({
+          code: 'NUTRITION_PROFILE_NOT_FOUND',
+          message: 'Nutrition profile not found',
+        });
+      }
+      return this.toNutritionView(np);
+    });
   }
 
   async putNutrition(
@@ -160,63 +166,69 @@ export class ProfileService {
       activityNotes?: string | null | undefined;
     },
   ): Promise<ProfileView['nutritionProfile']> {
-    const np = await getPrisma().nutritionProfile.upsert({
-      where: { userId },
-      create: {
-        userId,
-        ...(body.targetCalories !== undefined ? { targetCalories: body.targetCalories } : {}),
-        ...(body.targetProteinG !== undefined ? { targetProteinG: body.targetProteinG } : {}),
-        ...(body.targetFatG !== undefined ? { targetFatG: body.targetFatG } : {}),
-        ...(body.targetCarbsG !== undefined ? { targetCarbsG: body.targetCarbsG } : {}),
-        ...(body.mealsPerDay !== undefined ? { mealsPerDay: body.mealsPerDay } : {}),
-        ...(body.preferredPrepMinutes !== undefined
-          ? { preferredPrepMinutes: body.preferredPrepMinutes }
-          : {}),
-        ...(body.skillLevel !== undefined
-          ? { skillLevel: body.skillLevel as 'BEGINNER' | 'CONFIDENT' | 'EXPERIMENTER' }
-          : {}),
-        ...(body.appliances !== undefined ? { appliances: body.appliances } : {}),
-        ...(body.dietType !== undefined
-          ? { dietType: body.dietType as 'NONE' | 'VEGETARIAN' | 'VEGAN' | 'PESCATARIAN' }
-          : {}),
-        ...(body.activityNotes !== undefined ? { activityNotes: body.activityNotes } : {}),
-      },
-      update: {
-        ...(body.targetCalories !== undefined ? { targetCalories: body.targetCalories } : {}),
-        ...(body.targetProteinG !== undefined ? { targetProteinG: body.targetProteinG } : {}),
-        ...(body.targetFatG !== undefined ? { targetFatG: body.targetFatG } : {}),
-        ...(body.targetCarbsG !== undefined ? { targetCarbsG: body.targetCarbsG } : {}),
-        ...(body.mealsPerDay !== undefined ? { mealsPerDay: body.mealsPerDay } : {}),
-        ...(body.preferredPrepMinutes !== undefined
-          ? { preferredPrepMinutes: body.preferredPrepMinutes }
-          : {}),
-        ...(body.skillLevel !== undefined
-          ? { skillLevel: body.skillLevel as 'BEGINNER' | 'CONFIDENT' | 'EXPERIMENTER' }
-          : {}),
-        ...(body.appliances !== undefined ? { appliances: body.appliances } : {}),
-        ...(body.dietType !== undefined
-          ? { dietType: body.dietType as 'NONE' | 'VEGETARIAN' | 'VEGAN' | 'PESCATARIAN' }
-          : {}),
-        ...(body.activityNotes !== undefined ? { activityNotes: body.activityNotes } : {}),
-      },
+    // ADR-0023: NutritionProfile is RLS-protected — upsert in context.
+    return withTenantContext({ userId }, async (tx) => {
+      const np = await tx.nutritionProfile.upsert({
+        where: { userId },
+        create: {
+          userId,
+          ...(body.targetCalories !== undefined ? { targetCalories: body.targetCalories } : {}),
+          ...(body.targetProteinG !== undefined ? { targetProteinG: body.targetProteinG } : {}),
+          ...(body.targetFatG !== undefined ? { targetFatG: body.targetFatG } : {}),
+          ...(body.targetCarbsG !== undefined ? { targetCarbsG: body.targetCarbsG } : {}),
+          ...(body.mealsPerDay !== undefined ? { mealsPerDay: body.mealsPerDay } : {}),
+          ...(body.preferredPrepMinutes !== undefined
+            ? { preferredPrepMinutes: body.preferredPrepMinutes }
+            : {}),
+          ...(body.skillLevel !== undefined
+            ? { skillLevel: body.skillLevel as 'BEGINNER' | 'CONFIDENT' | 'EXPERIMENTER' }
+            : {}),
+          ...(body.appliances !== undefined ? { appliances: body.appliances } : {}),
+          ...(body.dietType !== undefined
+            ? { dietType: body.dietType as 'NONE' | 'VEGETARIAN' | 'VEGAN' | 'PESCATARIAN' }
+            : {}),
+          ...(body.activityNotes !== undefined ? { activityNotes: body.activityNotes } : {}),
+        },
+        update: {
+          ...(body.targetCalories !== undefined ? { targetCalories: body.targetCalories } : {}),
+          ...(body.targetProteinG !== undefined ? { targetProteinG: body.targetProteinG } : {}),
+          ...(body.targetFatG !== undefined ? { targetFatG: body.targetFatG } : {}),
+          ...(body.targetCarbsG !== undefined ? { targetCarbsG: body.targetCarbsG } : {}),
+          ...(body.mealsPerDay !== undefined ? { mealsPerDay: body.mealsPerDay } : {}),
+          ...(body.preferredPrepMinutes !== undefined
+            ? { preferredPrepMinutes: body.preferredPrepMinutes }
+            : {}),
+          ...(body.skillLevel !== undefined
+            ? { skillLevel: body.skillLevel as 'BEGINNER' | 'CONFIDENT' | 'EXPERIMENTER' }
+            : {}),
+          ...(body.appliances !== undefined ? { appliances: body.appliances } : {}),
+          ...(body.dietType !== undefined
+            ? { dietType: body.dietType as 'NONE' | 'VEGETARIAN' | 'VEGAN' | 'PESCATARIAN' }
+            : {}),
+          ...(body.activityNotes !== undefined ? { activityNotes: body.activityNotes } : {}),
+        },
+      });
+      return this.toNutritionView(np);
     });
-    return this.toNutritionView(np);
   }
 
   async listPreferences(
     userId: string,
     kind?: PreferenceKind,
   ): Promise<ProfileView['preferences']> {
-    const rows = await getPrisma().preference.findMany({
-      where: { userId, ...(kind ? { kind } : {}) },
-      orderBy: [{ kind: 'asc' }, { id: 'asc' }],
+    // ADR-0023: Preference is RLS-protected — read in context.
+    return withTenantContext({ userId }, async (tx) => {
+      const rows = await tx.preference.findMany({
+        where: { userId, ...(kind ? { kind } : {}) },
+        orderBy: [{ kind: 'asc' }, { id: 'asc' }],
+      });
+      return rows.map((p) => ({
+        id: p.id,
+        kind: p.kind,
+        ingredientId: p.ingredientId,
+        note: p.note,
+      }));
     });
-    return rows.map((p) => ({
-      id: p.id,
-      kind: p.kind,
-      ingredientId: p.ingredientId,
-      note: p.note,
-    }));
   }
 
   async addPreference(
@@ -239,7 +251,8 @@ export class ProfileService {
       // T14-A (audit round 14): the whole check-then-act runs inside one
       // transaction; the @@unique([userId, kind, ingredientId]) index is
       // the final arbiter when two concurrent adds both miss findFirst.
-      return await getPrisma().$transaction(async (tx) => {
+      // ADR-0023: Preference is RLS-protected — run in context.
+      return await withTenantContext({ userId }, async (tx) => {
         if (body.ingredientId) {
           const existing = await tx.preference.findFirst({
             where: { userId, kind: body.kind, ingredientId: body.ingredientId },
@@ -273,9 +286,11 @@ export class ProfileService {
       // Lost the insert race — return the winner's row so the replay
       // stays idempotent (same shape as the findFirst hit above).
       if (isUniqueConstraintOn(err, 'ingredientId')) {
-        const winner = await getPrisma().preference.findFirstOrThrow({
-          where: { userId, kind: body.kind, ingredientId: body.ingredientId ?? null },
-        });
+        const winner = await withTenantContext({ userId }, (tx) =>
+          tx.preference.findFirstOrThrow({
+            where: { userId, kind: body.kind, ingredientId: body.ingredientId ?? null },
+          }),
+        );
         return {
           id: winner.id,
           kind: winner.kind,
@@ -288,15 +303,16 @@ export class ProfileService {
   }
 
   async removePreference(userId: string, preferenceId: string): Promise<void> {
-    const row = await getPrisma().preference.findUnique({ where: { id: preferenceId } });
-    if (!row) {
-      throw new AppHttpException({ code: 'NOT_FOUND', message: 'Preference not found' });
-    }
-    if (row.userId !== userId) {
-      // Don't leak the existence of someone else's preference.
-      throw new AppHttpException({ code: 'NOT_FOUND', message: 'Preference not found' });
-    }
-    await getPrisma().preference.delete({ where: { id: preferenceId } });
+    // ADR-0023: Preference is RLS-protected — read+delete in context
+    // (cross-user rows are invisible, the NOT_FOUND semantics hold).
+    return withTenantContext({ userId }, async (tx) => {
+      const row = await tx.preference.findUnique({ where: { id: preferenceId } });
+      if (!row || row.userId !== userId) {
+        // Don't leak the existence of someone else's preference.
+        throw new AppHttpException({ code: 'NOT_FOUND', message: 'Preference not found' });
+      }
+      await tx.preference.delete({ where: { id: preferenceId } });
+    });
   }
 
   async onboarding(
@@ -328,7 +344,9 @@ export class ProfileService {
     // Idempotent onboarding: upsert NutritionProfile, then for each
     // list (allergies → ALLERGY, liked → LOVE, disliked → DISLIKE)
     // dedupe by (userId, kind, ingredientId) before inserting.
-    const result = await getPrisma().$transaction(async (tx) => {
+    // ADR-0023: NutritionProfile/Preference are RLS-protected — the
+    // whole flow runs in the user's tenant context.
+    return withTenantContext({ userId }, async (tx) => {
       const np = await tx.nutritionProfile.upsert({
         where: { userId },
         create: {
@@ -413,11 +431,10 @@ export class ProfileService {
       await insertPreferences('DISLIKE', body.dislikedIngredients);
 
       return { np, preferencesCreated };
-    });
-    return {
-      nutritionProfile: this.toNutritionView(result.np),
-      preferencesCreated: result.preferencesCreated,
-    };
+    }).then(({ np, preferencesCreated }) => ({
+      nutritionProfile: this.toNutritionView(np),
+      preferencesCreated,
+    }));
   }
 
   private async requireOwnedHousehold(userId: string): Promise<{

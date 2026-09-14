@@ -5,10 +5,14 @@
 // fitBudgetProposals generator for savings in preference order.
 // applyProposal mutates the list transactionally (SUBSTITUTE replaces
 // the row, DROP_OPTIONAL deletes it) and recomputes the total.
+//
+// ADR-0023 phase 2: ShoppingList* are RLS-protected (mc089) — every
+// tenant operation runs inside withTenantContext().
 
 import { Injectable, Optional } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
-import { getPrisma } from '@multichef/database';
+import { Prisma } from '@prisma/client';
+import { getPrisma, withTenantContext } from '@multichef/database';
 import {
   fitBudgetProposals,
   type BudgetItem,
@@ -34,31 +38,33 @@ export class ShoppingListsService {
   /** The household's ACTIVE shopping list; 404 when there is none. */
   async getActiveForUser(userId: string) {
     const householdId = await this.requireOwnedHouseholdId(userId);
-    const list = await this.db.shoppingList.findFirst({
-      where: { householdId, status: 'ACTIVE' },
-      include: {
-        items: {
-          orderBy: [{ sortOrder: 'asc' }, { ingredientId: 'asc' }],
-          // Audit fix: the UI must show catalogue names, not raw ids.
-          include: { ingredient: { select: { canonicalName: true } } },
-        },
-      },
-    });
     // T16-A (audit round 16): typed 404 instead of a raw null body —
     // the web client maps SHOPPING_LIST_NOT_FOUND back to null.
-    if (!list) {
-      throw new AppHttpException({
-        code: 'SHOPPING_LIST_NOT_FOUND',
-        message: 'Активный список покупок не найден',
+    return withTenantContext({ householdId, userId }, async (tx) => {
+      const list = await tx.shoppingList.findFirst({
+        where: { householdId, status: 'ACTIVE' },
+        include: {
+          items: {
+            orderBy: [{ sortOrder: 'asc' }, { ingredientId: 'asc' }],
+            // Audit fix: the UI must show catalogue names, not raw ids.
+            include: { ingredient: { select: { canonicalName: true } } },
+          },
+        },
       });
-    }
-    return {
-      ...list,
-      items: list.items.map((item) => ({
-        ...item,
-        name: item.ingredient?.canonicalName ?? null,
-      })),
-    };
+      if (!list) {
+        throw new AppHttpException({
+          code: 'SHOPPING_LIST_NOT_FOUND',
+          message: 'Активный список покупок не найден',
+        });
+      }
+      return {
+        ...list,
+        items: list.items.map((item) => ({
+          ...item,
+          name: item.ingredient?.canonicalName ?? null,
+        })),
+      };
+    });
   }
 
   async fitBudget(
@@ -66,15 +72,22 @@ export class ShoppingListsService {
     listId: string,
     targetBudgetKopecks: number,
   ): Promise<FitBudgetResponseDto> {
-    const { list, budgetItems } = await this.loadBudgetItems(userId, listId);
-    const result = fitBudgetProposals(budgetItems, targetBudgetKopecks, list.estimatedTotalKopecks);
-    return {
-      proposals: result.proposals.map((p) => this.toDto(p)),
-      totalPossibleSavings: result.totalPossibleSavings,
-      achievable: result.achievable,
-      currentTotalKopecks: list.estimatedTotalKopecks,
-      minimalTotalKopecks: result.minimalTotalKopecks,
-    };
+    const householdId = await this.requireOwnedHouseholdId(userId);
+    return withTenantContext({ householdId, userId }, async (tx) => {
+      const { list, budgetItems } = await this.loadBudgetItems(tx, userId, listId, householdId);
+      const result = fitBudgetProposals(
+        budgetItems,
+        targetBudgetKopecks,
+        list.estimatedTotalKopecks,
+      );
+      return {
+        proposals: result.proposals.map((p) => this.toDto(p)),
+        totalPossibleSavings: result.totalPossibleSavings,
+        achievable: result.achievable,
+        currentTotalKopecks: list.estimatedTotalKopecks,
+        minimalTotalKopecks: result.minimalTotalKopecks,
+      };
+    });
   }
 
   async applyProposal(
@@ -82,81 +95,85 @@ export class ShoppingListsService {
     listId: string,
     input: ApplyBudgetProposalDto,
   ): Promise<{ applied: boolean; estimatedTotalKopecks: number }> {
-    const { list, budgetItems } = await this.loadBudgetItems(userId, listId);
-    const rawItem = list.items.find((i) => i.ingredientId === input.ingredientId);
-    const target = budgetItems.find((i) => i.ingredientId === input.ingredientId);
-    if (!target || !rawItem) {
-      throw new AppHttpException({
-        code: 'SHOPPING_ITEM_NOT_FOUND',
-        message: 'Позиция не найдена в списке',
-        details: { ingredientId: input.ingredientId },
-      });
-    }
-    const prisma = this.db;
-    const total = await prisma.$transaction(async (tx) => {
-      if (input.kind === 'SUBSTITUTE') {
-        const substituteId = input.substituteIngredientId;
-        if (!substituteId) {
-          throw new AppHttpException({
-            code: 'VALIDATION_ERROR',
-            message: 'substituteIngredientId is required for SUBSTITUTE',
-          });
-        }
-        const substituteMeta = await tx.ingredient.findUnique({
-          where: { id: substituteId },
-          select: { avgPriceKopecks: true, categoryId: true },
-        });
-        await tx.shoppingListItem.updateMany({
-          where: { shoppingListId: list.id, ingredientId: input.ingredientId },
-          data: {
-            ingredientId: substituteId,
-            categoryId: substituteMeta?.categoryId ?? rawItem.categoryId,
-            estimatedPriceKopecks: Math.round(
-              (substituteMeta?.avgPriceKopecks ?? 0) * rawItem.packageQuantity,
-            ),
-          },
-        });
-      } else {
-        await tx.shoppingListItem.deleteMany({
-          where: { shoppingListId: list.id, ingredientId: input.ingredientId },
+    const householdId = await this.requireOwnedHouseholdId(userId);
+    return withTenantContext({ householdId, userId }, async (tx) => {
+      const { list, budgetItems } = await this.loadBudgetItems(tx, userId, listId, householdId);
+      const rawItem = list.items.find((i) => i.ingredientId === input.ingredientId);
+      const target = budgetItems.find((i) => i.ingredientId === input.ingredientId);
+      if (!target || !rawItem) {
+        throw new AppHttpException({
+          code: 'SHOPPING_ITEM_NOT_FOUND',
+          message: 'Позиция не найдена в списке',
+          details: { ingredientId: input.ingredientId },
         });
       }
-      const agg = await tx.shoppingListItem.aggregate({
-        where: { shoppingListId: list.id },
-        _sum: { estimatedPriceKopecks: true },
-      });
-      const estimatedTotalKopecks = agg._sum.estimatedPriceKopecks ?? 0;
-      await tx.shoppingList.update({
-        where: { id: list.id },
-        data: { estimatedTotalKopecks },
-      });
-      return estimatedTotalKopecks;
+      const total = await (async () => {
+        if (input.kind === 'SUBSTITUTE') {
+          const substituteId = input.substituteIngredientId;
+          if (!substituteId) {
+            throw new AppHttpException({
+              code: 'VALIDATION_ERROR',
+              message: 'substituteIngredientId is required for SUBSTITUTE',
+            });
+          }
+          const substituteMeta = await tx.ingredient.findUnique({
+            where: { id: substituteId },
+            select: { avgPriceKopecks: true, categoryId: true },
+          });
+          await tx.shoppingListItem.updateMany({
+            where: { shoppingListId: list.id, ingredientId: input.ingredientId },
+            data: {
+              ingredientId: substituteId,
+              categoryId: substituteMeta?.categoryId ?? rawItem.categoryId,
+              estimatedPriceKopecks: Math.round(
+                (substituteMeta?.avgPriceKopecks ?? 0) * rawItem.packageQuantity,
+              ),
+            },
+          });
+        } else {
+          await tx.shoppingListItem.deleteMany({
+            where: { shoppingListId: list.id, ingredientId: input.ingredientId },
+          });
+        }
+        const agg = await tx.shoppingListItem.aggregate({
+          where: { shoppingListId: list.id },
+          _sum: { estimatedPriceKopecks: true },
+        });
+        const estimatedTotalKopecks = agg._sum.estimatedPriceKopecks ?? 0;
+        await tx.shoppingList.update({
+          where: { id: list.id },
+          data: { estimatedTotalKopecks },
+        });
+        return estimatedTotalKopecks;
+      })();
+      return { applied: true, estimatedTotalKopecks: total };
     });
-    return { applied: true, estimatedTotalKopecks: total };
   }
 
   /** MC-056: toggle purchased on an item owned by the household. */
   async setItemPurchased(userId: string, itemId: string, purchased: boolean) {
-    await this.requireOwnedHouseholdId(userId);
-    const item = await this.db.shoppingListItem.findFirst({
-      where: {
-        id: itemId,
-        shoppingList: { household: { members: { some: { userId, role: 'OWNER' } } } },
-      },
-      select: { id: true, purchased: true },
-    });
-    if (!item) {
-      throw new AppHttpException({
-        code: 'SHOPPING_ITEM_NOT_FOUND',
-        message: 'Позиция не найдена в списке',
-        details: { itemId },
+    const householdId = await this.requireOwnedHouseholdId(userId);
+    return withTenantContext({ householdId, userId }, async (tx) => {
+      const item = await tx.shoppingListItem.findFirst({
+        where: {
+          id: itemId,
+          shoppingList: { household: { members: { some: { userId, role: 'OWNER' } } } },
+        },
+        select: { id: true, purchased: true },
       });
-    }
-    await this.db.shoppingListItem.update({
-      where: { id: itemId },
-      data: { purchased, purchasedAt: purchased ? new Date() : null },
+      if (!item) {
+        throw new AppHttpException({
+          code: 'SHOPPING_ITEM_NOT_FOUND',
+          message: 'Позиция не найдена в списке',
+          details: { itemId },
+        });
+      }
+      await tx.shoppingListItem.update({
+        where: { id: itemId },
+        data: { purchased, purchasedAt: purchased ? new Date() : null },
+      });
+      return { purchased };
     });
-    return { purchased };
   }
 
   /**
@@ -166,24 +183,24 @@ export class ShoppingListsService {
    */
   async complete(userId: string, listId: string) {
     const householdId = await this.requireOwnedHouseholdId(userId);
-    const list = await this.db.shoppingList.findFirst({
-      where: { id: listId, householdId },
-      include: {
-        items: {
-          where: { purchased: true },
-          include: { ingredient: { select: { canonicalName: true } } },
+    return withTenantContext({ householdId, userId }, async (tx) => {
+      const list = await tx.shoppingList.findFirst({
+        where: { id: listId, householdId },
+        include: {
+          items: {
+            where: { purchased: true },
+            include: { ingredient: { select: { canonicalName: true } } },
+          },
         },
-      },
-    });
-    if (!list) {
-      throw new AppHttpException({
-        code: 'SHOPPING_LIST_NOT_FOUND',
-        message: 'Shopping list not found',
-        details: { listId },
       });
-    }
-    const today = new Date();
-    await this.db.$transaction(async (tx) => {
+      if (!list) {
+        throw new AppHttpException({
+          code: 'SHOPPING_LIST_NOT_FOUND',
+          message: 'Shopping list not found',
+          details: { listId },
+        });
+      }
+      const today = new Date();
       for (const item of list.items) {
         const grams = item.packageQuantity * item.packageSize.toNumber();
         const existing = await tx.pantryItem.findFirst({
@@ -212,15 +229,19 @@ export class ShoppingListsService {
         }
       }
       await tx.shoppingList.update({ where: { id: list.id }, data: { status: 'COMPLETED' } });
+      return { completed: true, pantryItemsTouched: list.items.length };
     });
-    return { completed: true, pantryItemsTouched: list.items.length };
   }
 
   // --- internals -------------------------------------------------------------
 
-  private async loadBudgetItems(userId: string, listId: string) {
-    const householdId = await this.requireOwnedHouseholdId(userId);
-    const list = await this.db.shoppingList.findFirst({
+  private async loadBudgetItems(
+    tx: Prisma.TransactionClient,
+    userId: string,
+    listId: string,
+    householdId: string,
+  ) {
+    const list = await tx.shoppingList.findFirst({
       where: { id: listId, householdId },
       include: {
         items: { include: { ingredient: { select: { canonicalName: true } } } },
@@ -245,7 +266,7 @@ export class ShoppingListsService {
     const listedIds = new Set(list.items.map((i) => i.ingredientId));
 
     // Refine substitutes: the most common declared substitute per item.
-    const substituteRows = await this.db.recipeIngredient.groupBy({
+    const substituteRows = await tx.recipeIngredient.groupBy({
       by: ['ingredientId', 'substitutesFor'],
       where: {
         ingredientId: { in: [...listedIds] },
@@ -262,7 +283,7 @@ export class ShoppingListsService {
     const substituteIds = [...new Set(substituteByIngredient.values())];
     const substitutePrices = new Map(
       (
-        await this.db.ingredient.findMany({
+        await tx.ingredient.findMany({
           where: { id: { in: substituteIds } },
           select: { id: true, avgPriceKopecks: true },
         })
@@ -282,7 +303,7 @@ export class ShoppingListsService {
 
     // Optional-only: the ingredient appears in plan recipes ONLY as an
     // optional recipe-ingredient (one grouped query over plan entries).
-    const usage = await this.db.recipeIngredient.groupBy({
+    const usage = await tx.recipeIngredient.groupBy({
       by: ['ingredientId', 'optional'],
       where: {
         ingredientId: { in: [...listedIds] },
