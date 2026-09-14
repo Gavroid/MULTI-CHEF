@@ -78,7 +78,11 @@ async function main(): Promise<void> {
         const recipeId = existing
           ? (await prisma.recipe.update({ where: { id: existing.id }, data })).id
           : (await prisma.recipe.create({ data: { id: ulid(), ...data } })).id;
-        existing ? (updated += 1) : (created += 1);
+        if (existing) {
+          updated += 1;
+        } else {
+          created += 1;
+        }
 
         // replace ingredient rows
         await prisma.recipeIngredient.deleteMany({ where: { recipeId } });
