@@ -5,16 +5,13 @@
 // are taken verbatim from apps/api/src/pantry/pantry.service.ts —
 // keep them in lock-step when the backend schema evolves.
 //
-// Soft-delete semantics (ADR-0021, MC-022):
+// Soft-delete semantics (ADR-0021, MC-022) — mirrored by the backend's
+// pantry.controller.ts header:
 //   - DELETE = sets archivedAt = now() (204 No Content)
 //   - restore = clears archivedAt back to null; 400 ITEM_NOT_ARCHIVED
 //     if the row is already active
+//   - PATCH on an archived row → 409 PANTRY_ITEM_ARCHIVED (T15-B)
 //   - GET with ?includeArchived=false (default) hides archived rows
-//
-// The backend's pantry.controller.ts file header still says "hard
-// delete" — that's stale commentary from MC-022 draft 1. The
-// service has used soft delete since ADR-0021 was applied. Don't
-// believe the comment, believe the service.
 
 import {
   type ApiResponse,

@@ -3,12 +3,13 @@
 // from the session — clients cannot supply a different householdId
 // via query or body.
 //
-// Schema reality (MC-003, not modified in MC-022):
-//   - PantryItem has no `notes`, `archivedAt`, `addedAt` columns.
-//     DELETE is hard delete; restore returns 400 ITEM_NOT_ARCHIVED.
-//   - `?sort=addedAt` is rejected; `?sort=createdAt` works (mapped
-//     to the schema's `createdAt` column).
-//   - `?includeArchived` is accepted as a no-op for forward compat.
+// Soft-delete semantics (ADR-0021, MC-022):
+//   - DELETE sets `archivedAt = now()` (204 No Content).
+//   - POST /:id/restore clears `archivedAt` (400 ITEM_NOT_ARCHIVED
+//     if the row is already active).
+//   - GET ?includeArchived=false (default) hides archived rows.
+//   - PATCH on an archived row → 409 PANTRY_ITEM_ARCHIVED (T15-B):
+//     restore first.
 
 import {
   Body,
