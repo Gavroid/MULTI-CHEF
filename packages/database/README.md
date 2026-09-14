@@ -26,6 +26,12 @@ src/
 - **pnpm >= 9** — see `packageManager` at the repo root.
 - **Postgres 16** with extensions `pg_trgm`, `unaccent`, `vector`.
   The dev stack in `compose.yml` (repo root) provides them out of the box.
+  - T17-B caveat: `vector` (pgvector) is **reserved for the future ML
+    recommendation engine and is currently used by zero tables**. It
+    requires a **superuser** role to create — the app user gets
+    `permission denied`, so fresh environments must pre-install it
+    before running `migrate deploy` (the initial migration
+    `mc003_initial` executes `CREATE EXTENSION IF NOT EXISTS vector`).
 - **Docker** — only for `pnpm test:integration`. The Testcontainers
   module spins up a real `postgres:16-alpine` container per run.
 
