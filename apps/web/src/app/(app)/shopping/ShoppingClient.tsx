@@ -78,6 +78,7 @@ export function ShoppingClient({
   const [list, setList] = useState<ShoppingListDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [budgetInput, setBudgetInput] = useState('');
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [proposals, setProposals] = useState<FitBudgetResponseDto | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -87,8 +88,12 @@ export function ShoppingClient({
       .getActiveShoppingList()
       .then((res) => {
         if (cancelled) return;
-        if (res.error) toast.show({ message: res.error.error.message, tone: 'warning' });
-        else setList(res.data);
+        // T48-B: ошибка загрузки — состояние с retry, а не исчезающий toast.
+        if (res.error) setLoadError(res.error.error.message);
+        else {
+          setLoadError(null);
+          setList(res.data);
+        }
         setLoading(false);
       })
       .catch(() => {
@@ -180,6 +185,22 @@ export function ShoppingClient({
     },
     [deps, list],
   );
+
+  if (loadError && !loading) {
+    return (
+      <Card data-testid="shopping-load-error">
+        <p className="text-body">{loadError}</p>
+        {/* T48-B: retry-кнопка вместо toast-only. */}
+        <button
+          type="button"
+          className="mt-3 rounded-md bg-[var(--color-primary)] px-4 py-2 text-white"
+          onClick={() => setLoadError(null)}
+        >
+          Повторить
+        </button>
+      </Card>
+    );
+  }
 
   if (loading) {
     return (
