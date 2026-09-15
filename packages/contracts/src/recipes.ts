@@ -31,7 +31,12 @@ export const RecipeDtoSchema = z.object({
   id: z.string().min(1),
   title: z.string().min(1),
   description: z.string().nullable(),
-  imageKey: z.string().nullable(),
+  // T54-B (audit round 54, P1): только внутренние пути сид-хранилища.
+  // Запрещает data:/http(s)/SVG-инъекции через src у <img>.
+  imageKey: z
+    .string()
+    .regex(/^\/images\/recipes\/[a-z0-9-]+\.webp$/)
+    .nullable(),
   servings: z.number().int().positive(),
   prepMinutes: z.number().int().nonnegative(),
   cookMinutes: z.number().int().nonnegative(),

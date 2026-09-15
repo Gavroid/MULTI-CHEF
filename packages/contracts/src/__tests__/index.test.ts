@@ -142,3 +142,31 @@ test('TodayRecommendationDtoSchema: 3 options, ESTIMATED accuracy', () => {
   // each option independently). Order is covered by pick-top3 unit tests
   // and the controller integration spec.
 });
+
+// T54-B (audit round 54, P1): imageKey — только внутренние пути
+// сид-хранилища; data:/http(s)/javascript: отклоняются контрактом.
+test('RecipeDtoSchema.imageKey: rejects non-internal sources (XSS)', () => {
+  const base = { ...RECIPE_DTO };
+  for (const evil of [
+    'data:text/html;base64,PHNjcmlwdD4=',
+    'javascript:alert(1)',
+    'https://evil.example.com/x.webp',
+    '/images/recipes/x.svg',
+    '/etc/passwd.webp',
+  ]) {
+    const result = RecipeDtoSchema.safeParse({ ...base, imageKey: evil });
+    assert.equal(result.success, false, `must reject: ${evil}`);
+  }
+});
+
+test('RecipeDtoSchema.imageKey: accepts internal /images/recipes/*.webp paths', () => {
+  const result = RecipeDtoSchema.safeParse({
+    ...RECIPE_DTO,
+    imageKey: '/images/recipes/tolokno-s-lukom-poreem.webp',
+  });
+  assert.equal(result.success, true);
+});
+
+test('RecipeDtoSchema.imageKey: nullable is preserved', () => {
+  assert.equal(RecipeDtoSchema.safeParse({ ...RECIPE_DTO, imageKey: null }).success, true);
+});

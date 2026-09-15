@@ -7,6 +7,7 @@
 import React, { useState } from 'react';
 import { AlertTriangle, BarChart3, ChefHat, Clock, Minus, Plus } from 'lucide-react';
 import { Badge } from '@multichef/ui';
+import { isSafeRecipeImage } from '@/lib/recipe-image';
 import {
   MAX_SERVINGS,
   MIN_SERVINGS,
@@ -37,7 +38,7 @@ export function Header({
   return (
     <header className="mb-4" data-testid="recipe-header">
       <div className="relative mb-4 aspect-[4/3] overflow-hidden rounded-[var(--radius-lg)] bg-[var(--color-surface-2)]">
-        {recipe.imageKey && !imageFailed ? (
+        {isSafeRecipeImage(recipe.imageKey) && !imageFailed ? (
           // T3: LCP candidate — eager load at high priority, decoded
           // off-thread; the 4/3 aspect wrapper reserves the box (CLS = 0).
           <img
