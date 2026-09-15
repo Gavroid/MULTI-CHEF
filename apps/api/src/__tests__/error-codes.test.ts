@@ -3,10 +3,12 @@
 // отстаёт от контракта), а STATUS_BY_CODE — покрывать все коды.
 import { test } from 'node:test';
 import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import assert from 'node:assert/strict';
 import { STATUS_BY_CODE } from '../common/error-envelope.js';
 
-const REPO = new URL('../../../..', import.meta.url).pathname;
+// cwd при запуске api-тестов = apps/api → корень репо на два уровня выше.
+const REPO = resolve(process.cwd(), '..', '..', 'docs', 'api');
 
 test('STATUS_BY_CODE covers every ErrorCode', () => {
   for (const [code, status] of Object.entries(STATUS_BY_CODE)) {
@@ -15,7 +17,7 @@ test('STATUS_BY_CODE covers every ErrorCode', () => {
 });
 
 test('conventions.md documents every domain error code', () => {
-  const doc = readFileSync(REPO + 'docs/api/conventions.md', 'utf8');
+  const doc = readFileSync(resolve(REPO, 'conventions.md'), 'utf8');
   const domainCodes = [
     'INGREDIENT_NOT_FOUND',
     'RECIPE_NOT_FOUND',
