@@ -1,5 +1,5 @@
 import { Controller, Get, HttpException, HttpStatus } from '@nestjs/common';
-import { pingDatabase } from '@multichef/database';
+import { getPoolStats, pingDatabase } from '@multichef/database';
 import { loadServerEnv } from '@multichef/config';
 
 // Health endpoints under the global /api/v1 prefix (configured in main.ts).
@@ -16,6 +16,7 @@ import { loadServerEnv } from '@multichef/config';
 
 interface ReadyResponse {
   status: 'ready';
+  pool?: { total: number; idle: number; waiting: number } | null;
 }
 interface NotReadyResponse {
   status: 'not-ready';
@@ -71,7 +72,8 @@ export class HealthController {
       const body: NotReadyResponse = { status: 'not-ready', reason: 'redis' };
       throw new HttpException(body, HttpStatus.SERVICE_UNAVAILABLE);
     }
-    return { status: 'ready' };
+    const pool = getPoolStats();
+    return { status: 'ready', pool };
   }
 }
 

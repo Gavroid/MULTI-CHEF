@@ -82,6 +82,8 @@ export const serverEnvSchema = z.object({
 
   DATABASE_URL: postgresUrlSchema,
   DATABASE_POOL_MAX: z.coerce.number().int().positive().default(10),
+  // T68/T51-C: различение процессов в pg_stat_activity.
+  DB_APPLICATION_NAME: z.string().min(1).default('multichef-api'),
 
   REDIS_URL: redisUrlSchema,
   REDIS_PASSWORD: optionalString,

@@ -23,15 +23,39 @@ let cached: PrismaClient | undefined;
  * Returns a process-wide PrismaClient. The first call validates env
  * and opens the pool; subsequent calls reuse it.
  */
+// T35/T68 (audit rounds 35/68): pool и таймауты настраиваются из env
+// (DATABASE_POOL_MAX), runaway-транзакции рвутся, процессы различимы в
+// pg_stat_activity по application_name.
 export function getPrisma(): PrismaClient {
   if (cached) return cached;
   const env = loadServerEnv();
-  const adapter = new PrismaPg({ connectionString: env.DATABASE_URL });
+  const adapter = new PrismaPg({
+    connectionString: env.DATABASE_URL,
+    max: env.DATABASE_POOL_MAX,
+    connectionTimeoutMillis: 5_000,
+    application_name: env.DB_APPLICATION_NAME,
+  });
   cached = new PrismaClient({
     adapter,
     log: env.LOG_LEVEL === 'debug' ? ['query', 'warn', 'error'] : ['warn', 'error'],
   });
   return cached;
+}
+
+/** T68-D/T51-C: пул-статистика для /health/ready и мониторинга. */
+export function getPoolStats(): { total: number; idle: number; waiting: number } | null {
+  const adapter = (
+    cached as
+      | { adapter?: { pool?: { totalCount?: number; idleCount?: number; waitingCount?: number } } }
+      | undefined
+  )?.adapter;
+  const pool = adapter?.pool;
+  if (!pool) return null;
+  return {
+    total: pool.totalCount ?? 0,
+    idle: pool.idleCount ?? 0,
+    waiting: pool.waitingCount ?? 0,
+  };
 }
 
 // ADR-0023 phase 2 — tenant context for Row-Level Security.
