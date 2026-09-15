@@ -19,7 +19,6 @@
 //   * Demo household: skipped if a household with that id already
 //     exists.
 
-import { randomBytes } from 'node:crypto';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { CATEGORIES } from './categories.js';

@@ -15,7 +15,6 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const DATA = join('..', '..', 'data');
-import { randomBytes } from 'node:crypto';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { computeRecipeNutrition } from '@multichef/nutrition';

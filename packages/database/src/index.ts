@@ -8,7 +8,8 @@
 // All consumers should pull DATABASE_URL from @multichef/config — we
 // never read process.env directly here.
 
-import { PrismaClient, Prisma } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
+import type { Prisma } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { loadServerEnv } from '@multichef/config';
 
@@ -19,10 +20,7 @@ export { PrismaPg } from '@prisma/adapter-pg';
 
 let cached: PrismaClient | undefined;
 
-/**
- * Returns a process-wide PrismaClient. The first call validates env
- * and opens the pool; subsequent calls reuse it.
- */
+/** Returns a process-wide PrismaClient. */
 // T35/T68 (audit rounds 35/68): pool и таймауты настраиваются из env
 // (DATABASE_POOL_MAX), runaway-транзакции рвутся, процессы различимы в
 // pg_stat_activity по application_name.

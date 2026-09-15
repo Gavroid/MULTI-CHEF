@@ -20,7 +20,6 @@
 // @@index. This runner therefore does one findFirst per recipe — for
 // ~270 rows that's fine for a seed script.
 
-import { randomBytes } from 'node:crypto';
 import type { PrismaClient } from '@prisma/client';
 import { RECIPES } from './recipes.js';
 import { CHAIN_TAGS } from './chains.js';

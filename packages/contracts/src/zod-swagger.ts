@@ -21,7 +21,6 @@ import {
   RouletteRejectResponseDtoSchema,
 } from './roulette.js';
 import { JobDtoSchema } from './jobs.js';
-import { MealPlanSetupDtoSchema as MealPlanSetupWire } from './meal-plans.js';
 import { z } from 'zod';
 
 // T34-A (audit round 34): недостающие wire-схемы — компактные версии
