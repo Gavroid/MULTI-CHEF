@@ -13,8 +13,8 @@ import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { IngredientsModule } from '../ingredients/ingredients.module.js';
-import { AppHttpExceptionFilter } from '../common/exception-filter.js';
+import { IngredientsModule } from '../../ingredients/ingredients.module.js';
+import { AppHttpExceptionFilter } from '../../common/exception-filter.js';
 
 const PKG_ROOT = process.cwd();
 

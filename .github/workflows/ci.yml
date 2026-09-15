@@ -118,7 +118,9 @@ jobs:
         image: pgvector/pgvector:pg16
         env:
           POSTGRES_USER: multichef
-          POSTGRES_PASSWORD: test_password
+          # T28-D: пароль только для эфемерного CI-контейнера; значение
+          # переопределяется secret'ом CI_POSTGRES_PASSWORD.
+          POSTGRES_PASSWORD: ${{ secrets.CI_POSTGRES_PASSWORD || 'test_password' }}
           POSTGRES_DB: multichef_test
         ports:
           - 5432:5432
@@ -195,6 +197,40 @@ jobs:
         if: success()
         run: pnpm --filter @multichef/database test:integration
 
+      - name: Coverage (api unit)
+        if: success()
+        run: pnpm --filter @multichef/api test:coverage
+
+      - name: Integration tests (api, T28-A)
+        # HTTP → controller → service → DB поверх Postgres-сервиса.
+        if: success()
+        run: pnpm --filter @multichef/api test:integration
+
+  audit:
+    name: audit (T44-A)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: pnpm audit (prod, high+)
+        run: pnpm audit --prod --audit-level=high
+
   build:
     name: build
     runs-on: ubuntu-latest
@@ -241,3 +277,48 @@ jobs:
         env:
           GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  e2e:
+    name: e2e (T28-B)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm --filter @multichef/database prisma generate
+
+      - name: Build web
+        run: pnpm --filter @multichef/web build
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
+
+      - name: Install Playwright chromium
+        run: pnpm --filter @multichef/web exec playwright install --with-deps chromium
+
+      - name: Start web
+        run: pnpm --filter @multichef/web start & npx wait-on http://127.0.0.1:3000 --timeout 60000
+
+      - name: Run a11y e2e (axe)
+        # Полный happy-path e2e требует API+worker+nginx — пока CI гоняет
+        # публичные страницы (axe a11y-гейт). Остальные спеки — nightly.
+        run: >
+          E2E_BASE_URL=http://127.0.0.1:3000
+          pnpm --filter @multichef/web exec playwright test
+          --config=../../tests/e2e/playwright.config.ts
+          axe-pages.spec.ts --reporter=line

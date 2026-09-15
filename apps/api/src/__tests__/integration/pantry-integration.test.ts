@@ -21,10 +21,10 @@ import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fa
 import fastifyCookie from '@fastify/cookie';
 import { Prisma, PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { PantryModule } from '../pantry/pantry.module.js';
-import { AuthModule } from '../auth/auth.module.js';
-import { AppHttpExceptionFilter } from '../common/exception-filter.js';
-import { IdempotencyKeyGuard } from '../common/idempotency.js';
+import { PantryModule } from '../../pantry/pantry.module.js';
+import { AuthModule } from '../../auth/auth.module.js';
+import { AppHttpExceptionFilter } from '../../common/exception-filter.js';
+import { IdempotencyKeyGuard } from '../../common/idempotency.js';
 
 const PKG_ROOT = process.cwd();
 

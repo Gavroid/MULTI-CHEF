@@ -14,8 +14,8 @@ import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { AuthModule, AuthService } from '../auth/auth.module.js';
-import { hashSessionToken } from '../auth/session-token.js';
+import { AuthModule, AuthService } from '../../auth/auth.module.js';
+import { hashSessionToken } from '../../auth/session-token.js';
 
 // The test runner is invoked from apps/api (e.g.
 // `pnpm --filter @multichef/api test:integration`), so we resolve

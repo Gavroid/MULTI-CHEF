@@ -18,10 +18,10 @@ import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fa
 import fastifyCookie from '@fastify/cookie';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { ProfileModule } from '../profile/profile.module.js';
-import { HouseholdModule } from '../household/household.module.js';
-import { AuthModule } from '../auth/auth.module.js';
-import { AppHttpExceptionFilter } from '../common/exception-filter.js';
+import { ProfileModule } from '../../profile/profile.module.js';
+import { HouseholdModule } from '../../household/household.module.js';
+import { AuthModule } from '../../auth/auth.module.js';
+import { AppHttpExceptionFilter } from '../../common/exception-filter.js';
 
 const PKG_ROOT = process.cwd();
 
