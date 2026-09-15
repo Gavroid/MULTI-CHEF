@@ -12,25 +12,34 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import {
-  ApiOperation,
-  ApiResponse,
-  ApiTags,
-  ApiUnauthorizedResponse,
-  ApiForbiddenResponse,
-  ApiNotFoundResponse,
-  ApiUnprocessableEntityResponse,
-  ApiTooManyRequestsResponse,
-  ApiInternalServerErrorResponse,
-} from '@nestjs/swagger';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { FastifyRequest } from 'fastify';
 import type { FitBudgetResponseDto } from '@multichef/contracts';
 import { AppHttpException } from '../common/exception-filter.js';
-import { UlidParamsSchema } from '@multichef/contracts';
 import { AuthGuard, currentUser } from '../common/auth-guard.js';
 import type { AuthenticatedUser } from '../auth/auth.service.js';
-import { ApplyBudgetProposalDtoSchema, FitBudgetRequestDtoSchema } from './shopping-lists.dto.js';
+import {
+  ApplyBudgetProposalDtoSchema,
+  FitBudgetRequestDtoSchema,
+  ShoppingListIdParamsSchema,
+  ShoppingListItemIdParamsSchema,
+} from './shopping-lists.dto.js';
 import { ShoppingListsService } from './shopping-lists.service.js';
+
+function validationError(
+  issues: ReadonlyArray<{ path: (string | number)[]; message: string }>,
+): AppHttpException {
+  const fields: Record<string, string[]> = {};
+  for (const issue of issues) {
+    const key = issue.path.join('.') || '_root';
+    (fields[key] ??= []).push(issue.message);
+  }
+  return new AppHttpException({
+    code: 'VALIDATION_ERROR',
+    message: 'Invalid request',
+    details: { fields },
+  });
+}
 
 @ApiTags('shopping-lists')
 @UseGuards(AuthGuard)
@@ -51,10 +60,15 @@ export class ShoppingListsController {
   @ApiResponse({ status: 200, description: 'Ranked proposals + achievability' })
   async fitBudget(
     @Req() req: FastifyRequest,
-    @Param('id') listId: string,
+    @Param() params: Record<string, string>,
     @Body() body: unknown,
   ): Promise<FitBudgetResponseDto> {
     const user = currentUser(req as unknown as { user: AuthenticatedUser });
+    const listIdParsed = ShoppingListIdParamsSchema.safeParse(params);
+    if (!listIdParsed.success) {
+      throw validationError(listIdParsed.error.issues);
+    }
+    const listId = listIdParsed.data.id;
     const parsed = FitBudgetRequestDtoSchema.safeParse(body ?? {});
     if (!parsed.success) {
       throw new AppHttpException({
@@ -71,10 +85,15 @@ export class ShoppingListsController {
   @ApiResponse({ status: 200, description: 'applied + recomputed total' })
   async apply(
     @Req() req: FastifyRequest,
-    @Param('id') listId: string,
+    @Param() params: Record<string, string>,
     @Body() body: unknown,
   ): Promise<{ applied: boolean; estimatedTotalKopecks: number }> {
     const user = currentUser(req as unknown as { user: AuthenticatedUser });
+    const listIdParsed = ShoppingListIdParamsSchema.safeParse(params);
+    if (!listIdParsed.success) {
+      throw validationError(listIdParsed.error.issues);
+    }
+    const listId = listIdParsed.data.id;
     const parsed = ApplyBudgetProposalDtoSchema.safeParse(body ?? {});
     if (!parsed.success) {
       throw new AppHttpException({
@@ -92,10 +111,15 @@ export class ShoppingListsController {
   @ApiOperation({ summary: 'Set the purchased flag of a list item' })
   async setPurchased(
     @Req() req: FastifyRequest,
-    @Param('itemId') itemId: string,
+    @Param() params: Record<string, string>,
     @Body() body: unknown,
   ): Promise<{ purchased: boolean }> {
     const user = currentUser(req as unknown as { user: AuthenticatedUser });
+    const itemParsed = ShoppingListItemIdParamsSchema.safeParse(params);
+    if (!itemParsed.success) {
+      throw validationError(itemParsed.error.issues);
+    }
+    const itemId = itemParsed.data.itemId;
     const purchased = (body as { purchased?: unknown } | null)?.purchased === true;
     return this.svc.setItemPurchased(user.id, itemId, purchased);
   }
@@ -106,9 +130,14 @@ export class ShoppingListsController {
   @ApiOperation({ summary: 'Complete the list; purchased items go to the pantry' })
   async complete(
     @Req() req: FastifyRequest,
-    @Param('id') listId: string,
+    @Param() params: Record<string, string>,
   ): Promise<{ completed: boolean; pantryItemsTouched: number }> {
     const user = currentUser(req as unknown as { user: AuthenticatedUser });
+    const listIdParsed = ShoppingListIdParamsSchema.safeParse(params);
+    if (!listIdParsed.success) {
+      throw validationError(listIdParsed.error.issues);
+    }
+    const listId = listIdParsed.data.id;
     return this.svc.complete(user.id, listId);
   }
 }

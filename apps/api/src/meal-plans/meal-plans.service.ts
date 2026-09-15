@@ -115,7 +115,6 @@ export class MealPlansService {
    */
   async generatePrepSession(userId: string, intensity: PrepIntensity): Promise<PrepSessionDto> {
     const householdId = await this.requireOwnedHouseholdId(userId);
-    const prisma = getPrisma();
 
     // Resolve the household's ACTIVE plan (tenant-tx read, RLS-aware).
     const plan = await withTenantContext({ householdId, userId }, async (tx) => {

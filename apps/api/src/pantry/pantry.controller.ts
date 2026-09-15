@@ -55,6 +55,13 @@ import type { CreatePantryItemDto, PatchPantryItemDto } from './pantry.dto-class
 
 @ApiTags('pantry')
 @ApiCookieAuth('mc_session')
+// Class-level error contract (E15/T34-B): применяется ко всем маршрутам.
+@ApiUnauthorizedResponse({ description: 'Нет/просрочена сессия' })
+@ApiForbiddenResponse({ description: 'Нет прав на ресурс' })
+@ApiNotFoundResponse({ description: 'Ресурс не найден' })
+@ApiUnprocessableEntityResponse({ description: 'Доменное ограничение' })
+@ApiTooManyRequestsResponse({ description: 'Rate limit' })
+@ApiInternalServerErrorResponse({ description: 'Внутренняя ошибка' })
 @Controller({ path: 'pantry/items' })
 @UseGuards(AuthGuard)
 export class PantryController {

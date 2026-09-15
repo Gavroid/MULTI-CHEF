@@ -41,6 +41,13 @@ import { MealPlansService } from './meal-plans.service.js';
 
 @ApiTags('meal-plans')
 @UseGuards(AuthGuard)
+// Class-level error contract (E15/T34-B): applies to all routes.
+@ApiUnauthorizedResponse({ description: 'No/expired session' })
+@ApiForbiddenResponse({ description: 'No rights for the resource' })
+@ApiNotFoundResponse({ description: 'Resource not found' })
+@ApiUnprocessableEntityResponse({ description: 'Domain constraint' })
+@ApiTooManyRequestsResponse({ description: 'Rate limit' })
+@ApiInternalServerErrorResponse({ description: 'Internal error' })
 @Controller({ path: 'meal-plans' })
 export class MealPlansController {
   constructor(@Inject(MealPlansService) private readonly svc: MealPlansService) {}

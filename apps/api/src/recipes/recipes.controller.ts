@@ -24,6 +24,13 @@ import {
 } from './recipes.dto.js';
 
 @ApiTags('recipes')
+// Class-level error contract (E15/T34-B): применяется ко всем маршрутам.
+@ApiUnauthorizedResponse({ description: 'Нет/просрочена сессия' })
+@ApiForbiddenResponse({ description: 'Нет прав на ресурс' })
+@ApiNotFoundResponse({ description: 'Ресурс не найден' })
+@ApiUnprocessableEntityResponse({ description: 'Доменное ограничение' })
+@ApiTooManyRequestsResponse({ description: 'Rate limit' })
+@ApiInternalServerErrorResponse({ description: 'Внутренняя ошибка' })
 @Controller({ path: 'recipes' })
 export class RecipesController {
   constructor(@Inject(RecipesService) private readonly svc: RecipesService) {}

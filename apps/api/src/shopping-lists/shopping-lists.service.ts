@@ -11,7 +11,7 @@
 
 import { Injectable, Optional } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
-import { Prisma } from '@prisma/client';
+import type { Prisma } from '@prisma/client';
 import { getPrisma, withTenantContext } from '@multichef/database';
 import {
   fitBudgetProposals,

@@ -186,17 +186,6 @@ jobs:
         # beyond the documented DB-only invariants.
         run: pnpm check:schema-drift
 
-      - name: Web bundle budget (T65, E21)
-        # Порог подобран по текущему билду (~9 MB .next); превышение
-        # означает раздувшийся chunk — сигнал для code-split.
-        run: |
-          SIZE_KB=$(du -sk apps/web/.next | cut -f1)
-          echo "web .next size: ${SIZE_KB} KB"
-          if [ "$SIZE_KB" -gt 20000 ]; then
-            echo "bundle budget exceeded: ${SIZE_KB} KB > 20000 KB"
-            exit 1
-          fi
-
       - name: Unit tests
         # CI-fix v2 for PR #21 (MC-035): turbo's default parallel scheduling
         # causes flaky failures in node:test under heavy CPU contention
@@ -270,6 +259,16 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+      - name: Web bundle budget (T65/E21)
+        # .next без кэша; превышение порога — сигнал раздувшегося чанка.
+        run: |
+          SIZE_KB=$(du -sk --exclude=cache apps/web/.next | cut -f1)
+          echo "web .next (no cache): ${SIZE_KB} KB"
+          if [ "$SIZE_KB" -gt 20000 ]; then
+            echo "bundle budget exceeded: ${SIZE_KB} KB > 20000 KB"
+            exit 1
+          fi
 
   secret-scan:
     name: secret-scan

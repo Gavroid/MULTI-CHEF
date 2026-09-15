@@ -139,6 +139,13 @@ function clearSessionCookie(res: FastifyReply): void {
 // auth endpoints — the global throttler default is 300/min so normal
 // multi-screen usage (pantry + plan + shopping reads) is not throttled.
 @Throttle({ default: { ttl: 60_000, limit: 10 } })
+// Class-level error contract (E15/T34-B): применяется ко всем маршрутам.
+@ApiUnauthorizedResponse({ description: 'Нет/просрочена сессия' })
+@ApiForbiddenResponse({ description: 'Нет прав на ресурс' })
+@ApiNotFoundResponse({ description: 'Ресурс не найден' })
+@ApiUnprocessableEntityResponse({ description: 'Доменное ограничение' })
+@ApiTooManyRequestsResponse({ description: 'Rate limit' })
+@ApiInternalServerErrorResponse({ description: 'Внутренняя ошибка' })
 @Controller({ path: 'auth' })
 export class AuthController {
   constructor(@Inject(AuthService) private readonly auth: AuthService) {}

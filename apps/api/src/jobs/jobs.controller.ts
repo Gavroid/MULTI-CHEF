@@ -20,6 +20,13 @@ import { JobsService } from './jobs.service.js';
 
 @ApiTags('jobs')
 @UseGuards(AuthGuard)
+// Class-level error contract (E15/T34-B): применяется ко всем маршрутам.
+@ApiUnauthorizedResponse({ description: 'Нет/просрочена сессия' })
+@ApiForbiddenResponse({ description: 'Нет прав на ресурс' })
+@ApiNotFoundResponse({ description: 'Ресурс не найден' })
+@ApiUnprocessableEntityResponse({ description: 'Доменное ограничение' })
+@ApiTooManyRequestsResponse({ description: 'Rate limit' })
+@ApiInternalServerErrorResponse({ description: 'Внутренняя ошибка' })
 @Controller({ path: 'jobs' })
 export class JobsController {
   constructor(@Inject(JobsService) private readonly svc: JobsService) {}
