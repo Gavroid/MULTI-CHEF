@@ -22,6 +22,7 @@ const SWR_PREFIXES = [
   '/api/v1/meal-plans/active',
   '/api/v1/shopping-lists/active',
   '/api/v1/recipes',
+  '/api/v1/images',
 ];
 
 self.addEventListener('install', (event) => {

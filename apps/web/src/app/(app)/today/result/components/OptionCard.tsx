@@ -9,6 +9,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { ChefHat, Link2, ShoppingCart } from 'lucide-react';
 import { Badge, Button, Card } from '@multichef/ui';
+import { recipeImageUrl } from '@/lib/recipe-image';
 import type { TodayOptionDto } from '@multichef/contracts';
 import { ExplanationChip } from './ExplanationChip';
 import { ChainTimeline } from './ChainTimeline';
@@ -68,7 +69,7 @@ export function OptionCard({
             // T3: below-the-fold thumbnail is lazy and decoded off-thread;
             // explicit 64x64 (h-16 w-16) dimensions keep CLS at 0.
             <img
-              src={recipe.imageKey}
+              src={recipeImageUrl(recipe.imageKey) ?? undefined}
               alt={recipe.title}
               className="h-full w-full object-cover"
               loading="lazy"

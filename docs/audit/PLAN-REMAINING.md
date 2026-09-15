@@ -14,7 +14,7 @@
 | E27 Pagination API unification          | ✅ закрыт                | cursor/total унифицированы; ingredients отдают `meta.total` (T42-B)         |
 | E22 Mobile/PWA responsive               | ✅ закрыт (2026-09-16)   | T66-A/B/C/D; feat(web) E22, e2e 40/40                                       |
 | E23 i18n foundation                     | ✅ закрыт (2026-09-16)   | T46-A/B/C/D; feat(i18n) E23                                                 |
-| E24 Image storage abstraction + upload  | ⬜ открыт                | T54-A/C/D                                                                   |
+| E24 Image storage abstraction + upload  | ✅ закрыт (2026-09-16)   | T54-A/C/D; feat(storage) E24                                                |
 | E26 External integrations + AI scaffold | ⬜ открыт                | T69-A/B/C/D                                                                 |
 | E28 RLS финал                           | ⏸ ждёт решения владельца | предусловие — ADR-0023 (auth-bootstrap), наивное включение ломает login     |
 
@@ -82,7 +82,26 @@
 - **Acceptance:** 0 EN-строк в UI при locale=ru; API-ошибки на ru; переключение locale
   меняет формат дат. **Метрика:** i18n-coverage скрипт = 100% ключей.
 
-## E24. Image storage abstraction + upload — Фаза 3, L (4-7 pd)
+## E24. Image storage abstraction + upload — Фаза 3, L — ✅ ЗАКРЫТ (2026-09-16)
+
+- **T54-A:** 2000 детерминированных webp-ассетов сгенерированы (sharp, бренд-
+  градиент + инициал) в storage root; DB-ключи мигрированы
+  `/images/recipes/<slug>.webp` → `recipes/<slug>.webp` (2000/2000). 0 битых
+  ассетов.
+- **T54-C:** `apps/api/src/storage/` — `ImageStorage` (put/get/url) +
+  LocalImageStorage (атомарная запись, traversal-guard) + S3ImageStorage
+  (@aws-sdk/client-s3, ленивый импорт, fake-friendly) + env-factory
+  (IMAGE_STORAGE_DRIVER/ROOT/PUBLIC_BASE, IMAGE_S3_*). Ключ теперь opaque;
+  контракты: `RecipeImageKeySchema` (whitelist расширений, no traversal).
+- **T54-D:** `POST /uploads/image` (owner household, raw body, magic-byte
+  sniffing webp/jpeg/png, 5MB cap, Content-Type谎言-защита) и
+  `POST /recipes/:id/image` (только owning household — глобальные
+  каталог-рецепты read-only, миграция mc090: Recipe.ownerHouseholdId).
+  Отдача: `GET /api/v1/images/*` → nginx X-Accel (internal `/_storage/`)
+  с immutable-кэшем; без nginx — стриминг из API.
+- **Принято:** api unit 153/153 (sniff/keys/local driver/s3 fake/factory);
+  e2e images.spec 3/3 (seeded 200 image/webp через X-Accel, upload→serve
+  round-trip, 403 на глобальном рецепте, 400 на не-картинке).
 
 - **Закрывает:** T54-A (404 ассетов), T54-C (нет абстракции), T54-D (нет upload).
 - **План:** интерфейс `ImageStorage` (local → S3-совместимый драйвер); endpoint
@@ -110,4 +129,4 @@
 
 ## Порядок исполнения
 
-1. ~~E22~~ ✅ → 2. ~~E23~~ ✅ → 3. **E24** (следующий) → 4. **E26** → 5. **E28** (после решения владельца).
+1. ~~E22~~ ✅ → 2. ~~E23~~ ✅ → 3. ~~E24~~ ✅ → 4. **E26** (следующий) → 5. **E28** (после решения владельца).

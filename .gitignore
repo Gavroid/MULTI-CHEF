@@ -55,3 +55,6 @@ audit2.tgz
 
 # Playwright local artifacts
 test-results/
+
+# E24: runtime image storage (lives in /var/www/multichef-images/storage)
+data/images/

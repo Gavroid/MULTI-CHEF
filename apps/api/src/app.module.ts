@@ -17,6 +17,7 @@ import { RecommendationsModule } from './recommendations/recommendations.module.
 import { JobsModule } from './jobs/jobs.module.js';
 import { MealPlansModule } from './meal-plans/meal-plans.module.js';
 import { ShoppingListsModule } from './shopping-lists/shopping-lists.module.js';
+import { StorageModule } from './storage/storage.module.js';
 
 // MC-010 — global app wiring.
 //
@@ -44,6 +45,7 @@ import { ShoppingListsModule } from './shopping-lists/shopping-lists.module.js';
     JobsModule,
     MealPlansModule,
     ShoppingListsModule,
+    StorageModule,
   ],
   providers: [
     // Global exception filter — converts every thrown error into the

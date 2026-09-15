@@ -383,6 +383,9 @@ model Recipe {
   cookMinutes        Int
   difficulty         Int // 1..3
   imageKey           String?
+  /// T54-D (E24): null = global catalog asset (read-only); set = the
+  /// owning household may replace imageKey via POST /recipes/:id/image.
+  ownerHouseholdId   String?
   instructions       Json
   mealTypes          MealType[]
   tags               String[]         @default([])

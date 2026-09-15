@@ -83,7 +83,15 @@ export class AppHttpExceptionFilter implements ExceptionFilter {
         `unhandled exception: ${JSON.stringify(record)}`,
         exception instanceof Error ? exception.stack : undefined,
       );
-      input = { code: 'INTERNAL_ERROR', message: 'Internal server error' };
+      // T54-D (E24): Fastify framework errors (payload too large,
+      // unsupported media type, ...) carry a numeric statusCode — map
+      // client-side ones to their envelope codes instead of a 500.
+      const statusCode = (exception as { statusCode?: number } | null)?.statusCode;
+      if (typeof statusCode === 'number' && statusCode >= 400 && statusCode < 500) {
+        input = mapHttpStatusToError(statusCode, message);
+      } else {
+        input = { code: 'INTERNAL_ERROR', message: 'Internal server error' };
+      }
     }
 
     // T46-A/T46-C (E23): human message resolved from the contracts

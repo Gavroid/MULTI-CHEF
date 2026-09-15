@@ -7,7 +7,7 @@
 import React, { useState } from 'react';
 import { AlertTriangle, BarChart3, ChefHat, Clock, Minus, Plus } from 'lucide-react';
 import { Badge } from '@multichef/ui';
-import { isSafeRecipeImage } from '@/lib/recipe-image';
+import { isSafeRecipeImage, recipeImageUrl } from '@/lib/recipe-image';
 import {
   MAX_SERVINGS,
   MIN_SERVINGS,
@@ -42,7 +42,7 @@ export function Header({
           // T3: LCP candidate — eager load at high priority, decoded
           // off-thread; the 4/3 aspect wrapper reserves the box (CLS = 0).
           <img
-            src={recipe.imageKey}
+            src={recipeImageUrl(recipe.imageKey) ?? undefined}
             alt={recipe.title}
             className="h-full w-full object-cover"
             loading="eager"

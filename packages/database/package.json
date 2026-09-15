@@ -31,9 +31,9 @@
   },
   "dependencies": {
     "@multichef/config": "workspace:*",
+    "@multichef/nutrition": "workspace:*",
     "@prisma/adapter-pg": "^6.2.1",
-    "@prisma/client": "^6.2.1",
-    "@multichef/nutrition": "workspace:*"
+    "@prisma/client": "^6.2.1"
   },
   "devDependencies": {
     "@multichef/eslint-config": "workspace:*",
@@ -44,6 +44,7 @@
     "eslint": "^9.17.0",
     "prettier": "^3.4.2",
     "prisma": "^6.2.1",
+    "sharp": "^0.35.4",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2"
   },

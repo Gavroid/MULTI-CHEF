@@ -29,6 +29,21 @@ async function bootstrap(): Promise<void> {
   // Audit fix: trust only our nginx gateway (single hop) — client
   // X-Forwarded-For is not trusted for rate-limit IP extraction.
   const fastifyAdapter = new FastifyAdapter({ trustProxy: '127.0.0.1', logger: false });
+  // T54-D (E24): raw image upload bodies. The parser accepts only the
+  // three allowed image types and buffers up to 8 MB — deliberately
+  // ABOVE the service's 5 MB cap so oversize uploads reach the service
+  // and answer a clean VALIDATION_ERROR envelope (a parser-level
+  // bodyLimit failure bypasses Nest's exception filter and lands as a
+  // raw 413/500). nginx caps the wire at 10 MB.
+  fastifyAdapter
+    .getInstance()
+    .addContentTypeParser(
+      ['image/webp', 'image/jpeg', 'image/png'],
+      { parseAs: 'buffer', bodyLimit: 8 * 1024 * 1024 },
+      (_req: unknown, body: unknown, done: (err: null, body: unknown) => void) => {
+        done(null, body);
+      },
+    );
   // @fastify/cors MUST be registered first — before any other plugin
   // that touches the response (helmet, cookie) so the OPTIONS
   // preflight is short-circuited with the right headers. We
