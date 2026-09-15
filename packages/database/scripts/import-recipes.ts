@@ -1,5 +1,6 @@
 // MC-085 — wave importer (PLAN-2000-RECIPES.md §5.5). Upserts generated
 import { loadServerEnv } from '@multichef/config';
+import { generateUlid as ulid } from '../src/ulid.js';
 
 // T55-C: env валидируется на старте (fail-fast).
 loadServerEnv();
@@ -22,10 +23,6 @@ import { computeRecipeNutrition } from '@multichef/nutrition';
 const waveIdx = process.argv.indexOf('--wave');
 const wave = waveIdx > -1 ? String(process.argv[waveIdx + 1]) : '1';
 const publish = process.argv.includes('--publish');
-
-function ulid(): string {
-  return randomBytes(13).toString('hex').toUpperCase().padEnd(26, '0').slice(0, 26);
-}
 
 async function main(): Promise<void> {
   const url = process.env.DATABASE_URL;

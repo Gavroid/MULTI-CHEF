@@ -25,13 +25,10 @@ import type { PrismaClient } from '@prisma/client';
 import { RECIPES } from './recipes.js';
 import { CHAIN_TAGS } from './chains.js';
 import type { RecipeSeed } from './types.js';
+import { generateUlid as ulid } from '../../ulid.js';
 
 export { RECIPES, CHAIN_TAGS };
 export type { RecipeSeed };
-
-function ulid(): string {
-  return randomBytes(13).toString('hex').toUpperCase().padEnd(26, '0').slice(0, 26);
-}
 
 /** ["category:MAIN", "cuisine:русская", "season:ALL_YEAR", ...] */
 export function buildRecipeTags(recipe: RecipeSeed): string[] {

@@ -89,7 +89,7 @@ export async function withTenantContext<T>(
     client?: PrismaClient;
   },
 ): Promise<T> {
-  const client = options?.client ?? getPrisma();
+  const client = (options?.client ?? getPrisma()) as PrismaClient;
   return client.$transaction(
     async (tx) => {
       await tx.$executeRaw`SELECT set_config('app.household_id', ${ctx.householdId ?? ''}, true), set_config('app.user_id', ${ctx.userId ?? ''}, true)`;

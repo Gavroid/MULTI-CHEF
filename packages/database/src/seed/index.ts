@@ -27,6 +27,7 @@ import { INGREDIENTS } from './ingredients.js';
 import { buildAliasIndex } from './aliases.js';
 import { DEMO_HOUSEHOLD, DEMO_HOUSEHOLD_OWNER_EMAIL } from './demo-household.js';
 import { seedRecipes, RECIPES } from './recipes/index.js';
+import { generateUlid as ulid } from '../ulid.js';
 
 const LOCALE_RU = 'ru';
 
@@ -39,10 +40,6 @@ function loadDatabaseUrl(): string {
     throw new Error('DATABASE_URL is required for `pnpm db:seed`.');
   }
   return url;
-}
-
-function ulid(): string {
-  return randomBytes(13).toString('hex').toUpperCase().padEnd(26, '0').slice(0, 26);
 }
 
 async function main(): Promise<void> {
