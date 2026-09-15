@@ -108,8 +108,13 @@ export const serverEnvSchema = z.object({
     ),
 
   RATE_LIMIT_WINDOW_SECONDS: z.coerce.number().int().positive().default(60),
+  RATE_LIMIT_WINDOW_SECONDS: z.coerce.number().int().positive().default(60),
   // T39-B: доверенные прокси (CSV) для Fastify trustProxy.
   TRUST_PROXY: optionalString.default('127.0.0.1'),
+  // T70 (audit round 70): kill-switch'и и флаги.
+  KILL_PLAN_GENERATION: booleanFromString.default(false),
+  LLM_EXPLANATIONS_ENABLED: booleanFromString.default(false),
+  CSRF_HARD_MODE: booleanFromString.default(false),
   RATE_LIMIT_MAX_REQUESTS: z.coerce.number().int().positive().default(120),
   RATE_LIMIT_AUTH_MAX_REQUESTS: z.coerce.number().int().positive().default(10),
 

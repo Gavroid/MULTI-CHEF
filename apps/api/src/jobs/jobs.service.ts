@@ -61,6 +61,14 @@ export class JobsService {
     type: JobType,
     params: Record<string, unknown>,
   ): Promise<EnqueueResult> {
+    // T70-D: kill-switch — мгновенная остановка постановки новых джоб
+    // при инциденте, без деплоя.
+    if (String(process.env['KILL_PLAN_GENERATION'] ?? '') === 'true' && type === 'GENERATE_PLAN') {
+      throw new AppHttpException({
+        code: 'SERVICE_UNAVAILABLE',
+        message: 'Генерация планов временно приостановлена',
+      });
+    }
     const hash = paramsHash({ householdId, ...params });
     const windowStart = new Date(Date.now() - IDEMPOTENCY_WINDOW_MS);
     const existing = await this.db.job.findFirst({
