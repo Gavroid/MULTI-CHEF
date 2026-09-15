@@ -37,3 +37,10 @@ export const LoginBody = z
   .strict();
 
 export const LogoutBody = z.object({}).strict();
+
+// T46-C (E23): UI locale switch — drives API error-message language.
+export const LocaleBody = z
+  .object({
+    locale: z.enum(['ru', 'en']),
+  })
+  .strict();

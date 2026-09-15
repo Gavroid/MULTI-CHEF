@@ -22,7 +22,8 @@
     "commitlint": "commitlint --edit",
     "prepare": "husky",
     "clean": "turbo run clean && rm -rf node_modules",
-    "check:schema-drift": "node scripts/check-schema-drift.mjs"
+    "check:schema-drift": "node scripts/check-schema-drift.mjs",
+    "check:i18n": "node scripts/check-i18n-coverage.mjs"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",

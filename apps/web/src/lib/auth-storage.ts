@@ -17,6 +17,9 @@ export interface StoredUser {
   id: string;
   email: string;
   householdId: string;
+  /** T46-C/T46-D (E23): optional — older stored markers lack them. */
+  locale?: string | undefined;
+  tz?: string | undefined;
 }
 
 export function saveLocalUser(user: AuthUser, household: { id: string }): StoredUser {
@@ -24,6 +27,8 @@ export function saveLocalUser(user: AuthUser, household: { id: string }): Stored
     id: user.id,
     email: user.email,
     householdId: household.id,
+    locale: user.locale,
+    tz: user.tz,
   };
   if (typeof window !== 'undefined') {
     try {
@@ -46,7 +51,13 @@ export function readLocalUser(): StoredUser | null {
       typeof parsed.email === 'string' &&
       typeof parsed.householdId === 'string'
     ) {
-      return { id: parsed.id, email: parsed.email, householdId: parsed.householdId };
+      return {
+        id: parsed.id,
+        email: parsed.email,
+        householdId: parsed.householdId,
+        locale: typeof parsed.locale === 'string' ? parsed.locale : undefined,
+        tz: typeof parsed.tz === 'string' ? parsed.tz : undefined,
+      };
     }
     return null;
   } catch {

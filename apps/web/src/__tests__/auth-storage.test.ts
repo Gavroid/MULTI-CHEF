@@ -69,7 +69,14 @@ test('readLocalUser returns the parsed StoredUser', () => {
   authStorage.saveLocalUser(sampleUser, { id: 'h42' });
   const stored = authStorage.readLocalUser();
   assert.ok(stored);
-  assert.deepEqual(stored, { id: 'u1', email: 'a@b.c', householdId: 'h42' });
+  // T46-C/D (E23): locale/tz now persist in the marker.
+  assert.deepEqual(stored, {
+    id: 'u1',
+    email: 'a@b.c',
+    householdId: 'h42',
+    locale: 'ru',
+    tz: 'Europe/Moscow',
+  });
 });
 
 test('readLocalUser returns null on malformed JSON (no crash)', () => {

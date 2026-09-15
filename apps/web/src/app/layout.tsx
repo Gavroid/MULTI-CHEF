@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
+import { NextIntlClientProvider } from 'next-intl';
 import { PwaRegister } from '@/components/PwaRegister';
+import ru from '@/i18n/ru';
 import { getSiteUrl } from '@/lib/site-url';
 import './globals.css';
 
@@ -80,8 +82,13 @@ export default function RootLayout({ children }: { children: ReactNode }): React
           Перейти к содержимому
         </a>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
-        {children}
-        <PwaRegister />
+        {/* T46-B (E23): next-intl provider — ru messages for client
+            components; User.locale drives API error language (see
+            PATCH /auth/locale + exception filter). */}
+        <NextIntlClientProvider locale="ru" messages={ru}>
+          {children}
+          <PwaRegister />
+        </NextIntlClientProvider>
       </body>
     </html>
   );

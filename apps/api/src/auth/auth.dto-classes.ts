@@ -4,8 +4,9 @@
 // in `nestjs-zod` (and its rxjs peer-dep) at test time.
 
 import { createZodDto } from 'nestjs-zod';
-import { LoginBody, LogoutBody, RegisterBody } from './auth.dto.js';
+import { LocaleBody, LoginBody, LogoutBody, RegisterBody } from './auth.dto.js';
 
 export class RegisterDto extends createZodDto(RegisterBody) {}
+export class LocaleDto extends createZodDto(LocaleBody) {}
 export class LoginDto extends createZodDto(LoginBody) {}
 export class LogoutDto extends createZodDto(LogoutBody) {}

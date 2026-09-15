@@ -258,4 +258,14 @@ export class AuthService {
       isGuestConverted: u.isGuestConverted,
     };
   }
+
+  /** T46-C (E23): persist the UI locale used for error-message resolution. */
+  async updateLocale(userId: string, locale: 'ru' | 'en'): Promise<{ id: string; locale: string }> {
+    const prisma = getPrisma();
+    return prisma.user.update({
+      where: { id: userId },
+      data: { locale },
+      select: { id: true, locale: true },
+    });
+  }
 }

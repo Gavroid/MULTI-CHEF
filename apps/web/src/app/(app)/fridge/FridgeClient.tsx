@@ -36,6 +36,7 @@ import {
 } from '@/lib/pantry-client';
 import { searchIngredients } from '@/lib/ingredient-client';
 import { partitionByExpiry } from '@/lib/expiry';
+import { readLocalUser } from '@/lib/auth-storage';
 
 export interface FridgePageDeps {
   listItems: (
@@ -177,6 +178,9 @@ export function FridgeClient({ deps: depsOverride, now }: FridgeClientProps): Re
     onRestore,
   };
 
+  // T46-D (E23): expiry labels roll over at the user's local midnight.
+  const tz = readLocalUser()?.tz;
+
   return (
     <>
       <TabTitle sublabel="Ваши продукты">Холодильник</TabTitle>
@@ -251,7 +255,12 @@ export function FridgeClient({ deps: depsOverride, now }: FridgeClientProps): Re
               <ul className="grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-3">
                 {expiring.map((item) => (
                   <li key={item.id}>
-                    <PantryItemCard item={item} {...(now ? { now } : {})} {...cardProps} />
+                    <PantryItemCard
+                      item={item}
+                      {...(now ? { now } : {})}
+                      {...(tz ? { tz } : {})}
+                      {...cardProps}
+                    />
                   </li>
                 ))}
               </ul>
@@ -265,7 +274,12 @@ export function FridgeClient({ deps: depsOverride, now }: FridgeClientProps): Re
               <ul className="grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-3">
                 {fresh.map((item) => (
                   <li key={item.id}>
-                    <PantryItemCard item={item} {...(now ? { now } : {})} {...cardProps} />
+                    <PantryItemCard
+                      item={item}
+                      {...(now ? { now } : {})}
+                      {...(tz ? { tz } : {})}
+                      {...cardProps}
+                    />
                   </li>
                 ))}
               </ul>

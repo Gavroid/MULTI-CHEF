@@ -9,6 +9,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { Button, Card, Skeleton } from '@multichef/ui';
 import { TabTitle } from '@/components/TabTitle';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -25,6 +26,38 @@ export default function ProfilePage(): React.ReactElement {
   const [peopleCount, setPeopleCount] = useState(0);
   const [budgetWeekKopecks, setBudgetWeekKopecks] = useState<number | null>(null);
   const [loggingOut, setLoggingOut] = useState(false);
+  // T46-C/T46-D (E23): User.locale drives API error language; tz is shown
+  // (and consumed by date formatting) so the user can see their zone.
+  const [locale, setLocale] = useState('ru');
+  const [tz, setTz] = useState('Europe/Moscow');
+  const [switching, setSwitching] = useState(false);
+  const t = useTranslations('profile');
+
+  const switchLocale = async (next: 'ru' | 'en'): Promise<void> => {
+    setSwitching(true);
+    try {
+      const csrf = document.cookie
+        .split('; ')
+        .find((c) => c.startsWith('mc_csrf='))
+        ?.split('=')[1];
+      const res = await fetch('/api/v1/auth/locale', {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'Idempotency-Key':
+            typeof crypto !== 'undefined' && 'randomUUID' in crypto
+              ? crypto.randomUUID()
+              : `profile-${Date.now()}`,
+          ...(csrf ? { 'X-CSRF-Token': csrf } : {}),
+        },
+        body: JSON.stringify({ locale: next }),
+      });
+      if (res.ok) setLocale(next);
+    } finally {
+      setSwitching(false);
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -39,6 +72,8 @@ export default function ProfilePage(): React.ReactElement {
           const s = await sessionRes.json();
           setAuthed(true);
           setEmail(s.email ?? s.user?.email ?? '');
+          setLocale(s.user?.locale ?? 'ru');
+          setTz(s.user?.tz ?? 'Europe/Moscow');
         }
         if (householdRes.ok) {
           const h = await householdRes.json();
@@ -62,7 +97,7 @@ export default function ProfilePage(): React.ReactElement {
   if (checking) {
     return (
       <>
-        <TabTitle sublabel="Аккаунт и настройки">Профиль</TabTitle>
+        <TabTitle sublabel={t('subtitle')}>{t('title')}</TabTitle>
         <Card>
           <Skeleton className="h-4 w-2/3 mb-2" />
           <Skeleton className="h-4 w-1/2" />
@@ -74,15 +109,12 @@ export default function ProfilePage(): React.ReactElement {
   if (!authed) {
     return (
       <>
-        <TabTitle sublabel="Аккаунт и настройки">Профиль</TabTitle>
+        <TabTitle sublabel={t('subtitle')}>{t('title')}</TabTitle>
         <Card>
-          <h2 className="text-heading mb-2">Войдите, чтобы увидеть профиль</h2>
-          <p className="text-body mb-3">
-            Здесь будут аллергии, члены семьи, бюджет и настройки дисклеймера КБЖУ. Войдите или
-            создайте аккаунт.
-          </p>
+          <h2 className="text-heading mb-2">{t('loginCtaTitle')}</h2>
+          <p className="text-body mb-3">{t('loginCtaText')}</p>
           <Link href="/auth/login">
-            <Button variant="primary">Войти</Button>
+            <Button variant="primary">{t('login')}</Button>
           </Link>
         </Card>
       </>
@@ -91,22 +123,51 @@ export default function ProfilePage(): React.ReactElement {
 
   return (
     <>
-      <TabTitle sublabel="Аккаунт и настройки">Профиль</TabTitle>
+      <TabTitle sublabel={t('subtitle')}>{t('title')}</TabTitle>
 
       <Card className="mb-3" data-testid="profile-user">
         <h2 className="text-heading mb-1">{email}</h2>
         {householdName ? (
           <p className="text-body text-[var(--color-text-muted)]">
             {householdName}
-            {peopleCount > 0 ? ` · ${peopleCount} чел.` : ''}
-            {budgetWeekKopecks ? ` · бюджет ${Math.round(budgetWeekKopecks / 100)} ₽/нед` : ''}
+            {peopleCount > 0 ? ` · ${t('peopleShort', { count: peopleCount })}` : ''}
+            {budgetWeekKopecks
+              ? ` · ${t('budgetPerWeek', { amount: Math.round(budgetWeekKopecks / 100) })}`
+              : ''}
           </p>
         ) : null}
       </Card>
 
       <Card className="mb-3" data-testid="profile-theme">
-        <p className="text-body mb-2">Тема оформления</p>
+        <p className="text-body mb-2">{t('theme')}</p>
         <ThemeToggle />
+      </Card>
+
+      {/* T46-C/T46-D (E23): locale switcher (drives API error language)
+          and the user's timezone from User.tz. */}
+      <Card className="mb-3" data-testid="profile-locale">
+        <p className="text-body mb-2">{t('language')}</p>
+        <div className="flex gap-2">
+          <Button
+            variant={locale === 'ru' ? 'primary' : 'secondary'}
+            disabled={switching || locale === 'ru'}
+            onClick={() => void switchLocale('ru')}
+            data-testid="profile-locale-ru"
+          >
+            {t('localeRu')}
+          </Button>
+          <Button
+            variant={locale === 'en' ? 'primary' : 'secondary'}
+            disabled={switching || locale === 'en'}
+            onClick={() => void switchLocale('en')}
+            data-testid="profile-locale-en"
+          >
+            {t('localeEn')}
+          </Button>
+        </div>
+        <p className="text-caption text-[var(--color-text-muted)] mt-2" data-testid="profile-tz">
+          {t('timezone')}: {tz}
+        </p>
       </Card>
 
       <Card className="mb-6" data-testid="profile-logout">
@@ -132,7 +193,7 @@ export default function ProfilePage(): React.ReactElement {
           }}
           data-testid="profile-logout-btn"
         >
-          Выйти
+          {loggingOut ? t('loggingOut') : t('logout')}
         </Button>
       </Card>
     </>

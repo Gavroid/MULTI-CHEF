@@ -8,7 +8,7 @@
 // CSRF (mc_csrf + X-CSRF-Token) and rate-limit throttling are wired
 // in main.ts / app.module.ts so they apply to every mutating endpoint.
 
-import { Body, Controller, Get, HttpCode, Inject, Post, Req, Res } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Inject, Patch, Post, Req, Res } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import {
   ApiOperation,
@@ -25,7 +25,7 @@ import type { FastifyReply, FastifyRequest } from 'fastify';
 import { loadServerEnv } from '@multichef/config';
 import { generateSessionToken } from './session-token.js';
 import { AuthService, type AuthResult } from './auth.service.js';
-import type { LoginDto, LogoutDto, RegisterDto } from './auth.dto-classes.js';
+import type { LocaleDto, LoginDto, LogoutDto, RegisterDto } from './auth.dto-classes.js';
 import { AppHttpException } from '../common/exception-filter.js';
 
 // @fastify/cookie decorates FastifyRequest / FastifyReply at runtime;
@@ -255,5 +255,25 @@ export class AuthController {
       .getPrisma()
       .household.findFirstOrThrow({ where: { ownerId: session.user.id } });
     return { user: session.user, household: { id: household.id } };
+  }
+
+  // T46-C (E23): UI locale switch — drives API error-message language
+  // (resolved by the exception filter from request.user.locale).
+  @Patch('locale')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Set the UI locale of the session user' })
+  @ApiResponse({ status: 200, description: 'Locale updated' })
+  @ApiResponse({ status: 401, description: 'No/invalid session' })
+  async updateLocale(
+    @Req() req: FastifyRequest,
+    @Body() body: LocaleDto,
+  ): Promise<{ locale: string }> {
+    const token = (req as CookieRequest).cookies[SESSION_COOKIE];
+    const session = typeof token === 'string' ? await this.auth.getSession(token) : null;
+    if (!session) {
+      throw new AppHttpException({ code: 'UNAUTHORIZED', message: 'No active session' });
+    }
+    const updated = await this.auth.updateLocale(session.user.id, body.locale);
+    return { locale: updated.locale };
   }
 }

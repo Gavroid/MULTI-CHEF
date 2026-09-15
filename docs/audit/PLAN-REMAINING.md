@@ -13,7 +13,7 @@
 | E25 Feature flags + kill switches       | ✅ закрыт                | `cdd661e` (flag-реестр + kill-switch джоб + CSRF hard mode)                 |
 | E27 Pagination API unification          | ✅ закрыт                | cursor/total унифицированы; ingredients отдают `meta.total` (T42-B)         |
 | E22 Mobile/PWA responsive               | ✅ закрыт (2026-09-16)   | T66-A/B/C/D; feat(web) E22, e2e 40/40                                       |
-| E23 i18n foundation                     | ⬜ открыт                | T46-A/B/C/D                                                                 |
+| E23 i18n foundation                     | ✅ закрыт (2026-09-16)   | T46-A/B/C/D; feat(i18n) E23                                                 |
 | E24 Image storage abstraction + upload  | ⬜ открыт                | T54-A/C/D                                                                   |
 | E26 External integrations + AI scaffold | ⬜ открыт                | T69-A/B/C/D                                                                 |
 | E28 RLS финал                           | ⏸ ждёт решения владельца | предусловие — ADR-0023 (auth-bootstrap), наивное включение ломает login     |
@@ -62,7 +62,19 @@
   либо закэшированный shell; существующие unit/e2e зелёные.
 - **Метрика:** 0 `scrollWidth > innerWidth` на 375px; SW precache ≥ 7 URL.
 
-## E23. i18n foundation — Фаза 3, L (4-7 pd)
+## E23. i18n foundation — Фаза 3, L — ✅ ЗАКРЫТ (2026-09-16)
+
+- **T46-A/C:** словарь `ERROR_MESSAGES` (31 код, ru+en) в contracts; exception
+  filter резолвит message по User.locale (req.user → mc_session cookie fallback
+  для публичных роутов → 'ru'); PATCH /auth/locale переключает User.locale.
+  e2e: одна и та же 404 отвечает 'Рецепт не найден' / 'Recipe not found'.
+- **T46-B:** next-intl 4 подключён (плагин + request.ts + provider в root
+  layout); словарь `apps/web/src/i18n/ru.ts` (nav._, profile._); мигрированы
+  BottomTabBar и профиль; coverage-гейт `pnpm check:i18n` (100% в обе
+  стороны) + шаг в CI.
+- **T46-D:** `lib/datetime.ts` (DEFAULT_TZ, todayInTz, formatDateInTz);
+  formatExpiry считает «сегодня» в зоне пользователя (tz из User.tz через
+  mc_user); профиль показывает User.tz + переключатель языка.
 
 - **Закрывает:** T46-A (RU/EN mix в API), T46-B (нет i18n lib), T46-C (locale unused), T46-D (tz unused).
 - **План:** словари ru в `apps/web/src/i18n/ru.ts`; next-intl на web; API: сообщения
@@ -98,4 +110,4 @@
 
 ## Порядок исполнения
 
-1. ~~E22~~ ✅ → 2. **E23** (следующий) → 3. **E24** → 4. **E26** → 5. **E28** (после решения владельца).
+1. ~~E22~~ ✅ → 2. ~~E23~~ ✅ → 3. **E24** (следующий) → 4. **E26** → 5. **E28** (после решения владельца).

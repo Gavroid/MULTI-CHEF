@@ -7,7 +7,12 @@
 // @multichef/config#build runs first and emits dist/. We then load
 // the validation function from there.
 
-import { loadWebEnv, EnvValidationError } from "@multichef/config";
+import { loadWebEnv, EnvValidationError } from '@multichef/config';
+// T46-B (E23): next-intl App Router plugin — wires src/i18n/request.ts
+// so server components can resolve translations.
+import createNextIntlPlugin from 'next-intl/plugin';
+
+const withNextIntl = createNextIntlPlugin();
 
 let parsed;
 try {
@@ -26,10 +31,10 @@ const nextConfig = {
   // @multichef/contracts, a TS-source workspace package that uses
   // NodeNext-style "./x.js" specifiers. Compile its sources and map
   // the .js specifiers back onto .ts files.
-  transpilePackages: ["@multichef/contracts"],
+  transpilePackages: ['@multichef/contracts'],
   webpack: (config) => {
     config.resolve.extensionAlias = {
-      ".js": [".ts", ".tsx", ".js"],
+      '.js': ['.ts', '.tsx', '.js'],
     };
     return config;
   },
@@ -41,4 +46,4 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+export default withNextIntl(nextConfig);

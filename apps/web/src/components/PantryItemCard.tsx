@@ -23,6 +23,8 @@ export interface PantryItemCardProps {
    */
   displayName?: string;
   now?: Date;
+  /** T46-D (E23): user timezone for expiry day math. */
+  tz?: string | undefined;
   onEdit?: (item: PantryItem) => void;
   onDelete?: (item: PantryItem) => void;
   onRestore?: (item: PantryItem) => void;
@@ -32,11 +34,12 @@ export function PantryItemCard({
   item,
   displayName,
   now,
+  tz,
   onEdit,
   onDelete,
   onRestore,
 }: PantryItemCardProps): ReactElement {
-  const expiry = formatExpiry(item.expiresAt, now);
+  const expiry = formatExpiry(item.expiresAt, now, tz);
   const isArchived = item.archivedAt !== null;
   const name = displayName ?? item.ingredientId;
 

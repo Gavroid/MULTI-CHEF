@@ -57,8 +57,13 @@ test('every (app) page renders the documented Russian h1 (directly or via Client
     const src = read(path);
     // Each page passes the Russian label as TabTitle's JSX child, OR
     // delegates to a Client component that owns the TabTitle (MC-023
-    // /fridge → FridgeClient).
+    // /fridge → FridgeClient). T46-B (E23): /profile resolves the title
+    // via next-intl — accept {t('title')} when the ru dictionary holds
+    // the documented Russian title.
     const direct = new RegExp(`<TabTitle\\b[^>]*>\\s*${title}\\s*</TabTitle>`);
+    const viaI18n =
+      /<TabTitle\b[^>]*>\s*\{t\('title'\)\}\s*<\/TabTitle>/.test(src) &&
+      new RegExp(`title: '${title}'`).test(read('src/i18n/ru.ts'));
     const delegatesToFridge = /<FridgeClient\b/.test(src) && path.endsWith('fridge/page.tsx');
     // MC-034: /today delegates to TodayClient, which owns the TabTitle.
     const delegatesToToday = /<TodayClient\b/.test(src) && path.endsWith('today/page.tsx');
@@ -66,6 +71,7 @@ test('every (app) page renders the documented Russian h1 (directly or via Client
     const delegatesToShopping = /<ShoppingClient\b/.test(src) && path.endsWith('shopping/page.tsx');
     assert.ok(
       direct.test(src) ||
+        viaI18n ||
         delegatesToFridge ||
         delegatesToToday ||
         delegatesToPlan ||
@@ -114,7 +120,10 @@ test('every (app) page shows an empty-state Card with TODO marker (except /profi
 test('/profile renders an explicit CTA pointing to /auth/login', () => {
   const src = read('src/app/(app)/profile/page.tsx');
   assert.match(src, /href="\/auth\/login"/);
-  assert.match(src, /Войти/);
+  // T46-B (E23): the label is {t('login')} — the ru dictionary must hold
+  // the Russian text.
+  assert.ok(/Войти/.test(src) || /\{t\('login'\)\}/.test(src), 'login CTA present');
+  assert.match(read('src/i18n/ru.ts'), /login: 'Войти'/);
 });
 
 test('(auth) layout does NOT include the BottomTabBar', () => {
@@ -194,7 +203,11 @@ test('BottomTabBar package source is intact (regression guard)', () => {
   const t = read('src/components/BottomTabBar.tsx');
   assert.match(t, /h-16/); // 64px height per PRD
   assert.match(t, /safe-area-inset-bottom/);
-  assert.match(t, /aria-label="Основная навигация"/);
+  // T46-B (E23): aria-label resolves via next-intl (nav.ariaLabel).
+  const viaI18n = /aria-label=\{t\('ariaLabel'\)\}/.test(t);
+  const literal = /aria-label="Основная навигация"/.test(t);
+  assert.ok(viaI18n || literal, 'nav aria-label present');
+  assert.match(read('src/i18n/ru.ts'), /ariaLabel: 'Основная навигация'/);
 });
 
 test('useTheme.ts hook still exists and exports useTheme (regression guard)', () => {

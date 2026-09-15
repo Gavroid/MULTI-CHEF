@@ -1,3 +1,5 @@
+import { ERROR_MESSAGES } from '@multichef/contracts';
+
 // MC-010 — envelope mapper from internal codes to HTTP responses.
 //
 // docs/api/conventions.md §2.1 specifies the closed error-code enum
@@ -219,4 +221,25 @@ function defaultMessageFor(code: ErrorCode): string {
 export function envelopeFromRequest(req: unknown, input: ErrorInput): ErrorBody {
   const requestId = (req as { requestId?: string }).requestId;
   return toErrorBody({ ...input, ...(requestId ? { requestId } : {}) });
+}
+
+// T46-A/T46-C (E23): resolve the human message from the contracts
+// dictionary by User.locale ('ru' default — also covers anonymous
+// callers: 401/CSRF fire before AuthGuard fills request.user). The
+// code stays language-agnostic; unknown/dynamic codes fall back to
+// the thrown message untouched.
+// Compile-time exhaustiveness: every ErrorCode MUST have a dictionary
+// entry, else this array type errors.
+type MissingErrorCodes = Exclude<ErrorCode, keyof typeof ERROR_MESSAGES>;
+const _missingErrorCodes: MissingErrorCodes[] = [];
+
+export function localizeErrorMessage(
+  code: string | undefined,
+  locale: string | undefined,
+  fallback: string,
+): string {
+  if (!code) return fallback;
+  const entry = (ERROR_MESSAGES as Record<string, { ru: string; en: string }>)[code];
+  if (!entry) return fallback;
+  return locale === 'en' ? entry.en : entry.ru;
 }

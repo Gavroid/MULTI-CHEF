@@ -5,6 +5,7 @@
 // PantryItems stays scannable: "До 31 дек", "Истёк 5 дней назад",
 // "Нет срока".
 
+import { DEFAULT_TZ, todayInTz } from './datetime';
 import type { PantryItem } from './pantry-client';
 
 const MONTHS_GENITIVE = [
@@ -52,12 +53,15 @@ const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 /**
  * Start-of-day comparison: the backend stores YYYY-MM-DD as midnight
- * UTC, so we work in UTC to avoid TZ drift. Callers should pass a
- * `now` for deterministic tests.
+ * UTC, so we work in UTC to avoid TZ drift. `today` is computed in the
+ * USER's timezone (T46-D) — 'Europe/Moscow' default — not the browser's,
+ * so "days until expiry" rolls over at the user's local midnight.
+ * Callers should pass a `now` for deterministic tests.
  */
 export function formatExpiry(
   isoDate: string | null | undefined,
   now: Date = new Date(),
+  tz: string = DEFAULT_TZ,
 ): ExpiryLabel {
   if (!isoDate) {
     return { text: 'Нет срока', tone: 'muted', daysRemaining: null };
@@ -80,7 +84,8 @@ export function formatExpiry(
     return { text: 'Нет срока', tone: 'muted', daysRemaining: null };
   }
   const expiryUtc = Date.UTC(y, m - 1, d);
-  const nowUtc = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  const [ty, tm, td] = todayInTz(tz, now).split('-').map(Number);
+  const nowUtc = Date.UTC(ty!, tm! - 1, td!);
   const days = Math.round((expiryUtc - nowUtc) / MS_PER_DAY);
 
   if (days < 0) {

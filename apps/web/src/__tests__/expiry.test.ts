@@ -133,11 +133,22 @@ test('partitionByExpiry splits at 7 days', () => {
   );
 });
 
-test('formatExpiry is stable across DST boundaries (UTC normalisation)', () => {
-  // 2026-03-29 in Europe is the DST jump — same answer regardless of TZ.
-  const before = new Date('2026-03-15T00:00:00Z');
-  const after = new Date('2026-03-15T23:59:59Z');
+test('formatExpiry is stable within one user-day (UTC normalisation)', () => {
+  // T46-D: "today" is the user's local calendar day (tz param). Two
+  // instants inside the SAME Moscow day give the same label.
+  const before = new Date('2026-03-15T00:00:00Z'); // 03:00 MSK
+  const after = new Date('2026-03-15T20:00:00Z'); // 23:00 MSK, still Mar 15
   const a = formatExpiry('2026-04-01', before);
   const b = formatExpiry('2026-04-01', after);
   assert.deepEqual<ExpiryLabel>(a, b);
+});
+
+test('formatExpiry rolls "today" over at the user local midnight (T46-D)', () => {
+  // 21:00 UTC on Mar 15 is already Mar 16 in Moscow → one day less left.
+  const now = new Date('2026-03-19T21:00:00Z');
+  const utcView = formatExpiry('2026-03-20', now, 'UTC');
+  const mskView = formatExpiry('2026-03-20', now, 'Europe/Moscow');
+  assert.equal(utcView.daysRemaining, 1);
+  assert.equal(mskView.daysRemaining, 0);
+  assert.equal(mskView.text, 'Годен до сегодня');
 });

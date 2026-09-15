@@ -9,9 +9,12 @@
 import { Catch, HttpException, Logger } from '@nestjs/common';
 import type { ArgumentsHost, ExceptionFilter } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { getPrisma } from '@multichef/database';
+import { hashSessionToken } from '../auth/session-token.js';
 import type { ErrorCode, ErrorInput } from './error-envelope.js';
 import {
   envelopeFromRequest,
+  localizeErrorMessage,
   redactSecrets,
   STATUS_BY_CODE,
   type ErrorBody,
@@ -46,7 +49,7 @@ export class AppHttpException extends HttpException {
 export class AppHttpExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(AppHttpExceptionFilter.name);
 
-  catch(exception: unknown, host: ArgumentsHost): void {
+  async catch(exception: unknown, host: ArgumentsHost): Promise<void> {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse();
     const request = ctx.getRequest();
@@ -83,6 +86,19 @@ export class AppHttpExceptionFilter implements ExceptionFilter {
       input = { code: 'INTERNAL_ERROR', message: 'Internal server error' };
     }
 
+    // T46-A/T46-C (E23): human message resolved from the contracts
+    // dictionary by User.locale (default 'ru' — also covers anonymous
+    // callers whose errors fire before AuthGuard fills request.user).
+    // Public routes (recipes catalog) carry no request.user — fall back
+    // to the mc_session cookie, and only on this rare error path.
+    const locale =
+      (request as { user?: { locale?: string } } | undefined)?.user?.locale ??
+      (await this.resolveLocaleFromSession(request));
+    input = {
+      ...input,
+      message: localizeErrorMessage(input.code, locale, input.message ?? 'Internal server error'),
+    };
+
     const body: ErrorBody = envelopeFromRequest(request, input);
     // WP-6.2 (#16 recommendation): greppable 5xx marker per response —
     // the seed for a Prometheus counter until real metrics land.
@@ -94,6 +110,34 @@ export class AppHttpExceptionFilter implements ExceptionFilter {
       this.logger.warn(`metric_5xx path=${path} code=${body.error.code}`);
     }
     sendErrorResponse(response, body);
+  }
+
+  /**
+   * T46-C (E23): locale for callers without request.user (public routes
+   * like the recipes catalog). Reads the session cookie once per ERROR
+   * response — success paths never pay this cost.
+   */
+  private async resolveLocaleFromSession(request: unknown): Promise<string | undefined> {
+    const cookies = (request as { cookies?: Record<string, string | undefined> } | undefined)
+      ?.cookies;
+    const token = cookies?.['mc_session'];
+    if (typeof token !== 'string' || token.length === 0) return undefined;
+    try {
+      const row = await getPrisma().session.findFirst({
+        where: { tokenHash: hashSessionToken(token) },
+        select: { userId: true, revokedAt: true, expiresAt: true },
+      });
+      if (!row || row.revokedAt !== null || row.expiresAt.getTime() <= Date.now()) {
+        return undefined;
+      }
+      const user = await getPrisma().user.findUnique({
+        where: { id: row.userId },
+        select: { locale: true },
+      });
+      return user?.locale ?? undefined;
+    } catch {
+      return undefined;
+    }
   }
 }
 

@@ -186,6 +186,10 @@ jobs:
         # beyond the documented DB-only invariants.
         run: pnpm check:schema-drift
 
+      - name: i18n coverage (T46-B, E23)
+        # 100% both ways: every dictionary key used, every t('key') defined.
+        run: pnpm check:i18n
+
       - name: Unit tests
         # CI-fix v2 for PR #21 (MC-035): turbo's default parallel scheduling
         # causes flaky failures in node:test under heavy CPU contention

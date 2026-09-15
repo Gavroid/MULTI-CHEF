@@ -5,6 +5,7 @@
 // (MC-034) validates responses with the same schemas.
 
 export * from './params.js';
+export * from './error-messages.js';
 export * from './recipes.js';
 export * from './recommendations.js';
 export * from './rescue.js';

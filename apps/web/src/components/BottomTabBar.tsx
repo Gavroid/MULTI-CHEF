@@ -16,6 +16,7 @@
 import React, { type ReactElement } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import {
   Home,
   Refrigerator,
@@ -43,10 +44,13 @@ export const TAB_ICONS: Record<TabId, LucideIcon> = {
 export function TabItem({
   tab,
   isActive,
+  label = tab.label,
   href = tab.href,
 }: {
   tab: (typeof TABS)[number];
   isActive: boolean;
+  /** T46-B (E23): localized label resolved by the caller via next-intl. */
+  label?: string;
   href?: string;
 }): ReactElement {
   const Icon = TAB_ICONS[tab.id];
@@ -54,7 +58,7 @@ export function TabItem({
     <a
       href={href}
       aria-current={isActive ? 'page' : undefined}
-      aria-label={tab.label}
+      aria-label={label}
       data-tab-id={tab.id}
       data-active={isActive ? '' : undefined}
       className={cn(
@@ -77,7 +81,7 @@ export function TabItem({
         )}
       />
       <Icon size={24} strokeWidth={isActive ? 2.4 : 2} aria-hidden="true" />
-      <span className="text-[11px] leading-3 font-medium">{tab.label}</span>
+      <span className="text-[11px] leading-3 font-medium">{label}</span>
     </a>
   );
 }
@@ -85,10 +89,20 @@ export function TabItem({
 export function BottomTabBar(): ReactElement {
   const pathname = usePathname();
   const activeId = getActiveTabId(pathname);
+  // T46-B (E23): labels come from the i18n dictionary (src/i18n/ru.ts).
+  // Explicit per-tab calls (not t(tab.id)) keep check:i18n coverage exact.
+  const t = useTranslations('nav');
+  const labels = {
+    today: t('today'),
+    fridge: t('fridge'),
+    plan: t('plan'),
+    shopping: t('shopping'),
+    profile: t('profile'),
+  } as const;
 
   return (
     <nav
-      aria-label="Основная навигация"
+      aria-label={t('ariaLabel')}
       data-testid="mc-bottom-tab-bar"
       className={cn(
         'fixed inset-x-0 bottom-0 z-30',
@@ -102,7 +116,7 @@ export function BottomTabBar(): ReactElement {
           <li key={tab.id} className="flex-1 flex">
             {/* next/link gives SPA navigation; <a> inside TabItem keeps SSR tests trivial. */}
             <Link href={tab.href} passHref legacyBehavior>
-              <TabItem tab={tab} isActive={tab.id === activeId} />
+              <TabItem tab={tab} isActive={tab.id === activeId} label={labels[tab.id]} />
             </Link>
           </li>
         ))}
