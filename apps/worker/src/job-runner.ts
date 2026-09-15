@@ -19,6 +19,22 @@ export interface JobMirror {
   setError(jobId: string, error: string): Promise<void>;
 }
 
+// T59-B/T26-A (audit rounds 59/26): в Job.error попадает только
+// безопасная сводка — код + первые 200 символов сообщения. Стектрейсы,
+// SQL и Prisma-meta не хранятся и не отдаются клиенту.
+export function sanitizeJobError(err: unknown): { code: string; message: string } {
+  const code =
+    typeof err === 'object' && err !== null && 'code' in err
+      ? String((err as { code?: unknown }).code)
+      : 'INTERNAL_ERROR';
+  const raw = err instanceof Error ? err.message : String(err);
+  const clean = raw
+    .split('\n')[0]!
+    .slice(0, 200)
+    .replace(/postgresql:\/\/\S+/g, '[redacted]');
+  return { code, message: clean };
+}
+
 export function createPrismaJobMirror(): JobMirror {
   const prisma = getPrisma();
   const update = async (jobId: string, data: Record<string, unknown>): Promise<void> => {
@@ -62,7 +78,9 @@ export async function runWithMirror(
       await mirror.setStage(jobId, 'done');
     }
   } catch (err) {
-    await mirror.setError(jobId, err instanceof Error ? err.message : String(err));
+    // T59-B: клиенту — только безопасная сводка (T26-A: без Prisma-meta).
+    const { code, message } = sanitizeJobError(err);
+    await mirror.setError(jobId, `${code}: ${message}`);
     throw err;
   }
 }

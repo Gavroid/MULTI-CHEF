@@ -84,5 +84,6 @@ test('runWithMirror: domain failure → FAILED with message, error rethrown', as
   );
   const last = mirror.events[mirror.events.length - 1]!;
   assert.equal(last.op, 'error');
-  assert.equal(last.value, 'planner exploded');
+  // T59-B: хранится безопасная сводка "CODE: message" — без стека.
+  assert.match(String(last.value), /INTERNAL_ERROR: planner exploded/);
 });
