@@ -6,6 +6,7 @@
 
 import React, { useEffect, useRef, type ReactElement, type ReactNode } from 'react';
 import { X } from 'lucide-react';
+import { useDialogA11y } from '@/hooks/useDialogA11y';
 
 export interface PantryDialogProps {
   open: boolean;
@@ -24,6 +25,8 @@ export function PantryDialog({
   footer,
 }: PantryDialogProps): ReactElement {
   const ref = useRef<HTMLDialogElement | null>(null);
+  // T47-A/B, T67-B: initial focus + focus-return (WCAG 2.4.3).
+  useDialogA11y(open, ref);
 
   useEffect(() => {
     const el = ref.current;
@@ -50,6 +53,7 @@ export function PantryDialog({
   return (
     <dialog
       ref={ref}
+      aria-labelledby="pantry-dialog-title"
       data-testid="pantry-dialog"
       className="bg-transparent backdrop:bg-black/40 max-w-screen-sm w-[92vw] p-0 m-auto"
       onClick={(e): void => {
@@ -60,7 +64,9 @@ export function PantryDialog({
     >
       <div className="bg-card rounded-lg shadow-lg border border-border overflow-hidden">
         <header className="flex items-center justify-between px-4 py-3 border-b border-border">
-          <h2 className="text-heading">{title}</h2>
+          <h2 id="pantry-dialog-title" className="text-heading">
+            {title}
+          </h2>
           <button
             type="button"
             aria-label="Закрыть"

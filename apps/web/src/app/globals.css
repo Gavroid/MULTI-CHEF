@@ -133,12 +133,15 @@ body {
 
 /* Reduced motion: fade-only or none (PRD §2.5.6). */
 @media (prefers-reduced-motion: reduce) {
+  /* T30-A (WCAG 2.3.3): полностью отключаем motion — 100ms transition
+     всё ещё заметна пользователям с vestibular-нарушениями. */
   *,
   *::before,
   *::after {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 100ms !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
   }
 }
 

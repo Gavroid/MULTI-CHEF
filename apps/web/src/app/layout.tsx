@@ -57,6 +57,13 @@ export default function RootLayout({ children }: { children: ReactNode }): React
   return (
     <html lang="ru" data-theme="light" suppressHydrationWarning>
       <body className="min-h-screen bg-bg text-text font-sans">
+        {/* T30-B (WCAG 2.4.1): skip-link — первый фокусируемый элемент. */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-[var(--color-primary)] focus:px-4 focus:py-2 focus:text-white"
+        >
+          Перейти к содержимому
+        </a>
         {/* T30-B/T67-C (WCAG 2.4.1): skip-link — первый фокусируемый элемент. */}
         <a
           href="#main-content"
