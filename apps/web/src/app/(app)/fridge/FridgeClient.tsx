@@ -248,7 +248,7 @@ export function FridgeClient({ deps: depsOverride, now }: FridgeClientProps): Re
               <h2 className="text-caption font-semibold text-text-muted mb-2 uppercase tracking-wide">
                 Скоро истекает
               </h2>
-              <ul className="flex flex-col gap-2">
+              <ul className="grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-3">
                 {expiring.map((item) => (
                   <li key={item.id}>
                     <PantryItemCard item={item} {...(now ? { now } : {})} {...cardProps} />
@@ -262,7 +262,7 @@ export function FridgeClient({ deps: depsOverride, now }: FridgeClientProps): Re
               <h2 className="text-caption font-semibold text-text-muted mb-2 uppercase tracking-wide">
                 Свежие
               </h2>
-              <ul className="flex flex-col gap-2">
+              <ul className="grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-3">
                 {fresh.map((item) => (
                   <li key={item.id}>
                     <PantryItemCard item={item} {...(now ? { now } : {})} {...cardProps} />

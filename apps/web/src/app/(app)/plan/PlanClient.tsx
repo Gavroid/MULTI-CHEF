@@ -153,7 +153,10 @@ export function PlanClient({ deps: depsOverride }: PlanClientProps): React.React
       <TabTitle sublabel={`${plan.days.length} дней · на ${plan.peopleCount} чел.`}>
         План недели
       </TabTitle>
-      <div className="flex flex-col gap-3" data-testid="plan-days">
+      <div
+        className="grid grid-cols-1 gap-3 md:grid-cols-2 md:items-start lg:grid-cols-3"
+        data-testid="plan-days"
+      >
         {plan.days.map((day) => {
           const percent = kcalPercent(day.totalCalories, DEFAULT_DAILY_TARGET, plan.peopleCount);
           return (

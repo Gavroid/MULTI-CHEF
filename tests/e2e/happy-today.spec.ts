@@ -6,17 +6,25 @@
 import { randomUUID } from 'node:crypto';
 import { expect, test } from '@playwright/test';
 
-const BASE = process.env['E2E_BASE_URL'] ?? 'http://127.0.0.1:8080';
+// Must match the NEXT_PUBLIC_APP_BASE_URL baked into the bundle —
+// cookies are planted per-origin and pages run at the gateway origin.
+const BASE = process.env['E2E_BASE_URL'] ?? 'http://192.168.1.95:8080';
 const unique = Date.now();
 const EMAIL = `e2e-${unique}@test.ru`;
 const PASSWORD = 'Passw0rd-e2e';
 
 test('register → stock the fridge → get a recommendation → accept it', async ({ page }) => {
-  // 1. Register the account through the API (Idempotency-Key required).
-  const register = await page.request.post('/api/v1/auth/register', {
-    headers: { 'idempotency-key': randomUUID() },
-    data: { email: EMAIL, password: PASSWORD, householdName: 'Семья E2E' },
-  });
+  // 1. Register through the API (Idempotency-Key required). Auth endpoints
+  //    are @Throttle(10/min) — retry 429s until the window frees up.
+  let register;
+  for (let attempt = 0; attempt < 15; attempt += 1) {
+    register = await page.request.post('/api/v1/auth/register', {
+      headers: { 'idempotency-key': randomUUID() },
+      data: { email: EMAIL, password: PASSWORD, householdName: 'Семья E2E' },
+    });
+    if (register.status() !== 429) break;
+    await new Promise((r) => setTimeout(r, 5_000));
+  }
   expect(register.status()).toBe(201);
   const registerBody = (await register.json()) as {
     sessionToken: string;
@@ -24,7 +32,16 @@ test('register → stock the fridge → get a recommendation → accept it', asy
     household: { id: string };
   };
 
-  // 2. Seed the session state the real UI login produces.
+  // 2. Seed the session state the real UI login produces. E25 CSRF hard
+  //    mode: the login response also sets mc_csrf (double-submit token) —
+  //    re-plant it from the register response, else authed mutations 403.
+  let csrfToken = '';
+  for (const h of register.headersArray()) {
+    if (h.name.toLowerCase() === 'set-cookie') {
+      const m = /mc_csrf=([^;]+)/.exec(h.value);
+      if (m) csrfToken = m[1] as string;
+    }
+  }
   await page.context().addCookies([
     {
       name: 'mc_session',
@@ -33,6 +50,9 @@ test('register → stock the fridge → get a recommendation → accept it', asy
       httpOnly: true,
       sameSite: 'Lax',
     },
+    ...(csrfToken
+      ? [{ name: 'mc_csrf', value: csrfToken, url: BASE, httpOnly: false, sameSite: 'Lax' }]
+      : []),
   ]);
   await page.addInitScript(
     (stored) => {

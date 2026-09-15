@@ -302,38 +302,42 @@ export function ShoppingClient({
         </Card>
       ) : null}
 
-      {groupItems(list.items, new Map(list.items.map((i) => [i.categoryId, i.sortOrder]))).map(
-        (group) => (
-          <Card key={group.categoryId} className="mb-3" data-testid="shopping-group">
-            {group.items.map((item) => (
-              <label
-                key={item.id}
-                className="flex items-center justify-between border-b border-[var(--color-border)] py-2 last:border-none"
-                data-testid={`shopping-item-${item.ingredientId}`}
-              >
-                <span className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={item.purchased}
-                    onChange={() => void toggle(item)}
-                    className="h-7 w-7"
-                    data-testid={`shopping-check-${item.ingredientId}`}
-                  />
-                  <span
-                    className={item.purchased ? 'text-[var(--color-text-muted)] line-through' : ''}
-                  >
-                    {item.name ?? item.ingredientId}
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:items-start">
+        {groupItems(list.items, new Map(list.items.map((i) => [i.categoryId, i.sortOrder]))).map(
+          (group) => (
+            <Card key={group.categoryId} data-testid="shopping-group">
+              {group.items.map((item) => (
+                <label
+                  key={item.id}
+                  className="flex items-center justify-between border-b border-[var(--color-border)] py-2 last:border-none"
+                  data-testid={`shopping-item-${item.ingredientId}`}
+                >
+                  <span className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={item.purchased}
+                      onChange={() => void toggle(item)}
+                      className="h-7 w-7"
+                      data-testid={`shopping-check-${item.ingredientId}`}
+                    />
+                    <span
+                      className={
+                        item.purchased ? 'text-[var(--color-text-muted)] line-through' : ''
+                      }
+                    >
+                      {item.name ?? item.ingredientId}
+                    </span>
                   </span>
-                </span>
-                <span className="text-xs text-[var(--color-text-muted)]">
-                  {item.packageQuantity} уп. · {formatKopecks(item.estimatedPriceKopecks ?? 0)}
-                  {item.utilityScore != null ? ` · польза ${item.utilityScore}/10` : ''}
-                </span>
-              </label>
-            ))}
-          </Card>
-        ),
-      )}
+                  <span className="text-xs text-[var(--color-text-muted)]">
+                    {item.packageQuantity} уп. · {formatKopecks(item.estimatedPriceKopecks ?? 0)}
+                    {item.utilityScore != null ? ` · польза ${item.utilityScore}/10` : ''}
+                  </span>
+                </label>
+              ))}
+            </Card>
+          ),
+        )}
+      </div>
 
       <Card className="mb-6" data-testid="shopping-complete">
         <Button

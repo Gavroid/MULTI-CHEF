@@ -135,10 +135,12 @@ function clearSessionCookie(res: FastifyReply): void {
 }
 
 @ApiTags('auth')
-// Audit fix (2026-09-13): the tight 10/min bucket now applies ONLY to
-// auth endpoints — the global throttler default is 300/min so normal
-// multi-screen usage (pantry + plan + shopping reads) is not throttled.
-@Throttle({ default: { ttl: 60_000, limit: 10 } })
+// Audit fix (2026-09-13, refined 2026-09-16): the tight 10/min bucket
+// applies ONLY to the credential endpoints (register/login) — it sits on
+// those routes, NOT on the class. GET /session is probed by AuthGuard on
+// every (app) screen mount; per-IP 10/min bounced real multi-user NAT
+// households (and the e2e workers) to /auth/login at random. Everything
+// else stays at the global 300/min default.
 // Class-level error contract (E15/T34-B): применяется ко всем маршрутам.
 @ApiUnauthorizedResponse({ description: 'Нет/просрочена сессия' })
 @ApiForbiddenResponse({ description: 'Нет прав на ресурс' })
@@ -155,6 +157,7 @@ export class AuthController {
   @ApiUnprocessableEntityResponse({ description: 'Доменное ограничение' })
   @ApiTooManyRequestsResponse({ description: 'Rate limit' })
   @ApiInternalServerErrorResponse({ description: 'Внутренняя ошибка' })
+  @Throttle({ default: { ttl: 60_000, limit: 10 } })
   @Post('register')
   @HttpCode(201)
   @ApiOperation({ summary: 'Register a new user + create household + create session' })
@@ -178,6 +181,7 @@ export class AuthController {
     };
   }
 
+  @Throttle({ default: { ttl: 60_000, limit: 10 } })
   @Post('login')
   @HttpCode(200)
   @ApiOperation({ summary: 'Authenticate by email + password, set mc_session cookie' })

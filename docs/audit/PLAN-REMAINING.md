@@ -12,7 +12,7 @@
 | E21 Web perf & rendering hygiene        | ✅ закрыт                | `8af0cbc` (loading.tsx), `2b5fe7d`/`b9d95a4` (bundle budget в CI build-job) |
 | E25 Feature flags + kill switches       | ✅ закрыт                | `cdd661e` (flag-реестр + kill-switch джоб + CSRF hard mode)                 |
 | E27 Pagination API unification          | ✅ закрыт                | cursor/total унифицированы; ingredients отдают `meta.total` (T42-B)         |
-| **E22 Mobile/PWA responsive**           | 🔴 **открыт — в работе** | T66-A/B/C/D, этот спринт                                                    |
+| E22 Mobile/PWA responsive               | ✅ закрыт (2026-09-16)   | T66-A/B/C/D; feat(web) E22, e2e 40/40                                       |
 | E23 i18n foundation                     | ⬜ открыт                | T46-A/B/C/D                                                                 |
 | E24 Image storage abstraction + upload  | ⬜ открыт                | T54-A/C/D                                                                   |
 | E26 External integrations + AI scaffold | ⬜ открыт                | T69-A/B/C/D                                                                 |
@@ -28,7 +28,23 @@
 
 ---
 
-## E22. Mobile/PWA responsive — Фаза 3, XL — ЗАКРЫВАЕТСЯ ЭТИМ СПРИНТОМ
+## E22. Mobile/PWA responsive — Фаза 3, XL — ✅ ЗАКРЫТ (2026-09-16)
+
+- **Принято:** e2e `responsive-pwa.spec.ts` — 30 тестов: 0 горизонтальных скроллов
+  на 375/768/1280 (публичные + авторизованные экраны); grid 1→2→3 колонки (fridge);
+  shell 480→896px (md/lg); manifest PNG+maskable иконки 200; apple-touch-icon;
+  viewport maximum-scale=5; SW v2 precache ≥ 7 URL; offline-навигация → /offline.
+  Полный прогон e2e — 40/40.
+- **Сопутствующие продуктовые фиксы, найденные e2e:**
+  - `@Throttle(10/min)` с класса AuthController перенесён на register/login —
+    GET /session (проба AuthGuard на каждом монтировании экрана) бился в лимит
+    на NAT/мультипользовательских инсталляциях и случайно выкидывал на логин.
+  - SW/PWA работает только в secure context (localhost/HTTPS): LAN-деплой по
+    plain HTTP на 192.168.1.95 не регистрирует SW — для installable-PWA нужен
+    HTTPS на шлюзе (существует :8443, self-signed) — отдельное решение.
+  - tests/e2e: mc_csrf сеется из ответа register (Path=/api/v1 — E25 hard mode
+    сломал старую добычу из document.cookie); playwright baseURL выровнен с
+    запечённым NEXT_PUBLIC_APP_BASE_URL; workers: 4.
 
 - **Закрывает:** T66-A (0 breakpoints), T66-B (SW precache только `/`+`/today`),
   T66-C (manifest без PNG/apple-touch-icon), T66-D (viewport без явного zoom-разрешения).
@@ -82,4 +98,4 @@
 
 ## Порядок исполнения
 
-1. **E22** (этот спринт) → 2. **E23** → 3. **E24** → 4. **E26** → 5. **E28** (после решения владельца).
+1. ~~E22~~ ✅ → 2. **E23** (следующий) → 3. **E24** → 4. **E26** → 5. **E28** (после решения владельца).

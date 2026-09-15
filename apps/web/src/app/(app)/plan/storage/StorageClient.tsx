@@ -108,22 +108,24 @@ export function StorageClient(): React.ReactElement {
           <p className="text-body">Здесь пока ничего нет.</p>
         </Card>
       ) : (
-        shown.map((a) => (
-          <Card key={a.entryId} className="mb-2" data-testid={`storage-item-${a.entryId}`}>
-            <div className="flex items-center justify-between">
-              <h3 className="text-title">{a.title}</h3>
-              {a.storageMethod === 'FREEZER' ? <Badge tone="info">Морозилка</Badge> : null}
-            </div>
-            <p className="text-caption text-[var(--color-text-muted)]">
-              {a.containerNumber != null ? `Контейнер №${a.containerNumber} · ` : ''}
-              День {a.dayIndex + 1}
-              {a.storageMethod === 'FREEZER' && defrostWeekday(a.defrostDate)
-                ? ` · достать из морозилки: ${defrostWeekday(a.defrostDate)} вечер`
-                : ''}
-              {a.addBeforeServing ? ' · добавить перед подачей' : ''}
-            </p>
-          </Card>
-        ))
+        <div className="grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-3">
+          {shown.map((a) => (
+            <Card key={a.entryId} data-testid={`storage-item-${a.entryId}`}>
+              <div className="flex items-center justify-between">
+                <h3 className="text-title">{a.title}</h3>
+                {a.storageMethod === 'FREEZER' ? <Badge tone="info">Морозилка</Badge> : null}
+              </div>
+              <p className="text-caption text-[var(--color-text-muted)]">
+                {a.containerNumber != null ? `Контейнер №${a.containerNumber} · ` : ''}
+                День {a.dayIndex + 1}
+                {a.storageMethod === 'FREEZER' && defrostWeekday(a.defrostDate)
+                  ? ` · достать из морозилки: ${defrostWeekday(a.defrostDate)} вечер`
+                  : ''}
+                {a.addBeforeServing ? ' · добавить перед подачей' : ''}
+              </p>
+            </Card>
+          ))}
+        </div>
       )}
     </>
   );

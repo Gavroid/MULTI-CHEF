@@ -23,12 +23,20 @@ export const metadata: Metadata = {
     description: 'Семейный планировщик питания — рецепты из того, что уже есть дома.',
   },
   manifest: '/manifest.webmanifest',
-  icons: { icon: '/icons/icon.svg' },
+  icons: {
+    icon: '/icons/icon.svg',
+    // T66-C: iOS home-screen icon (PNG, opaque — iOS fills transparency black).
+    apple: '/icons/apple-touch-icon.png',
+  },
 };
 
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
+  // T66-D (E22): explicit, WCAG 1.4.4-compliant zoom — users may scale up
+  // to 5x; never set userScalable:false (it fails axe & Lighthouse a11y).
+  maximumScale: 5,
+  userScalable: true,
   // Theme color follows the brand orange (PRD §2.5.1) — kept identical in
   // both light/dark since PWA icons + browser chrome expect a single value.
   themeColor: '#E8590C',
