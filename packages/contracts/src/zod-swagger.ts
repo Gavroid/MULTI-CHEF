@@ -21,10 +21,30 @@ import {
   RouletteRejectResponseDtoSchema,
 } from './roulette.js';
 import { JobDtoSchema } from './jobs.js';
+import { MealPlanSetupDtoSchema as MealPlanSetupWire } from './meal-plans.js';
 import { z } from 'zod';
 
 // T34-A (audit round 34): недостающие wire-схемы — компактные версии
 // публичных DTO (поля, приходящие в ответах API).
+const NutritionProfileDtoSchema = z.object({
+  userId: z.string(),
+  targetCalories: z.number().int().nullable().optional(),
+  targetProteinG: z.number().int().nullable().optional(),
+  targetFatG: z.number().int().nullable().optional(),
+  targetCarbsG: z.number().int().nullable().optional(),
+  mealsPerDay: z.number().int(),
+  preferredPrepMinutes: z.number().int(),
+  skillLevel: z.enum(['BEGINNER', 'CONFIDENT', 'EXPERIMENTER']),
+  appliances: z.array(z.string()),
+  dietType: z.enum(['NONE', 'VEGETARIAN', 'VEGAN', 'PESCATARIAN']),
+  activityNotes: z.string().nullable().optional(),
+});
+const PreferenceDtoSchema = z.object({
+  id: z.string(),
+  kind: z.enum(['LOVE', 'DISLIKE', 'ALLERGY', 'EXCLUDE']),
+  ingredientId: z.string().nullable().optional(),
+  note: z.string().nullable().optional(),
+});
 const PantryItemDtoSchema = z.object({
   id: z.string(),
   ingredientId: z.string(),
@@ -127,4 +147,6 @@ export const swaggerSchemas = {
   PantryItemDto: toSwagger('PantryItemDto', PantryItemDtoSchema as ZodTypeAny),
   ShoppingListDto: toSwagger('ShoppingListDto', ShoppingListDtoSchema as ZodTypeAny),
   ErrorEnvelope: toSwagger('ErrorEnvelope', ErrorEnvelopeSchema as ZodTypeAny),
+  NutritionProfileDto: toSwagger('NutritionProfileDto', NutritionProfileDtoSchema as ZodTypeAny),
+  PreferenceDto: toSwagger('PreferenceDto', PreferenceDtoSchema as ZodTypeAny),
 } as const;
