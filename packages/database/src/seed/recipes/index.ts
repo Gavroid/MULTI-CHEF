@@ -62,11 +62,20 @@ export async function seedRecipes(prisma: PrismaClient): Promise<{
   nutrition: number;
   storageRules: number;
 }> {
+  // T60-D: advisory lock — параллельные запуски seed сериализуются.
+  await prisma.$executeRawUnsafe("SELECT pg_advisory_lock(hashtext('multichef-recipes-seed'))");
+
+  let recipesCreated = 0;
+  let recipesUpdated = 0;
+  let recipeIngredients = 0;
+  let nutrition = 0;
+  let storageRules = 0;
+
   // 1. Ingredient name → id map (single query).
   const ingredients = await prisma.ingredient.findMany({
     select: { id: true, canonicalName: true },
   });
-  const ingredientIdByName = new Map(ingredients.map((i) => [i.canonicalName, i.id]));
+  const ingredientByCanonicalName = new Map(ingredients.map((i) => [i.canonicalName, i.id]));
 
   // 2. Chain tag map: recipe title → slugs of chains containing it.
   const chainSlugsByTitle = new Map<string, string[]>();
@@ -78,22 +87,10 @@ export async function seedRecipes(prisma: PrismaClient): Promise<{
     }
   }
 
-  let recipesCreated = 0;
-  let recipesUpdated = 0;
-  let recipeIngredients = 0;
-  let nutrition = 0;
-  let storageRules = 0;
-
   for (const recipe of RECIPES) {
-    // Validate ingredient references eagerly — fail the seed loudly on
-    // an orphan FK instead of silently dropping the row.
     const ingredientRows = recipe.ingredients.map((ing) => {
-      const ingredientId = ingredientIdByName.get(ing.canonicalName);
-      if (!ingredientId) {
-        throw new Error(
-          `recipe "${recipe.canonicalTitle}": unknown ingredient "${ing.canonicalName}" (not in MC-020 catalog)`,
-        );
-      }
+      const ingredientId = ingredientByCanonicalName.get(ing.canonicalName);
+      if (!ingredientId) throw new Error(`unknown ingredient: ${ing.canonicalName}`);
       return { ing, ingredientId };
     });
 
@@ -106,8 +103,6 @@ export async function seedRecipes(prisma: PrismaClient): Promise<{
       servings: recipe.servings,
       prepMinutes: recipe.prepMinutes,
       cookMinutes: recipe.cookMinutes,
-      // Difficulty enum in schema is Int 1..3 (BEGINNER=1, CONFIDENT=2,
-      // EXPERIMENTER=3). The string form lives in tags: difficulty:<X>.
       difficulty: { BEGINNER: 1, CONFIDENT: 2, EXPERIMENTER: 3 }[recipe.difficulty],
       instructions: recipe.instructions,
       mealTypes: recipe.mealTypes,
@@ -119,73 +114,83 @@ export async function seedRecipes(prisma: PrismaClient): Promise<{
       sourceType: 'CURATED' as const,
     };
 
-    const existing = await prisma.recipe.findFirst({
-      where: { title: recipe.canonicalTitle },
-      select: { id: true },
-    });
-
-    const recipeId = existing ? existing.id : ulid();
-
-    if (existing) {
-      await prisma.recipe.update({ where: { id: recipeId }, data });
-      recipesUpdated += 1;
-    } else {
-      await prisma.recipe.create({ data: { id: recipeId, ...data } });
-      recipesCreated += 1;
-    }
-
-    // 3. Full replace of RecipeIngredient (id PK is (recipeId, ingredientId)).
-    await prisma.recipeIngredient.deleteMany({ where: { recipeId } });
-    await prisma.recipeIngredient.createMany({
-      data: ingredientRows.map(({ ing, ingredientId }) => ({
-        recipeId,
-        ingredientId,
-        quantity: ing.quantityG,
-        unit: ing.unit,
-        // ML/PIECE rows keep the declared qty in `quantity` and the
-        // gram equivalent in `grams` (PIECE ≈ qty g here; ML ≈ 1 g/ml).
-        grams: ing.quantityG,
-        optional: ing.optional,
-      })),
-    });
-    recipeIngredients += ingredientRows.length;
-
-    // 4. RecipeNutrition (PK = recipeId → upsert).
-    await prisma.recipeNutrition.upsert({
-      where: { recipeId },
-      create: {
-        recipeId,
-        servingCalories: recipe.nutrition.kcal,
-        servingProteinG: recipe.nutrition.proteinG,
-        servingFatG: recipe.nutrition.fatG,
-        servingCarbsG: recipe.nutrition.carbsG,
-        servingGrams: 0,
-        calculationVersion: 1,
-      },
-      update: {
-        servingCalories: recipe.nutrition.kcal,
-        servingProteinG: recipe.nutrition.proteinG,
-        servingFatG: recipe.nutrition.fatG,
-        servingCarbsG: recipe.nutrition.carbsG,
-      },
-    });
-    nutrition += 1;
-
-    // 5. StorageRule (matched by recipeTag).
-    const rule = storageRuleData(recipe);
-    if (rule) {
-      const existingRule = await prisma.storageRule.findFirst({
-        where: { recipeTag: recipe.canonicalTitle },
+    // T60-B (audit round 60): рецепт + ингредиенты + нутрицы + правило —
+    // одна транзакция; падение между шагами не оставит «голый» рецепт.
+    await prisma.$transaction(async (tx) => {
+      const existing = await tx.recipe.findFirst({
+        where: { title: recipe.canonicalTitle },
         select: { id: true },
       });
-      if (existingRule) {
-        await prisma.storageRule.update({ where: { id: existingRule.id }, data: rule });
+
+      const recipeId = existing ? existing.id : ulid();
+
+      if (existing) {
+        await tx.recipe.update({ where: { id: recipeId }, data });
+        recipesUpdated += 1;
       } else {
-        await prisma.storageRule.create({ data: { id: ulid(), ...rule } });
+        await tx.recipe.create({ data: { id: recipeId, ...data } });
+        recipesCreated += 1;
       }
-      storageRules += 1;
-    }
+
+      // 3. Full replace of RecipeIngredient (id PK is (recipeId, ingredientId)).
+      await tx.recipeIngredient.deleteMany({ where: { recipeId } });
+      await tx.recipeIngredient.createMany({
+        data: ingredientRows.map((row) => ({
+          id: generateId(recipeId, row.ingredientId),
+          recipeId,
+          ingredientId: row.ingredientId,
+          quantity: row.ing.quantityG,
+          unit: row.ing.unit,
+          grams: row.ing.quantityG,
+          optional: row.ing.optional,
+        })),
+      });
+      recipeIngredients += ingredientRows.length;
+
+      // 4. RecipeNutrition (PK = recipeId → upsert).
+      await tx.recipeNutrition.upsert({
+        where: { recipeId },
+        create: {
+          recipeId,
+          servingCalories: recipe.nutrition.kcal,
+          servingProteinG: recipe.nutrition.proteinG,
+          servingFatG: recipe.nutrition.fatG,
+          servingCarbsG: recipe.nutrition.carbsG,
+          servingGrams: 0,
+          calculationVersion: 1,
+        },
+        update: {
+          servingCalories: recipe.nutrition.kcal,
+          servingProteinG: recipe.nutrition.proteinG,
+          servingFatG: recipe.nutrition.fatG,
+          servingCarbsG: recipe.nutrition.carbsG,
+        },
+      });
+      nutrition += 1;
+
+      // 5. StorageRule (matched by recipeTag).
+      const rule = storageRuleData(recipe);
+      if (rule) {
+        const existingRule = await tx.storageRule.findFirst({
+          where: { recipeTag: recipe.canonicalTitle },
+          select: { id: true },
+        });
+        if (existingRule) {
+          await tx.storageRule.update({ where: { id: existingRule.id }, data: rule });
+        } else {
+          await tx.storageRule.create({ data: { id: ulid(), ...rule } });
+        }
+        storageRules += 1;
+      }
+    });
   }
 
+  // T60-D: снимаем advisory lock в конце.
+  await prisma.$executeRawUnsafe("SELECT pg_advisory_unlock(hashtext('multichef-recipes-seed'))");
   return { recipesCreated, recipesUpdated, recipeIngredients, nutrition, storageRules };
+}
+
+/** Deterministic ingredient-scoped id (26 chars, no slashes). */
+function generateId(recipeId: string, ingredientId: string): string {
+  return `${recipeId.slice(0, 13)}${ingredientId.slice(0, 13)}`.slice(0, 26);
 }

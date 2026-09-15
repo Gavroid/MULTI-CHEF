@@ -45,9 +45,9 @@ function loadDatabaseUrl(): string {
 async function main(): Promise<void> {
   const url = loadDatabaseUrl();
   console.log('seed: connecting…');
+  const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: url }) });
   // T60-D: advisory lock — параллельные запуски seed ждут друг друга.
   await prisma.$executeRawUnsafe("SELECT pg_advisory_lock(hashtext('multichef-seed'))");
-  const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: url }) });
 
   try {
     // 1. Categories
@@ -204,12 +204,12 @@ async function main(): Promise<void> {
       `seed: done — ${totalIngs} ingredients, ${totalAliases} aliases, ${totalRecipes} recipes total in DB`,
     );
   } finally {
+    await prisma.$executeRawUnsafe("SELECT pg_advisory_unlock(hashtext('multichef-seed'))");
     await prisma.$disconnect();
   }
 }
 
 main().catch((err) => {
   console.error(err);
-  await prisma.$executeRawUnsafe("SELECT pg_advisory_unlock(hashtext('multichef-seed'))");
   process.exit(1);
 });
