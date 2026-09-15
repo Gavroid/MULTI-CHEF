@@ -4,6 +4,7 @@
 // Schemas are Zod; apps/api maps Prisma rows into these shapes, apps/web
 // (MC-034) validates responses with the same schemas.
 
+export * from './params.js';
 export * from './recipes.js';
 export * from './recommendations.js';
 export * from './rescue.js';

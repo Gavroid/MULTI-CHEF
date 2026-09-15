@@ -18,7 +18,9 @@ export interface RescueSession {
 function newRef(): string {
   const c = globalThis.crypto;
   if (c && typeof c.randomUUID === 'function') return c.randomUUID();
-  return Math.random().toString(36).slice(2);
+  return Array.from(crypto.getRandomValues(new Uint8Array(16)), (b) => b.toString(36))
+    .join('')
+    .slice(0, 12);
 }
 
 export function saveRescueSession(

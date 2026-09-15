@@ -16,6 +16,7 @@ import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { FastifyRequest } from 'fastify';
 import type { FitBudgetResponseDto } from '@multichef/contracts';
 import { AppHttpException } from '../common/exception-filter.js';
+import { UlidParamsSchema } from '@multichef/contracts';
 import { AuthGuard, currentUser } from '../common/auth-guard.js';
 import type { AuthenticatedUser } from '../auth/auth.service.js';
 import { ApplyBudgetProposalDtoSchema, FitBudgetRequestDtoSchema } from './shopping-lists.dto.js';
