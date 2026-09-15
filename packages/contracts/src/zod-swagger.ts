@@ -21,6 +21,62 @@ import {
   RouletteRejectResponseDtoSchema,
 } from './roulette.js';
 import { JobDtoSchema } from './jobs.js';
+import { MealPlanSetupDtoSchema as MealPlanSetupWire } from './meal-plans.js';
+import { z } from 'zod';
+
+// T34-A (audit round 34): недостающие wire-схемы — компактные версии
+// публичных DTO (поля, приходящие в ответах API).
+const PantryItemDtoSchema = z.object({
+  id: z.string(),
+  ingredientId: z.string(),
+  name: z.string().nullable(),
+  quantity: z.number(),
+  unit: z.string(),
+  estimatedGrams: z.number(),
+  amountStatus: z.enum(['CRITICAL', 'LOW', 'ENOUGH', 'PLENTY']),
+  priority: z.enum(['NORMAL', 'USE_FIRST']),
+  storageLocation: z.enum(['FRIDGE', 'FREEZER', 'PANTRY']),
+  opened: z.boolean(),
+  expiresAt: z.string().nullable(),
+  notes: z.string().nullable(),
+  archivedAt: z.string().nullable(),
+});
+const ShoppingListDtoSchema = z.object({
+  id: z.string(),
+  status: z.enum(['ACTIVE', 'COMPLETED']),
+  estimatedTotalKopecks: z.number().int(),
+  items: z.array(
+    z.object({
+      id: z.string(),
+      ingredientId: z.string(),
+      name: z.string().nullable(),
+      requiredGrams: z.number(),
+      packageQuantity: z.number(),
+      packageSize: z.number(),
+      estimatedPriceKopecks: z.number().nullable(),
+      purchased: z.boolean(),
+    }),
+  ),
+});
+const MealPlanSetupWireSchema = z.object({
+  days: z.number().int().min(1).max(7).optional(),
+  peopleCount: z.number().int().min(1).max(12).optional(),
+  startDate: z.string().optional(),
+  maxMinutes: z.number().optional(),
+  budgetMode: z.enum(['NORMAL', 'SAVER']).optional(),
+  targetBudgetKopecks: z.number().int().optional(),
+  antiFilters: z.array(z.string()).optional(),
+  generationSettings: z.record(z.unknown()).optional(),
+});
+const ErrorEnvelopeSchema = z.object({
+  status: z.number().int(),
+  error: z.object({
+    code: z.string(),
+    message: z.string(),
+    details: z.record(z.unknown()).nullable().optional(),
+    requestId: z.string().optional(),
+  }),
+});
 
 // Bypass deep Zod inference (TS2589) by typing the parameter as ZodTypeAny.
 // zod-to-json-schema v3 accepts any zod schema; the concrete ZodObject /
@@ -68,4 +124,8 @@ export const swaggerSchemas = {
     RouletteRejectResponseDtoSchema as ZodTypeAny,
   ),
   JobDto: toSwagger('JobDto', JobDtoSchema as ZodTypeAny),
+  MealPlanSetupDto: toSwagger('MealPlanSetupDto', MealPlanSetupWireSchema as ZodTypeAny),
+  PantryItemDto: toSwagger('PantryItemDto', PantryItemDtoSchema as ZodTypeAny),
+  ShoppingListDto: toSwagger('ShoppingListDto', ShoppingListDtoSchema as ZodTypeAny),
+  ErrorEnvelope: toSwagger('ErrorEnvelope', ErrorEnvelopeSchema as ZodTypeAny),
 } as const;
