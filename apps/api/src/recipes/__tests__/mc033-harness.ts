@@ -10,6 +10,7 @@ import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import fastifyCookie from '@fastify/cookie';
 import { PrismaClient, Prisma } from '@prisma/client';
+import { withTenantContext } from '@multichef/database';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { AuthModule } from '../../auth/auth.module.js';
 import { RecipesModule } from '../../recipes/recipes.module.js';
@@ -151,38 +152,42 @@ export async function setup(): Promise<Mc033Harness> {
       });
       if (!chicken) throw new Error('no chicken recipe in seed');
       const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
-      const plan = await prisma!.mealPlan.create({
-        data: {
-          id: `mc033plan${Date.now()}`.slice(0, 26),
-          householdId,
-          startDate: yesterday,
-          endDate: yesterday,
-          peopleCount: 1,
-          generationSettings: {},
-          status: 'ACTIVE',
-          days: {
-            create: {
-              id: `mc033day${Date.now()}`.slice(0, 26),
-              date: yesterday,
-              totalCalories: 0,
-              totalProteinG: 0,
-              totalFatG: 0,
-              totalCarbsG: 0,
-              entries: {
-                create: {
-                  id: `mc033ent${Date.now()}`.slice(0, 26),
-                  mealType: 'DINNER',
-                  recipeId: chicken.id,
-                  servings: new Prisma.Decimal(1),
-                  portionGrams: new Prisma.Decimal(350),
-                  position: 1,
-                  source: 'GENERATED',
+      // ADR-0023 phase 3: MealPlan is RLS-protected — seed inside the
+      // household's tenant context.
+      const plan = await withTenantContext({ householdId, userId: user!.id }, async (tx) =>
+        tx.mealPlan.create({
+          data: {
+            id: `mc033plan${Date.now()}`.slice(0, 26),
+            householdId,
+            startDate: yesterday,
+            endDate: yesterday,
+            peopleCount: 1,
+            generationSettings: {},
+            status: 'ACTIVE',
+            days: {
+              create: {
+                id: `mc033day${Date.now()}`.slice(0, 26),
+                date: yesterday,
+                totalCalories: 0,
+                totalProteinG: 0,
+                totalFatG: 0,
+                totalCarbsG: 0,
+                entries: {
+                  create: {
+                    id: `mc033ent${Date.now()}`.slice(0, 26),
+                    mealType: 'DINNER',
+                    recipeId: chicken.id,
+                    servings: new Prisma.Decimal(1),
+                    portionGrams: new Prisma.Decimal(350),
+                    position: 1,
+                    source: 'GENERATED',
+                  },
                 },
               },
             },
           },
-        },
-      });
+        }),
+      );
       void plan;
     },
   };
