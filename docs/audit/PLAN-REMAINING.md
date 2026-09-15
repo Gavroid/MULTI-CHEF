@@ -1,0 +1,85 @@
+# PLAN-REMAINING — открытый остаток ROADMAP-21-70
+
+**Дата:** 2026-09-16
+**Источник:** `docs/audit/ROADMAP-21-70.md` (Фаза 3). Этот файл — снимок того, что
+осталось после закрытия E01–E21, E25, E27 (см. историю git: коммиты с префиксами
+`feat/fix/chore` T21–T70, E09–E27).
+
+## Статус эпиков Фазы 3
+
+| Эпик                                    | Статус                   | Коммиты/примечание                                                          |
+| --------------------------------------- | ------------------------ | --------------------------------------------------------------------------- |
+| E21 Web perf & rendering hygiene        | ✅ закрыт                | `8af0cbc` (loading.tsx), `2b5fe7d`/`b9d95a4` (bundle budget в CI build-job) |
+| E25 Feature flags + kill switches       | ✅ закрыт                | `cdd661e` (flag-реестр + kill-switch джоб + CSRF hard mode)                 |
+| E27 Pagination API unification          | ✅ закрыт                | cursor/total унифицированы; ingredients отдают `meta.total` (T42-B)         |
+| **E22 Mobile/PWA responsive**           | 🔴 **открыт — в работе** | T66-A/B/C/D, этот спринт                                                    |
+| E23 i18n foundation                     | ⬜ открыт                | T46-A/B/C/D                                                                 |
+| E24 Image storage abstraction + upload  | ⬜ открыт                | T54-A/C/D                                                                   |
+| E26 External integrations + AI scaffold | ⬜ открыт                | T69-A/B/C/D                                                                 |
+| E28 RLS финал                           | ⏸ ждёт решения владельца | предусловие — ADR-0023 (auth-bootstrap), наивное включение ломает login     |
+
+## Остатки-хвосты (низкий приоритет)
+
+- `GET /meal-plans/prep-tasks` из T42-D: закрыт функционально через
+  `POST /meal-plans/active/prep` (generate-or-return, идемпотентен). Отдельный
+  GET не требуется, пока не появится consumer вне web-клиента.
+- E28: единственный блокер — продуктовое решение по auth-bootstrap
+  (register/login вне RLS-контекста). Без него не начинать.
+
+---
+
+## E22. Mobile/PWA responsive — Фаза 3, XL — ЗАКРЫВАЕТСЯ ЭТИМ СПРИНТОМ
+
+- **Закрывает:** T66-A (0 breakpoints), T66-B (SW precache только `/`+`/today`),
+  T66-C (manifest без PNG/apple-touch-icon), T66-D (viewport без явного zoom-разрешения).
+- **План:**
+  1. T66-D: `viewport` → `maximumScale: 5, userScalable: true` (zoom не запрещаем — WCAG 1.4.4).
+  2. T66-C: PNG-иконки 192/512 (+apple-touch-icon 180) из `icons/icon.svg`; manifest
+     получает PNG-записи; layout — `apple-touch-icon` в `metadata.icons`.
+  3. T66-B: `sw.js` — SHELL_URLS + `/plan`, `/shopping`, `/fridge`, `/offline`;
+     navigate-режим: network → кэш маршрута → `/offline`; VERSION → v2.
+  4. T66-A: `md:`/`lg:` breakpoints на топ-экранах: `/fridge`, `/plan/storage`,
+     `/plan`, `/shopping/[listId]`, `/recipe/[id]` (сетки 2–3 колонки, desktop-контейнер).
+  5. `/offline` — отдельный route с осмысленным сообщением и retry-кнопкой.
+- **Acceptance:** e2e viewport-проверки 375/768/1280 (0 горизонтальных скроллов);
+  manifest + иконки + sw отдаются 200; offline-смоук: navigate без сети → /offline
+  либо закэшированный shell; существующие unit/e2e зелёные.
+- **Метрика:** 0 `scrollWidth > innerWidth` на 375px; SW precache ≥ 7 URL.
+
+## E23. i18n foundation — Фаза 3, L (4-7 pd)
+
+- **Закрывает:** T46-A (RU/EN mix в API), T46-B (нет i18n lib), T46-C (locale unused), T46-D (tz unused).
+- **План:** словари ru в `apps/web/src/i18n/ru.ts`; next-intl на web; API: сообщения
+  ошибок из словаря по `User.locale`; отобразить tz в UI (expiration по локальному времени).
+- **Acceptance:** 0 EN-строк в UI при locale=ru; API-ошибки на ru; переключение locale
+  меняет формат дат. **Метрика:** i18n-coverage скрипт = 100% ключей.
+
+## E24. Image storage abstraction + upload — Фаза 3, L (4-7 pd)
+
+- **Закрывает:** T54-A (404 ассетов), T54-C (нет абстракции), T54-D (нет upload).
+- **План:** интерфейс `ImageStorage` (local → S3-совместимый драйвер); endpoint
+  `POST /recipes/:id/image` (owner, валидация mime/size); миграция ключей; отдача
+  через nginx X-Accel.
+- **Acceptance:** upload → resize → отдача; смена драйвера конфигом; 0 404 на
+  существующих. **Метрика:** 100% imageKey проходят валидацию драйвера.
+
+## E26. External integrations + AI scaffold — Фаза 3, L (4-7 pd)
+
+- **Закрывает:** T69-A (TemplateAiProvider без HTTP-клиента), T69-B (ключи мертвы),
+  T69-C (Sentry без SDK), T69-D (нет webhook-каркаса).
+- **План:** `AiProvider` интерфейс + HTTP-клиент (timeout/retry/circuit-breaker) за
+  feature-флагом E25; Sentry SDK по DSN; webhook-каркас (signature + idempotency).
+- **Acceptance:** мок-LLM в тестах; Sentry события в staging; webhook-спека задокументирована.
+
+## E28. RLS финал — Фаза 3, XL — по решению владельца
+
+- **Закрывает:** T27-B + полное закрытие T4 (Postgres RLS).
+- **План:** ADR-изменение по auth-bootstrap (register/login вне RLS-контекста:
+  отдельная роль/политики auth-mode) → перевод auth/household/jobs сервисов →
+  ENABLE/FORCE на Session/User/Household/HouseholdMember/Job → приёмочные SQL-пробы.
+- **Acceptance:** SQL-проба cross-tenant = 0 на всех 15 таблицах; auth-флоу e2e зелёный.
+- **Предусловие:** явное продуктовое решение (наивное включение ломает login) — ADR-0023.
+
+## Порядок исполнения
+
+1. **E22** (этот спринт) → 2. **E23** → 3. **E24** → 4. **E26** → 5. **E28** (после решения владельца).
