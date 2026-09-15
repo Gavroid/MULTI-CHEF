@@ -52,3 +52,6 @@ apps/web/playwright/.cache/
 .husky/_
 .handover/
 audit2.tgz
+
+# Playwright local artifacts
+test-results/
