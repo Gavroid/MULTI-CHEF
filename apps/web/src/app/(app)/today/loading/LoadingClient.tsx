@@ -183,7 +183,9 @@ export function LoadingClient({ deps: depsOverride }: LoadingClientProps): React
           <>
             <div
               className="h-1.5 w-48 overflow-hidden rounded-full bg-[var(--color-surface-2)]"
-              role="progressbar"
+              role="status"
+              aria-live="polite"
+              aria-label="Генерация плана"
               data-testid="loading-progress"
             >
               <div

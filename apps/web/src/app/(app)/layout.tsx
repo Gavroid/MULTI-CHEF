@@ -27,7 +27,9 @@ export default function AppLayout({ children }: { children: ReactNode }): ReactE
   return (
     <AuthGuard>
       {/* pb-24 reserves space for the 64px tab bar + safe-area + breathing room. */}
-      <main className="mx-auto max-w-content min-h-screen px-4 py-6 pb-24">{children}</main>
+      <main id="main-content" className="mx-auto max-w-content min-h-screen px-4 py-6 pb-24">
+        {children}
+      </main>
       <BottomTabBar />
     </AuthGuard>
   );
