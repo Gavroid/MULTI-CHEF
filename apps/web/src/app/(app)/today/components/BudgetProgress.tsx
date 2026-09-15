@@ -16,12 +16,6 @@ export interface BudgetProgressProps {
   spentKopecks?: number;
 }
 
-/** "₽240 из 2 000" — roubles with thin spaces for thousands. */
-export function formatKopecks(kopecks: number): string {
-  const rubles = Math.round(kopecks / 100);
-  return `₽${rubles.toLocaleString('ru-RU')}`;
-}
-
 export function BudgetProgress({
   budgetWeekKopecks,
   spentKopecks = 0,

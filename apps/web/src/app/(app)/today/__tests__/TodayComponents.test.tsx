@@ -11,7 +11,8 @@ import { Greeting, greetingForHour } from '../components/Greeting';
 import { UrgentBlock, selectUrgentItems } from '../components/UrgentBlock';
 import { QuickScenarios, QUICK_SCENARIOS } from '../components/QuickScenarios';
 import { HeroButton } from '../components/HeroButton';
-import { BudgetProgress, formatKopecks } from '../components/BudgetProgress';
+import { BudgetProgress } from '../components/BudgetProgress';
+import { formatRub as formatKopecks } from '@/lib/money';
 import { UpcomingMeals } from '../components/UpcomingMeals';
 
 /* ---------------- Greeting ---------------- */

@@ -18,7 +18,7 @@ function getChannel(): BroadcastChannel | null {
   if (typeof BroadcastChannel === 'undefined') return null;
   channel ??= new BroadcastChannel(CHANNEL);
   // Не удерживаем процесс открытым (тесты и SSR-прогоны).
-  channel.unref?.();
+  (channel as unknown as { unref?: () => void }).unref?.();
   return channel;
 }
 
