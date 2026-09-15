@@ -67,13 +67,14 @@ export class IngredientsController {
   @ApiResponse({ status: 400, description: 'Invalid query parameters' })
   async list(
     @Query() rawQuery: Record<string, string | undefined>,
-  ): Promise<{ data: IngredientView[] }> {
+  ): Promise<{ data: IngredientView[]; meta: { total: number; limit: number; offset: number } }> {
     const parsed = IngredientsQuerySchema.safeParse(rawQuery);
     if (!parsed.success) {
       throw validationError(parsed.error.issues);
     }
-    const { items } = await this.svc.listIngredients(parsed.data);
-    return { data: items };
+    // T42-B: total уже считается сервисом — отдаём клиенту.
+    const { items, total } = await this.svc.listIngredients(parsed.data);
+    return { data: items, meta: { total, limit: parsed.data.limit, offset: parsed.data.offset } };
   }
 
   @Get('categories')
