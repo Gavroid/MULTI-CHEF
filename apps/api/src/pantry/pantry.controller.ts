@@ -87,14 +87,15 @@ export class PantryController {
   async list(
     @Req() req: FastifyRequest,
     @Query() raw: Record<string, string | undefined>,
-  ): Promise<{ data: PantryItemView[] }> {
+  ): Promise<{ data: PantryItemView[]; meta: { total: number; limit: number; offset: number } }> {
     const user = currentUser(req as unknown as { user: AuthenticatedUser });
     const parsed = ListPantryQuerySchema.safeParse(raw ?? {});
     if (!parsed.success) {
       throw validationError(parsed.error.issues);
     }
-    const data = await this.svc.listItems(user.id, parsed.data);
-    return { data };
+    const { items, total, limit, offset } = await this.svc.listItems(user.id, parsed.data);
+    // T42-A: total + limit/offset — клиент знает, есть ли ещё страницы.
+    return { data: items, meta: { total, limit, offset } };
   }
 
   @Get(':id')

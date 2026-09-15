@@ -134,7 +134,10 @@ export class PantryService {
     });
   }
 
-  async listItems(userId: string, query: ListPantryQuery): Promise<PantryItemView[]> {
+  async listItems(
+    userId: string,
+    query: ListPantryQuery,
+  ): Promise<{ items: PantryItemView[]; total: number; limit: number; offset: number }> {
     const householdId = await this.requireOwnedHouseholdId(userId);
     // ADR-0023: PantryItem is RLS-protected — run with tenant context.
     return withTenantContext({ householdId, userId }, async (tx) => {
@@ -163,7 +166,14 @@ export class PantryService {
         skip: query.offset,
         include: { ingredient: { select: { canonicalName: true } } },
       });
-      return rows.map(toView);
+      // T42-A: total для клиентской пагинации.
+      const total = await tx.pantryItem.count({ where });
+      return {
+        items: rows.map(toView),
+        total,
+        limit: query.limit,
+        offset: query.offset,
+      };
     });
   }
 
