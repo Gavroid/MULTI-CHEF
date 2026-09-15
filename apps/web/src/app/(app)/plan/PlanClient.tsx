@@ -53,9 +53,12 @@ export function PlanClient({ deps: depsOverride }: PlanClientProps): React.React
   const [plan, setPlan] = useState<ActivePlanDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [retrying, setRetrying] = useState(false);
+  const [retryNonce, setRetryNonce] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
+    void retryNonce;
     void deps
       .getActivePlan()
       .then((res) => {
@@ -73,7 +76,7 @@ export function PlanClient({ deps: depsOverride }: PlanClientProps): React.React
     return () => {
       cancelled = true;
     };
-  }, [deps]);
+  }, [deps, retryNonce]);
 
   if (loading) {
     return (
@@ -93,8 +96,30 @@ export function PlanClient({ deps: depsOverride }: PlanClientProps): React.React
         <TabTitle sublabel="Недельное меню">План</TabTitle>
         <Card data-testid="plan-error">
           <p className="text-body">{error}</p>
-          <Link href="/plan/setup" className="text-sm text-[var(--color-primary)] underline">
-            Сгенерировать план
+          <button
+            type="button"
+            className="mt-4 rounded-md bg-[var(--color-primary)] px-4 py-2 text-white disabled:opacity-50"
+            disabled={retrying}
+            onClick={() => {
+              setRetrying(true);
+              setRetryNonce((n) => n + 1);
+              void deps
+                .getActivePlan()
+                .then((res) => {
+                  if (res.error) {
+                    setError(res.error.error.message);
+                  } else {
+                    setError(null);
+                    setPlan(res.data);
+                  }
+                })
+                .finally(() => setRetrying(false));
+            }}
+          >
+            {retrying ? 'Повторяем…' : 'Повторить'}
+          </button>
+          <Link href="/plan/setup" className="ml-3 text-sm text-[var(--color-primary)] underline">
+            Сгенерировать заново
           </Link>
         </Card>
       </>
