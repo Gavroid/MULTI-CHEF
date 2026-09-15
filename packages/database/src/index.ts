@@ -62,7 +62,7 @@ export async function withTenantContext<T>(
   fn: (tx: Prisma.TransactionClient) => Promise<T>,
   options?: WithTenantContextOptions & {
     /** DI- seam для unit-тестов: клиент вместо getPrisma(). */
-    client?: Prisma.TransactionClient | PrismaClient;
+    client?: PrismaClient;
   },
 ): Promise<T> {
   const client = options?.client ?? getPrisma();
