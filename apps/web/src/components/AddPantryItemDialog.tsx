@@ -163,7 +163,13 @@ export function AddPantryItemDialog({
       }
     >
       <form id="add-pantry-form" onSubmit={submit} className="flex flex-col gap-3">
+        {/* T67-D: поля форм ссылаются на ошибку через aria-describedby. */}
         <FormErrorBanner message={error} />
+        {error ? (
+          <span id="add-pantry-error" className="sr-only">
+            {error}
+          </span>
+        ) : null}
 
         <div className="flex flex-col gap-1">
           <label htmlFor="ingredient" className="text-caption font-medium">
@@ -217,6 +223,7 @@ export function AddPantryItemDialog({
         <div className="grid grid-cols-2 gap-3">
           <Input
             label="Количество"
+            aria-required="true"
             type="number"
             inputMode="numeric"
             min={1}

@@ -135,6 +135,11 @@ export function EditPantryItemDialog({
       {item ? (
         <form id="edit-pantry-form" onSubmit={submit} className="flex flex-col gap-3">
           <FormErrorBanner message={error} />
+          {error ? (
+            <span id="edit-pantry-error" className="sr-only">
+              {error}
+            </span>
+          ) : null}
 
           <div className="grid grid-cols-2 gap-3">
             <Input
