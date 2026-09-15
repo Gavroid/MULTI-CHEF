@@ -85,12 +85,17 @@ export function TodayClient({ deps: depsOverride, now }: TodayClientProps): Reac
   // (filled by onboarding registration or PATCH /household).
   const [budgetWeekKopecks, setBudgetWeekKopecks] = useState<number | null>(null);
   const [activePlan, setActivePlan] = useState<ActivePlanDto | null>(null);
+  const [loadingPlan, setLoadingPlan] = useState(true);
   useEffect(() => {
     let cancelled = false;
     void deps
       .getActivePlan()
       .then((res) => {
-        if (cancelled || res.error) return;
+        if (cancelled) return;
+        // T48-D: без плана (404 PLAN_NOT_FOUND) показываем пустое
+        // состояние; skeletons — только до первого ответа.
+        setLoadingPlan(false);
+        if (res.error) return;
         setActivePlan(res.data);
       })
       .catch(() => undefined);
@@ -115,6 +120,21 @@ export function TodayClient({ deps: depsOverride, now }: TodayClientProps): Reac
   // (MC-040+); the hook is mounted here so the 60s cache warms early
   // and failures degrade silently (manager default #2).
   usePreferences();
+
+  if (loadingPlan) {
+    // T48-D (audit round 48): skeleton вместо silent empty-then-fill.
+    return (
+      <>
+        <TabTitle sublabel="Главный экран">Сегодня</TabTitle>
+        <Greeting {...(now ? { now } : {})} />
+        <div className="flex flex-col gap-3" data-testid="today-skeleton" aria-busy="true">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="h-24 animate-pulse rounded-lg bg-[var(--color-surface-2)]" />
+          ))}
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
