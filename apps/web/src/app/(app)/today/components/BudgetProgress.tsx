@@ -7,6 +7,7 @@
 import React from 'react';
 import { Wallet } from 'lucide-react';
 import { Card } from '@multichef/ui';
+import { formatRub as formatKopecks } from '@/lib/money'; // T52: единая утилита
 
 export interface BudgetProgressProps {
   /** Weekly budget in kopecks (null = not set → block hidden). */

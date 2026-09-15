@@ -16,6 +16,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { type ApiResponse } from '@/lib/auth-client';
 import { listItems, type ListPantryItemsOptions, type PantryItem } from '@/lib/pantry-client';
+import { onCacheInvalidation } from '@/lib/cache-sync'; // T29-A
 
 const CACHE_TTL_MS = 30_000;
 
@@ -41,9 +42,17 @@ interface CacheEntry {
 let cache: CacheEntry | null = null;
 
 /** Test seam: reset the module-scope cache between tests. */
+/** T29-A: сброс из других вкладок при logout. */
+export function invalidateCrossTab(): void {
+  void onCacheInvalidation(() => resetPantryCache());
+}
+
 export function resetPantryCache(): void {
   cache = null;
 }
+
+// T29-A: разорвать кэш, если logout произошёл в другой вкладке.
+invalidateCrossTab();
 
 export function usePantry(deps?: Partial<UsePantryDeps>): UsePantryResult {
   const list = deps?.listItems ?? listItems;

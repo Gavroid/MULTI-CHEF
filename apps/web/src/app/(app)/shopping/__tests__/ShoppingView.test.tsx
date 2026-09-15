@@ -5,7 +5,8 @@ import assert from 'node:assert/strict';
 import React from 'react';
 import { renderToString } from 'react-dom/server';
 
-import { budgetPercent, formatKopecks, groupItems, ShoppingClient } from '../ShoppingClient';
+import { budgetPercent, groupItems, ShoppingClient } from '../ShoppingClient';
+import { formatRub } from '@/lib/money';
 import type { ShoppingItemDto } from '@/lib/shopping-client';
 
 const item = (
@@ -27,8 +28,8 @@ const item = (
 });
 
 test('formatKopecks: roubles from kopecks', () => {
-  assert.equal(formatKopecks(24_000), '₽240');
-  assert.equal(formatKopecks(0), '₽0');
+  assert.equal(formatRub(24_000), '₽240');
+  assert.equal(formatRub(0), '₽0');
 });
 
 test('budgetPercent: capped at 110, zero-limit safe', () => {

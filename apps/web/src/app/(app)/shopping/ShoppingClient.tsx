@@ -22,6 +22,7 @@ import {
   type ShoppingListDto,
 } from '@/lib/shopping-client';
 import { TabTitle } from '@/components/TabTitle';
+import { formatRub as formatKopecks } from '@/lib/money'; // T52: единая утилита
 
 export interface ItemGroup {
   categoryId: string;
@@ -47,10 +48,6 @@ export function groupItems(items: ShoppingItemDto[], orders: Map<string, number>
 export function budgetPercent(total: number, limit: number | null): number {
   if (!limit || limit <= 0) return 0;
   return Math.min(110, Math.round((total / limit) * 100));
-}
-
-export function formatKopecks(kopecks: number): string {
-  return `₽${Math.round(kopecks / 100)}`;
 }
 
 export interface ShoppingClientDeps {

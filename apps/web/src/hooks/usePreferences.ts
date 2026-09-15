@@ -14,6 +14,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getApiBaseUrl } from '@/lib/env';
+import { onCacheInvalidation } from '@/lib/cache-sync'; // T29-A
 
 const CACHE_TTL_MS = 60_000;
 
@@ -82,9 +83,17 @@ interface CacheEntry {
 let cache: CacheEntry | null = null;
 
 /** Test seam: reset the module-scope cache between tests. */
+/** T29-A: сброс из других вкладок при logout. */
+export function invalidateCrossTab(): void {
+  void onCacheInvalidation(() => resetPreferencesCache());
+}
+
 export function resetPreferencesCache(): void {
   cache = null;
 }
+
+// T29-A: разорвать кэш, если logout произошёл в другой вкладке.
+invalidateCrossTab();
 
 export function usePreferences(deps?: Partial<UsePreferencesDeps>): UsePreferencesResult {
   const fetchProfile = deps?.fetchProfile;

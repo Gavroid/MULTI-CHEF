@@ -15,6 +15,7 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { logout } from '@/lib/auth-client';
 import { resetPantryCache } from '@/hooks/usePantry';
 import { resetPreferencesCache } from '@/hooks/usePreferences';
+import { broadcastCacheInvalidation } from '@/lib/cache-sync';
 
 export default function ProfilePage(): React.ReactElement {
   const [checking, setChecking] = useState(true);
@@ -123,6 +124,8 @@ export default function ProfilePage(): React.ReactElement {
             // previous user's pantry/preferences for up to 30s.
             resetPantryCache();
             resetPreferencesCache();
+            // T29-A: соседние вкладки тоже сбрасывают кэши.
+            broadcastCacheInvalidation('logout');
             void logout().then(() => {
               window.location.assign('/auth/login');
             });
