@@ -27,7 +27,7 @@ test('valid server env parses and exposes the expected values', () => {
   assert.equal(env.RATE_LIMIT_MAX_REQUESTS, 200);
   assert.deepEqual(env.CORS_ORIGINS, ['http://localhost:3000']);
   // Defaults applied
-  assert.equal(env.SESSION_TTL_SECONDS, 2_592_000);
+  assert.equal(env.SESSION_TTL_SECONDS, 604_800);
   assert.equal(env.COOKIE_SAMESITE, 'lax');
   assert.equal(env.LOG_LEVEL, 'info');
   assert.equal(env.LOG_FORMAT, 'pretty');
