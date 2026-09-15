@@ -238,6 +238,7 @@ model HouseholdMember {
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([householdId, userId])
+  @@index([userId, role])
   @@map("HouseholdMember")
 }
 
@@ -405,6 +406,7 @@ model Recipe {
   // representable in Prisma — documented in
   // packages/database/README.md ("DB-only invariants").
   @@index([tags], type: Gin, map: "idx_recipe_tags")
+  @@index([createdAt, id])
   @@map("Recipe")
 }
 
@@ -424,6 +426,7 @@ model RecipeIngredient {
 
   @@id([recipeId, ingredientId])
   @@index([ingredientId])
+  @@index([ingredientId, substitutesFor])
   @@map("RecipeIngredient")
 }
 
@@ -480,6 +483,7 @@ model MealPlan {
   shoppingLists ShoppingList[]
   prepSessions  PrepSession[]
 
+  @@index([householdId, status])
   @@index([householdId, startDate])
   @@map("MealPlan")
 }
@@ -533,6 +537,7 @@ model ShoppingList {
   household Household          @relation(fields: [householdId], references: [id], onDelete: Cascade)
   items     ShoppingListItem[]
 
+  @@index([householdId, status])
   @@map("ShoppingList")
 }
 
@@ -585,6 +590,7 @@ model PrepTask {
 
   prepSession PrepSession @relation(fields: [prepSessionId], references: [id], onDelete: Cascade)
 
+  @@index([prepSessionId, sequence])
   @@map("PrepTask")
 }
 
@@ -618,6 +624,8 @@ model Job {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([status, createdAt])
+  @@index([userId, type, paramsHash, createdAt])
   @@index([userId, createdAt])
   @@index([paramsHash])
   @@map("Job")

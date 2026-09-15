@@ -88,7 +88,8 @@ export const serverEnvSchema = z.object({
 
   SESSION_SECRET: z.string().min(32, 'SESSION_SECRET must be at least 32 characters'),
   COOKIE_SECRET: z.string().min(32, 'COOKIE_SECRET must be at least 32 characters'),
-  SESSION_TTL_SECONDS: z.coerce.number().int().positive().default(2_592_000),
+  // T32-B: 7 дней (было 30) — окно кражи cookie ограничено.
+  SESSION_TTL_SECONDS: z.coerce.number().int().positive().default(604_800),
   COOKIE_SECURE: booleanFromString.default(false),
   COOKIE_SAMESITE: z.enum(['lax', 'strict', 'none']).default('lax'),
   COOKIE_DOMAIN: z.string().min(1).default('localhost'),

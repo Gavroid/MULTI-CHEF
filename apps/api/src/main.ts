@@ -44,8 +44,15 @@ async function bootstrap(): Promise<void> {
     },
     credentials: true,
     methods: ['GET', 'POST', 'PATCH', 'DELETE', 'PUT', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Idempotency-Key', 'Cookie'],
-    exposedHeaders: ['x-ratelimit-limit', 'x-ratelimit-remaining', 'x-ratelimit-reset'],
+    // T41-A/B: X-CSRF-Token нужен для cross-origin мутаций, Retry-After —
+    // для 429-ответов rate limiter.
+    allowedHeaders: ['Content-Type', 'Authorization', 'Idempotency-Key', 'Cookie', 'X-CSRF-Token'],
+    exposedHeaders: [
+      'x-ratelimit-limit',
+      'x-ratelimit-remaining',
+      'x-ratelimit-reset',
+      'Retry-After',
+    ],
     maxAge: 86400,
   });
   // @fastify/cookie is registered before Nest boots so req.cookies
