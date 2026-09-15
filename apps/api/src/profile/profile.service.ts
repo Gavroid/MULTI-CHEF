@@ -308,8 +308,12 @@ export class ProfileService {
     return withTenantContext({ userId }, async (tx) => {
       const row = await tx.preference.findUnique({ where: { id: preferenceId } });
       if (!row || row.userId !== userId) {
-        // Don't leak the existence of someone else's preference.
-        throw new AppHttpException({ code: 'NOT_FOUND', message: 'Preference not found' });
+        // Don't leak the existence of someone else's preference (T38-D:
+        // специфичный доменный код, HTTP-статус тот же — 404).
+        throw new AppHttpException({
+          code: 'PREFERENCE_NOT_FOUND',
+          message: 'Preference not found',
+        });
       }
       await tx.preference.delete({ where: { id: preferenceId } });
     });

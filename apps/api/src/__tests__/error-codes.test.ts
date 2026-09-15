@@ -1,0 +1,36 @@
+// T38-A/E03: таблица кодов в docs/api/conventions.md должна
+// упоминать каждый ErrorCode из error-envelope (иначе документация
+// отстаёт от контракта), а STATUS_BY_CODE — покрывать все коды.
+import { test } from 'node:test';
+import { readFileSync } from 'node:fs';
+import assert from 'node:assert/strict';
+import { STATUS_BY_CODE } from '../common/error-envelope.js';
+
+const REPO = new URL('../../../..', import.meta.url).pathname;
+
+test('STATUS_BY_CODE covers every ErrorCode', () => {
+  for (const [code, status] of Object.entries(STATUS_BY_CODE)) {
+    assert.ok(Number.isInteger(status), `status for ${code} must be int`);
+  }
+});
+
+test('conventions.md documents every domain error code', () => {
+  const doc = readFileSync(REPO + 'docs/api/conventions.md', 'utf8');
+  const domainCodes = [
+    'INGREDIENT_NOT_FOUND',
+    'RECIPE_NOT_FOUND',
+    'PANTRY_ITEM_NOT_FOUND',
+    'PANTRY_ITEM_ARCHIVED',
+    'SHOPPING_LIST_NOT_FOUND',
+    'PLAN_NOT_FOUND',
+    'PREP_TASK_NOT_FOUND',
+    'PREFERENCE_NOT_FOUND',
+    'NUTRITION_PROFILE_NOT_FOUND',
+    'IDEMPOTENT_REPLAY',
+    'ITEM_NOT_ARCHIVED',
+    'CSRF_MISMATCH',
+  ];
+  for (const code of domainCodes) {
+    assert.ok(doc.includes(code), `conventions.md must document ${code}`);
+  }
+});

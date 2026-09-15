@@ -49,6 +49,8 @@
 | 500  | `INTERNAL_ERROR`       | Непредвиденная ошибка сервера                                                                                                                            |
 | 503  | `SERVICE_UNAVAILABLE`  | БД / Redis / внешний сервис недоступен                                                                                                                   |
 
+**T38-A (v2-реестр).** Полный машиночитаемый источник — `apps/api/src/common/error-envelope.ts` (`ErrorCode` / `STATUS_BY_CODE`). Помимо таблицы выше в проде используются доменные коды (404/409/422): `INGREDIENT_NOT_FOUND`, `RECIPE_NOT_FOUND`, `MEAL_PLAN_NOT_FOUND`, `HOUSEHOLD_NOT_FOUND`, `USER_NOT_FOUND`, `SESSION_NOT_FOUND`, `PANTRY_ITEM_NOT_FOUND`, `PANTRY_ITEM_ARCHIVED`, `SHOPPING_LIST_NOT_FOUND`, `SHOPPING_ITEM_NOT_FOUND`, `JOB_NOT_FOUND`, `PLAN_NOT_FOUND`, `PREP_TASK_NOT_FOUND`, `EMPTY_RESCUE`, `ROULETTE_EMPTY`, `REJECT_LIMIT_REACHED`, `PREFERENCE_NOT_FOUND`, `NUTRITION_PROFILE_NOT_FOUND`, `ITEM_NOT_ARCHIVED`, `CSRF_MISMATCH`, `IDEMPOTENT_REPLAY`. Зарезервированы (заполняются по мере развития домена): `BAD_REQUEST`, `JOB_FAILED`, `MEAL_PLAN_NOT_FOUND*`, `HOUSEHOLD_NOT_FOUND*`, `USER_NOT_FOUND*`, `SESSION_NOT_FOUND*`, `PREFERENCE_NOT_FOUND*` (* — семантически покрыты доменными аналогами). CI-тест `error-codes.test.ts` следит за синхронностью enum и этой таблицы.
+
 В development режиме (`NODE_ENV=development`) `error.details` может содержать `stack: string[]`. В production — **никогда**.
 
 ---
