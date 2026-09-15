@@ -9,7 +9,18 @@
 // filter, consistent with auth/profile modules.
 
 import { Controller, Get, Inject, Param, Query } from '@nestjs/common';
-import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiOperation,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+  ApiUnauthorizedResponse,
+  ApiForbiddenResponse,
+  ApiNotFoundResponse,
+  ApiUnprocessableEntityResponse,
+  ApiTooManyRequestsResponse,
+  ApiInternalServerErrorResponse,
+} from '@nestjs/swagger';
 import { AppHttpException } from '../common/exception-filter.js';
 import {
   IngredientsService,
@@ -30,7 +41,12 @@ import {
 @Controller({ path: 'ingredients' })
 export class IngredientsController {
   constructor(@Inject(IngredientsService) private readonly svc: IngredientsService) {}
-
+  @ApiUnauthorizedResponse({ description: 'Нет/просрочена сессия' })
+  @ApiForbiddenResponse({ description: 'Нет прав на ресурс' })
+  @ApiNotFoundResponse({ description: 'Ресурс не найден' })
+  @ApiUnprocessableEntityResponse({ description: 'Доменное ограничение' })
+  @ApiTooManyRequestsResponse({ description: 'Rate limit' })
+  @ApiInternalServerErrorResponse({ description: 'Внутренняя ошибка' })
   @Get()
   @ApiOperation({ summary: 'Search the ingredient catalog (public, fuzzy)' })
   @ApiQuery({ name: 'q', required: false, description: 'Fuzzy match on canonicalName + aliases' })

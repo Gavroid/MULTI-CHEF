@@ -2,7 +2,18 @@
 // CURATED + PUBLISHED is public reference data, same as /ingredients).
 
 import { Controller, Get, Inject, Param, Query } from '@nestjs/common';
-import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiOperation,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+  ApiUnauthorizedResponse,
+  ApiForbiddenResponse,
+  ApiNotFoundResponse,
+  ApiUnprocessableEntityResponse,
+  ApiTooManyRequestsResponse,
+  ApiInternalServerErrorResponse,
+} from '@nestjs/swagger';
 import { AppHttpException } from '../common/exception-filter.js';
 import { RecipesService } from './recipes.service.js';
 import {
@@ -16,7 +27,12 @@ import {
 @Controller({ path: 'recipes' })
 export class RecipesController {
   constructor(@Inject(RecipesService) private readonly svc: RecipesService) {}
-
+  @ApiUnauthorizedResponse({ description: 'Нет/просрочена сессия' })
+  @ApiForbiddenResponse({ description: 'Нет прав на ресурс' })
+  @ApiNotFoundResponse({ description: 'Ресурс не найден' })
+  @ApiUnprocessableEntityResponse({ description: 'Доменное ограничение' })
+  @ApiTooManyRequestsResponse({ description: 'Rate limit' })
+  @ApiInternalServerErrorResponse({ description: 'Внутренняя ошибка' })
   @Get()
   @ApiOperation({ summary: 'Public recipe catalog (CURATED + PUBLISHED, cursor-paginated)' })
   @ApiQuery({ name: 'mealType', required: false, enum: ['BREAKFAST', 'LUNCH', 'DINNER', 'SNACK'] })

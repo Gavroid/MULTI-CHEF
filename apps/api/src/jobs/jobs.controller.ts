@@ -1,7 +1,17 @@
 // MC-050 — Jobs controller: GET /api/v1/jobs/:id (ownership-scoped).
 
 import { Controller, Get, Inject, Param, Req, UseGuards } from '@nestjs/common';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+  ApiUnauthorizedResponse,
+  ApiForbiddenResponse,
+  ApiNotFoundResponse,
+  ApiUnprocessableEntityResponse,
+  ApiTooManyRequestsResponse,
+  ApiInternalServerErrorResponse,
+} from '@nestjs/swagger';
 import type { FastifyRequest } from 'fastify';
 import type { JobDto } from '@multichef/contracts';
 import { AuthGuard, currentUser } from '../common/auth-guard.js';
@@ -13,7 +23,12 @@ import { JobsService } from './jobs.service.js';
 @Controller({ path: 'jobs' })
 export class JobsController {
   constructor(@Inject(JobsService) private readonly svc: JobsService) {}
-
+  @ApiUnauthorizedResponse({ description: 'Нет/просрочена сессия' })
+  @ApiForbiddenResponse({ description: 'Нет прав на ресурс' })
+  @ApiNotFoundResponse({ description: 'Ресурс не найден' })
+  @ApiUnprocessableEntityResponse({ description: 'Доменное ограничение' })
+  @ApiTooManyRequestsResponse({ description: 'Rate limit' })
+  @ApiInternalServerErrorResponse({ description: 'Внутренняя ошибка' })
   @Get(':id')
   @ApiOperation({ summary: 'Job status mirror (QUEUED → PROCESSING → COMPLETED/FAILED)' })
   @ApiResponse({ status: 200, description: 'Job row' })

@@ -10,7 +10,17 @@
 
 import { Body, Controller, Get, HttpCode, Inject, Post, Req, Res } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+  ApiUnauthorizedResponse,
+  ApiForbiddenResponse,
+  ApiNotFoundResponse,
+  ApiUnprocessableEntityResponse,
+  ApiTooManyRequestsResponse,
+  ApiInternalServerErrorResponse,
+} from '@nestjs/swagger';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { loadServerEnv } from '@multichef/config';
 import { generateSessionToken } from './session-token.js';
@@ -132,7 +142,12 @@ function clearSessionCookie(res: FastifyReply): void {
 @Controller({ path: 'auth' })
 export class AuthController {
   constructor(@Inject(AuthService) private readonly auth: AuthService) {}
-
+  @ApiUnauthorizedResponse({ description: 'Нет/просрочена сессия' })
+  @ApiForbiddenResponse({ description: 'Нет прав на ресурс' })
+  @ApiNotFoundResponse({ description: 'Ресурс не найден' })
+  @ApiUnprocessableEntityResponse({ description: 'Доменное ограничение' })
+  @ApiTooManyRequestsResponse({ description: 'Rate limit' })
+  @ApiInternalServerErrorResponse({ description: 'Внутренняя ошибка' })
   @Post('register')
   @HttpCode(201)
   @ApiOperation({ summary: 'Register a new user + create household + create session' })

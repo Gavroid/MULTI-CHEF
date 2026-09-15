@@ -25,7 +25,19 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { ApiCookieAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiCookieAuth,
+  ApiOperation,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+  ApiUnauthorizedResponse,
+  ApiForbiddenResponse,
+  ApiNotFoundResponse,
+  ApiUnprocessableEntityResponse,
+  ApiTooManyRequestsResponse,
+  ApiInternalServerErrorResponse,
+} from '@nestjs/swagger';
 import type { FastifyRequest } from 'fastify';
 import type { AuthenticatedUser } from '../auth/auth.service.js';
 import { AuthGuard, currentUser } from '../common/auth-guard.js';
@@ -47,7 +59,12 @@ import type { CreatePantryItemDto, PatchPantryItemDto } from './pantry.dto-class
 @UseGuards(AuthGuard)
 export class PantryController {
   constructor(@Inject(PantryService) private readonly svc: PantryService) {}
-
+  @ApiUnauthorizedResponse({ description: 'Нет/просрочена сессия' })
+  @ApiForbiddenResponse({ description: 'Нет прав на ресурс' })
+  @ApiNotFoundResponse({ description: 'Ресурс не найден' })
+  @ApiUnprocessableEntityResponse({ description: 'Доменное ограничение' })
+  @ApiTooManyRequestsResponse({ description: 'Rate limit' })
+  @ApiInternalServerErrorResponse({ description: 'Внутренняя ошибка' })
   @Post()
   @HttpCode(201)
   @ApiOperation({ summary: 'Add a PantryItem to the authenticated household' })
