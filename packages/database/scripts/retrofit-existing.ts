@@ -10,6 +10,10 @@ import { join } from 'node:path';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { recomputeRecipeNutrition } from '../src/seed/nutrition/index.js';
+import { loadServerEnv } from '@multichef/config';
+
+// T55-C: env валидируется на старте (fail-fast).
+loadServerEnv();
 
 // Seed titles that reference ingredients absent from the MC-020 catalog
 // (нут, сушёная фасоль, селёдка) — renamed to match actual content.

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 import { PwaRegister } from '@/components/PwaRegister';
+import { getSiteUrl } from '@/lib/site-url';
 import './globals.css';
 
 // T1 (audit round 3): title template gives every page a unique
@@ -8,7 +9,7 @@ import './globals.css';
 // metadataBase anchors the relative OG/sitemap URLs to the public
 // origin (NEXT_PUBLIC_APP_BASE_URL is inlined at build time).
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env['NEXT_PUBLIC_APP_BASE_URL'] ?? 'http://localhost:3001'),
+  metadataBase: new URL(getSiteUrl()),
   title: {
     default: 'MULTI-CHEF — семейный планировщик питания',
     template: '%s — MULTI-CHEF',

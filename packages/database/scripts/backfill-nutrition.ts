@@ -6,6 +6,10 @@
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { seedIngredientNutrition, recomputeRecipeNutrition } from '../src/seed/nutrition/index.js';
+import { loadServerEnv } from '@multichef/config';
+
+// T55-C: env валидируется на старте (fail-fast).
+loadServerEnv();
 
 async function main(): Promise<void> {
   const url = process.env.DATABASE_URL;

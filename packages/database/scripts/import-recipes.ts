@@ -1,4 +1,8 @@
 // MC-085 — wave importer (PLAN-2000-RECIPES.md §5.5). Upserts generated
+import { loadServerEnv } from '@multichef/config';
+
+// T55-C: env валидируется на старте (fail-fast).
+loadServerEnv();
 // cards into the DB (idempotent, matched by case-insensitive title),
 // replaces RecipeIngredient rows, computes RecipeNutrition v2 through
 // @multichef/nutrition, sets sourceType=IMPORTED.

@@ -7,11 +7,13 @@
 import { Worker } from 'bullmq';
 import IORedis from 'ioredis';
 import { processJob, type ProcessPayload } from './processor.js';
+import { loadServerEnv } from '@multichef/config';
 
 const QUEUE_NAME = 'planning';
 
 export function createConnection(): InstanceType<typeof IORedis> {
-  const url = process.env['REDIS_URL'];
+  // T55-A: валидация env на старте (fail-fast), как в API.
+  const url = loadServerEnv().REDIS_URL;
   if (!url) {
     throw new Error('worker: REDIS_URL is required to consume the planning queue');
   }

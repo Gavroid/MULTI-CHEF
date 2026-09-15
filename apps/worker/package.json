@@ -29,6 +29,7 @@
     "@multichef/database": "workspace:*",
     "@multichef/contracts": "workspace:*",
     "ioredis": "^5.4.1",
-    "@multichef/recommendation": "workspace:*"
+    "@multichef/recommendation": "workspace:*",
+    "@multichef/config": "workspace:*"
   }
 }

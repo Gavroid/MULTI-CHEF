@@ -132,6 +132,10 @@ export const webEnvSchema = z.object({
   NODE_ENV: nodeEnvSchema.default('development'),
   WEB_PORT: portSchema.default(3000),
   APP_BASE_URL: urlSchema.default('http://localhost:3001'),
+  // T37-A/T55-B: fixture-флаги валидируются (boolean) — опечатки и
+  // случайное включение в prod-сборке отлавливаются fail-fast ниже.
+  NEXT_PUBLIC_USE_RECIPE_FIXTURES: booleanFromString.default(false),
+  NEXT_PUBLIC_USE_MEALPLAN_MOCK: booleanFromString.default(false),
 
   // Public-side keys. Only NEXT_PUBLIC_* should be passed to the browser
   // via env at runtime; this schema is the entry point for build-time

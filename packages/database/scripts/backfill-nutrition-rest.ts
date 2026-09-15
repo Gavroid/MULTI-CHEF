@@ -5,6 +5,10 @@
 // Run: pnpm --filter @multichef/database exec tsx scripts/backfill-nutrition-rest.ts
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
+import { loadServerEnv } from '@multichef/config';
+
+// T55-C: env валидируется на старте (fail-fast).
+loadServerEnv();
 
 /** name -> [kcal, proteinG, fatG, carbsG] per 100 g/ml */
 const TABLE: Record<string, [number, number, number, number]> = {

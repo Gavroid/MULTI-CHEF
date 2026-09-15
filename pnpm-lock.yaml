@@ -232,6 +232,9 @@ importers:
 
   apps/worker:
     dependencies:
+      '@multichef/config':
+        specifier: workspace:*
+        version: link:../../packages/config
       '@multichef/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
