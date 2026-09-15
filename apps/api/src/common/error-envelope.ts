@@ -113,6 +113,13 @@ const SECRET_KEYS = new Set([
   'sessionToken',
   'cookieSecret',
   'secret',
+  // T36-A (audit round 36): PII-ключи, которые не должны утекать в
+  // journalctl через лог-рекорды фильтра.
+  'email',
+  'userId',
+  'householdId',
+  'notes',
+  'authorization',
 ]);
 
 // Exported for the exception filter, which redacts the same key set

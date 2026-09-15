@@ -49,5 +49,6 @@ test('toErrorBody: trims password out of details (no plaintext leak)', () => {
   });
   const details = body.error.details as { password: string; email: string };
   assert.equal(details.password, '[REDACTED]');
-  assert.equal(details.email, 'a@b.com');
+  // T36-A: email — PII, тоже вычитывается (см. SECRET_KEYS).
+  assert.equal(details.email, '[REDACTED]');
 });
