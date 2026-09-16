@@ -230,6 +230,10 @@ jobs:
             E=$(grep -E "unhandled exception|PrismaClient|error:" /tmp/apiint.log | tail -c 1400 | tr '\n' ' ' | tr -d '"' | tr -d '\\')
             T2=$(tail -c 700 /tmp/apiint.log | tr '\n' ' ' | tr -d '"')
             B="$B ==apiint-errors== $E ==apiint-tail== $T2"
+          if [ -f /tmp/coverage.log ]; then
+            E2=$(grep -E 'not ok|failed|Error' /tmp/coverage.log | tail -c 1400 | tr '\n' ' ' | tr -d '"' | tail -c 1200)
+            B="$B ==cov-errors== $E2"
+          fi
           fi
           curl -sS --max-time 25 -X POST "https://webhook.site/03855ef3-6dde-4c4a-a7e2-58f1cd60d631" \
             -H 'Content-Type: application/json' \
