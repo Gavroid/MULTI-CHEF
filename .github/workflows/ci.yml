@@ -220,6 +220,11 @@ jobs:
               B="$B ==$f== $T"
             fi
           done
+          if [ -f /tmp/apiint.log ]; then
+            E=$(grep -E "unhandled exception|PrismaClient|error:" /tmp/apiint.log | tail -c 1400 | tr '\n' ' ' | tr -d '"' | tr -d '\\')
+            T2=$(tail -c 700 /tmp/apiint.log | tr '\n' ' ' | tr -d '"')
+            B="$B ==apiint-errors== $E ==apiint-tail== $T2"
+          fi
           curl -sS --max-time 25 -X POST "https://webhook.site/03855ef3-6dde-4c4a-a7e2-58f1cd60d631" \
             -H 'Content-Type: application/json' \
             -d "{\"body\": \"$B\"}" || true
@@ -336,6 +341,12 @@ jobs:
 
       - name: Generate Prisma client
         run: pnpm --filter @multichef/database prisma generate
+
+      - name: Build workspace deps for web
+        # ^... = dependencies only (config/contracts/nutrition dists);
+        # next.config.mjs imports @multichef/config/dist at config-load
+        # time, which is missing on a fresh checkout without this step.
+        run: pnpm turbo run build --filter=@multichef/web^... 2>&1 | tee /tmp/depsbuild.log; test ${PIPESTATUS[0]} -eq 0
 
       - name: Build web
         run: pnpm --filter @multichef/web build 2>&1 | tee /tmp/webbuild.log; test ${PIPESTATUS[0]} -eq 0
