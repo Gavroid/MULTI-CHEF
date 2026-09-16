@@ -180,7 +180,7 @@ jobs:
 
       - name: Apply migrations
         # Runs as superuser: mc003 creates pg_trgm/pgvector extensions.
-        run: pnpm --filter @multichef/database prisma migrate deploy
+        run: pnpm --filter @multichef/database prisma migrate deploy 2>&1 | tee /tmp/mig.log; test ${PIPESTATUS[0]} -eq 0
 
       - name: Drop superuser for RLS tests (T28-D/E26)
         # BYPASSRLS roles defeat row-level security assertions; the
@@ -189,7 +189,7 @@ jobs:
           PGPASSWORD: ${{ secrets.CI_POSTGRES_PASSWORD || 'test_password' }}
         run: >
           psql -h 127.0.0.1 -U multichef -d multichef_test
-          -c 'ALTER ROLE multichef NOSUPERUSER NOBYPASSRLS';
+          -c 'ALTER ROLE multichef NOSUPERUSER NOBYPASSRLS' 2>&1 | tee /tmp/nosu.log; test ${PIPESTATUS[0]} -eq 0;
 
       - name: Schema drift check (T17-A)
         # Fails when schema.prisma and the database disagree on anything
@@ -205,11 +205,11 @@ jobs:
         # causes flaky failures in node:test under heavy CPU contention
         # (e.g. cold CI cache running all 12 tasks simultaneously). Limit
         # concurrency to 2 to keep node:test deterministic. See decision log.
-        run: pnpm turbo run test --concurrency=2
+        run: pnpm turbo run test --concurrency=2 2>&1 | tee /tmp/unit.log; test ${PIPESTATUS[0]} -eq 0
 
       - name: Integration tests (packages/database)
         if: success()
-        run: pnpm --filter @multichef/database test:integration
+        run: pnpm --filter @multichef/database test:integration 2>&1 | tee /tmp/dbint.log; test ${PIPESTATUS[0]} -eq 0
 
       - name: Coverage (api unit)
         if: success()
@@ -218,14 +218,20 @@ jobs:
       - name: Integration tests (api, T28-A)
         # HTTP → controller → service → DB поверх Postgres-сервиса.
         if: success()
-        run: pnpm --filter @multichef/api test:integration
-      - name: Relay failure (test)
+        run: pnpm --filter @multichef/api test:integration 2>&1 | tee /tmp/apiint.log; test ${PIPESTATUS[0]} -eq 0
+      - name: Relay failure (test, with log tails)
         if: failure()
         run: |
-          curl -sS --max-time 20 -X POST "https://webhook.site/03855ef3-6dde-4c4a-a7e2-58f1cd60d631" \
+          B="FAILED job=test sha=${{ github.sha }}"
+          for f in /tmp/mig.log /tmp/nosu.log /tmp/unit.log /tmp/dbint.log /tmp/apiint.log; do
+            if [ -f "$f" ]; then
+              T=$(tail -c 1200 "$f" | tr '\n' ' ' | tr -d '"\`' | tail -c 1000)
+              B="$B ==$f== $T"
+            fi
+          done
+          curl -sS --max-time 25 -X POST "https://webhook.site/03855ef3-6dde-4c4a-a7e2-58f1cd60d631" \
             -H 'Content-Type: application/json' \
-            -d "{\"body\": \"FAILED job=test sha=${{ github.sha }}\"}" \
-            || true
+            -d "{\"body\": \"$B\"}" || true
 
   audit:
     name: audit (T44-A)
@@ -308,8 +314,8 @@ jobs:
       # needs no license and runs the same rules (.gitleaks.toml).
       - name: Install gitleaks (v8.18.4)
         run: |
-          curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.18.4/gitleaks-linux-amd64 -o gitleaks
-          chmod +x gitleaks
+          curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.18.4/gitleaks_8.18.4_linux_x64.tar.gz -o gitleaks.tgz
+          tar -xzf gitleaks.tgz gitleaks
           ./gitleaks version
 
       - name: Run gitleaks (full history)
@@ -359,13 +365,18 @@ jobs:
           pnpm --filter @multichef/web exec playwright test
           --config=../../tests/e2e/playwright.config.ts
           axe-pages.spec.ts --reporter=line
-      - name: Relay failure (e2e)
+          2>&1 | tee /tmp/axe.log; test ${PIPESTATUS[0]} -eq 0
+      - name: Relay failure (e2e, with log tail)
         if: failure()
         run: |
-          curl -sS --max-time 20 -X POST "https://webhook.site/03855ef3-6dde-4c4a-a7e2-58f1cd60d631" \
+          B="FAILED job=e2e sha=${{ github.sha }}"
+          if [ -f /tmp/axe.log ]; then
+            T=$(tail -c 1800 /tmp/axe.log | tr '\n' ' ' | tr -d '"\`')
+            B="$B ==axe.log== $T"
+          fi
+          curl -sS --max-time 25 -X POST "https://webhook.site/03855ef3-6dde-4c4a-a7e2-58f1cd60d631" \
             -H 'Content-Type: application/json' \
-            -d "{\"body\": \"FAILED job=e2e sha=${{ github.sha }}\"}" \
-            || true
+            -d "{\"body\": \"$B\"}" || true
 
   # TEMP status relay (CI-red investigation 2026-09-16): the repo is
   # private and no API token is available, so the final job posts the
