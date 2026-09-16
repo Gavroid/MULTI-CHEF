@@ -294,11 +294,17 @@ jobs:
           # were added in earlier commits and later moved around.
           fetch-depth: 0
 
-      - name: Run gitleaks
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # T69-fix: gitleaks-action@v2 requires GITLEAKS_LICENSE on private
+      # repositories (no secret on this repo -> every run red). The CLI
+      # needs no license and runs the same rules (.gitleaks.toml).
+      - name: Install gitleaks (v8.18.4)
+        run: |
+          curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.18.4/gitleaks_8.18.4_linux_osx_x64.tar.gz -o gitleaks.tgz
+          tar -xzf gitleaks.tgz gitleaks
+          ./gitleaks version
+
+      - name: Run gitleaks (full history)
+        run: ./gitleaks detect --source . -c .gitleaks.toml --verbose --redact
 
   e2e:
     name: e2e (T28-B)
