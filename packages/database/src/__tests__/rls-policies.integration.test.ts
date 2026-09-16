@@ -25,7 +25,9 @@ const PKG_ROOT = new URL('../..', import.meta.url).pathname;
 
 let container: StartedPostgreSqlContainer | undefined;
 let prisma: PrismaClient | undefined;
+let rlsPrisma: PrismaClient | undefined;
 let databaseUrl: string | undefined;
+let rlsUrl: string | undefined;
 
 async function setupApp(): Promise<void> {
   const externalUrl = process.env['INTEGRATION_DATABASE_URL'];
@@ -45,6 +47,28 @@ async function setupApp(): Promise<void> {
     stdio: 'pipe',
   });
   prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: databaseUrl }) });
+
+  // CI/bootstrap users are SUPERUSER, which silently BYPASSESSES every
+  // RLS policy and would defeat these assertions. Create (idempotently)
+  // a plain LOGIN role and a dedicated client through it — the RLS
+  // checks below run with exactly the privileges the app will have.
+  execSync(
+    `pnpm exec psql "${databaseUrl}" -v ON_ERROR_STOP=1 << 'SQL'
+      DO $$ BEGIN
+        IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'mc_rls_probe') THEN
+          CREATE ROLE mc_rls_probe LOGIN PASSWORD 'rls_probe_password' NOSUPERUSER NOBYPASSRLS;
+        END IF;
+      END $$;
+      GRANT USAGE ON SCHEMA public TO mc_rls_probe;
+      GRANT ALL ON ALL TABLES IN SCHEMA public TO mc_rls_probe;
+      GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO mc_rls_probe;
+      ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO mc_rls_probe;
+      ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO mc_rls_probe;
+SQL`,
+    { cwd: PKG_ROOT, stdio: 'pipe' },
+  );
+  rlsUrl = databaseUrl.replace(/\/\/([^:@/]+):([^@/]*)@/, '//mc_rls_probe:rls_probe_password@');
+  rlsPrisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: rlsUrl }) });
 }
 
 before(async () => {
@@ -58,17 +82,17 @@ before(async () => {
 });
 
 after(async () => {
-  if (!prisma) return;
+  if (rlsPrisma) await rlsPrisma.$disconnect().catch(() => undefined);
   // Restore the inert deployment state whatever the test outcome.
   try {
-    await prisma.$executeRawUnsafe(
+    await prisma?.$executeRawUnsafe(
       'ALTER TABLE "NutritionProfile" DISABLE ROW LEVEL SECURITY; ALTER TABLE "NutritionProfile" NO FORCE ROW LEVEL SECURITY',
     );
-    await prisma.$executeRawUnsafe('DELETE FROM "User" WHERE email LIKE \'rls-%@test.local\'');
+    await prisma?.$executeRawUnsafe('DELETE FROM "User" WHERE email LIKE \'rls-%@test.local\'');
   } catch {
     /* already off / nothing to clean */
   }
-  await prisma.$disconnect();
+  await prisma?.$disconnect();
 });
 
 test('NutritionProfile RLS: own context sees the row, other/no context sees nothing, WITH CHECK rejects', async (t) => {
@@ -77,6 +101,8 @@ test('NutritionProfile RLS: own context sees the row, other/no context sees noth
     return;
   }
   const db = prisma;
+  // rlsPrisma = same database through the non-BYPASSRLS role.
+  const rdb = rlsPrisma as PrismaClient;
   const userA = 'RLSUSERA000000000000000001';
   const userB = 'RLSUSERB000000000000000002';
 
@@ -104,7 +130,7 @@ test('NutritionProfile RLS: own context sees the row, other/no context sees noth
   await db.$executeRawUnsafe('ALTER TABLE "NutritionProfile" FORCE ROW LEVEL SECURITY');
 
   const countAs = async (userId: string): Promise<number> =>
-    db.$transaction(async (tx) => {
+    rdb.$transaction(async (tx) => {
       await tx.$executeRaw`SELECT set_config('app.user_id', ${userId}, true)`;
       const rows = (await tx.$queryRaw`SELECT "userId" FROM "NutritionProfile"`) as Array<{
         userId: string;
@@ -115,14 +141,14 @@ test('NutritionProfile RLS: own context sees the row, other/no context sees noth
   assert.equal(await countAs(userA), 1, 'context A must see its own profile');
   assert.equal(await countAs(userB), 0, 'context B must see nothing of user A');
 
-  const noContext = (await db.$queryRaw`SELECT "userId" FROM "NutritionProfile"`) as Array<{
+  const noContext = (await rdb.$queryRaw`SELECT "userId" FROM "NutritionProfile"`) as Array<{
     userId: string;
   }>;
   assert.equal(noContext.length, 0, 'fail-closed: no context → no rows');
 
   // WITH CHECK: writing a profile for user B under context A is rejected.
   await assert.rejects(
-    db.$transaction(async (tx) => {
+    rdb.$transaction(async (tx) => {
       await tx.$executeRaw`SELECT set_config('app.user_id', ${userA}, true)`;
       await tx.$executeRawUnsafe(`INSERT INTO "NutritionProfile" ("userId") VALUES ('${userB}')`);
     }),
@@ -130,7 +156,7 @@ test('NutritionProfile RLS: own context sees the row, other/no context sees noth
   );
 
   // Legitimate write under the owner's own context succeeds.
-  await db.$transaction(async (tx) => {
+  await rdb.$transaction(async (tx) => {
     await tx.$executeRaw`SELECT set_config('app.user_id', ${userB}, true)`;
     await tx.$executeRawUnsafe(`INSERT INTO "NutritionProfile" ("userId") VALUES ('${userB}')`);
   });

@@ -182,15 +182,6 @@ jobs:
         # Runs as superuser: mc003 creates pg_trgm/pgvector extensions.
         run: pnpm --filter @multichef/database prisma migrate deploy 2>&1 | tee /tmp/mig.log; test ${PIPESTATUS[0]} -eq 0
 
-      - name: Drop superuser for RLS tests (T28-D/E26)
-        # BYPASSRLS roles defeat row-level security assertions; the
-        # migrations (the only superuser-needing step) already ran.
-        env:
-          PGPASSWORD: ${{ secrets.CI_POSTGRES_PASSWORD || 'test_password' }}
-        run: >
-          psql -h 127.0.0.1 -U multichef -d multichef_test
-          -c 'ALTER ROLE multichef NOSUPERUSER NOBYPASSRLS' 2>&1 | tee /tmp/nosu.log; test ${PIPESTATUS[0]} -eq 0;
-
       - name: Schema drift check (T17-A)
         # Fails when schema.prisma and the database disagree on anything
         # beyond the documented DB-only invariants.
@@ -347,15 +338,15 @@ jobs:
         run: pnpm --filter @multichef/database prisma generate
 
       - name: Build web
-        run: pnpm --filter @multichef/web build
+        run: pnpm --filter @multichef/web build 2>&1 | tee /tmp/webbuild.log; test ${PIPESTATUS[0]} -eq 0
         env:
           NEXT_TELEMETRY_DISABLED: '1'
 
       - name: Install Playwright chromium
-        run: pnpm --filter @multichef/web exec playwright install --with-deps chromium
+        run: pnpm --filter @multichef/web exec playwright install --with-deps chromium 2>&1 | tee /tmp/pwinstall.log; test ${PIPESTATUS[0]} -eq 0
 
       - name: Start web
-        run: pnpm --filter @multichef/web start & npx wait-on http://127.0.0.1:3000 --timeout 60000
+        run: pnpm --filter @multichef/web start & npx wait-on http://127.0.0.1:3000 --timeout 60000 2>&1 | tee /tmp/waiton.log; test ${PIPESTATUS[0]} -eq 0
 
       - name: Run a11y e2e (axe)
         # Полный happy-path e2e требует API+worker+nginx — пока CI гоняет
@@ -370,10 +361,12 @@ jobs:
         if: failure()
         run: |
           B="FAILED job=e2e sha=${{ github.sha }}"
-          if [ -f /tmp/axe.log ]; then
-            T=$(tail -c 1800 /tmp/axe.log | tr '\n' ' ' | tr -d '"\`')
-            B="$B ==axe.log== $T"
-          fi
+          for f in /tmp/webbuild.log /tmp/pwinstall.log /tmp/waiton.log /tmp/axe.log; do
+            if [ -f "$f" ]; then
+              T=$(tail -c 1200 "$f" | tr '\n' ' ' | tr -d '"\`' | tail -c 900)
+              B="$B ==$f== $T"
+            fi
+          done
           curl -sS --max-time 25 -X POST "https://webhook.site/03855ef3-6dde-4c4a-a7e2-58f1cd60d631" \
             -H 'Content-Type: application/json' \
             -d "{\"body\": \"$B\"}" || true
