@@ -73,15 +73,11 @@ async function main(): Promise<void> {
     const slug = slugOf(legacy);
     const key = `recipes/${slug}.webp`;
     const out = path.join(ROOT, key);
-    try {
-      await generate(slug, r.title, out);
-      generated += 1;
-    } catch (err) {
-      // generate() writes tmp then renames (atomic overwrite); real
-      // failures are re-thrown — resumability comes from the DB: the
-      // WHERE clause only selects legacy keys, so a rerun finds none.
-      throw err;
-    }
+    // generate() writes tmp then renames (atomic overwrite);
+    // resumability comes from the DB: the WHERE clause only selects
+    // legacy keys, so a rerun finds nothing to do.
+    await generate(slug, r.title, out);
+    generated += 1;
     await prisma.recipe.update({ where: { id: r.id }, data: { imageKey: key } });
     migratedKeys += 1;
     if (migratedKeys % 200 === 0) console.log(`  … ${migratedKeys}`);

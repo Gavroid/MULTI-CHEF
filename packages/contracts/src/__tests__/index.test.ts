@@ -159,12 +159,15 @@ test('RecipeDtoSchema.imageKey: rejects non-internal sources (XSS)', () => {
   }
 });
 
-test('RecipeDtoSchema.imageKey: accepts internal /images/recipes/*.webp paths', () => {
-  const result = RecipeDtoSchema.safeParse({
-    ...RECIPE_DTO,
-    imageKey: '/images/recipes/tolokno-s-lukom-poreem.webp',
-  });
-  assert.equal(result.success, true);
+test('RecipeDtoSchema.imageKey: accepts opaque storage keys (T54-C, E24)', () => {
+  // catalog keys and household upload keys both start with recipes/
+  for (const key of [
+    'recipes/tolokno-s-lukom-poreem.webp',
+    'recipes/u/01hfakehousehold0000000000/3b8ad9a0-12cd-4e01-a333-000000000001.jpg',
+  ]) {
+    const result = RecipeDtoSchema.safeParse({ ...RECIPE_DTO, imageKey: key });
+    assert.equal(result.success, true, `should accept ${key}`);
+  }
 });
 
 test('RecipeDtoSchema.imageKey: nullable is preserved', () => {

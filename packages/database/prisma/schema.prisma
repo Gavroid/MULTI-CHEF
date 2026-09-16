@@ -410,6 +410,7 @@ model Recipe {
   // packages/database/README.md ("DB-only invariants").
   @@index([tags], type: Gin, map: "idx_recipe_tags")
   @@index([createdAt, id])
+  @@index([ownerHouseholdId])
   @@map("Recipe")
 }
 
