@@ -150,8 +150,9 @@ jobs:
       # E26-fix: the api integration harness registers/sessions through
       # code paths that call loadServerEnv() at request time — without
       # these the register endpoint 500s (EnvValidationError).
-      SESSION_SECRET: ci-test-session-secret
-      COOKIE_SECRET: ci-test-cookie-secret
+      # >= 32 chars each (serverEnvSchema enforces min length).
+      SESSION_SECRET: ci-test-session-secret-0123456789abcdef
+      COOKIE_SECRET: ci-test-cookie-secret-0123456789abcdef
     steps:
       - name: Checkout
         uses: actions/checkout@v4
