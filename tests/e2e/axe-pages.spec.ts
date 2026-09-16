@@ -12,7 +12,10 @@ test.describe.configure({ mode: 'parallel' });
 
 for (const path of PAGES) {
   test(`axe: no serious/critical violations on ${path}`, async ({ page }) => {
-    await page.goto(path, { waitUntil: 'networkidle' });
+    // 'load' instead of 'networkidle': a cold `next start` (CI) keeps
+    // best-effort API fetches pending long enough to trip the goto
+    // timeout; axe only needs the rendered DOM + stylesheets.
+    await page.goto(path, { waitUntil: 'load' });
     const results = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
       .analyze();
