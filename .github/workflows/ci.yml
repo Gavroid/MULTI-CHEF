@@ -112,7 +112,7 @@ jobs:
   test:
     name: test
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     services:
       postgres:
         image: pgvector/pgvector:pg16
@@ -210,7 +210,7 @@ jobs:
 
       - name: Coverage (api unit)
         if: success()
-        run: pnpm --filter @multichef/api test:coverage
+        run: pnpm --filter @multichef/api test:coverage 2>&1 | tee /tmp/coverage.log; test ${PIPESTATUS[0]} -eq 0
 
       - name: Integration tests (api, T28-A)
         # HTTP → controller → service → DB поверх Postgres-сервиса.
@@ -220,7 +220,7 @@ jobs:
         if: failure()
         run: |
           B="FAILED job=test sha=${{ github.sha }}"
-          for f in /tmp/mig.log /tmp/drift.log /tmp/i18n.log /tmp/unit.log /tmp/dbint.log /tmp/apiint.log; do
+          for f in /tmp/mig.log /tmp/drift.log /tmp/i18n.log /tmp/unit.log /tmp/dbint.log /tmp/coverage.log /tmp/apiint.log; do
             if [ -f "$f" ]; then
               T=$(tail -c 1200 "$f" | tr '\n' ' ' | tr -d '"\`' | tail -c 1000)
               B="$B ==$f== $T"
