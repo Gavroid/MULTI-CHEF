@@ -1,0 +1,73 @@
+{
+  "steps": [
+    {
+      "name": "after-register",
+      "url": "http://192.168.1.95:8080/auth/login?redirect=%2Ftoday"
+    },
+    {
+      "name": "after-login",
+      "url": "http://192.168.1.95:8080/auth/login?redirect=%2Ftoday"
+    },
+    {
+      "name": "fridge-added",
+      "url": "http://192.168.1.95:8080/auth/login?redirect=%2Ffridge%2Fadd",
+      "added": false
+    },
+    {
+      "name": "plan-375-light",
+      "url": "http://192.168.1.95:8080/auth/login?redirect=%2Fplan",
+      "h1": "Логин"
+    },
+    {
+      "name": "shopping-375-light",
+      "url": "http://192.168.1.95:8080/auth/login?redirect=%2Fshopping",
+      "h1": "Логин"
+    },
+    {
+      "name": "profile-375-light",
+      "url": "http://192.168.1.95:8080/auth/login?redirect=%2Fprofile",
+      "h1": "Логин"
+    },
+    {
+      "name": "anon-plan-redirect",
+      "url": "http://192.168.1.95:8080/auth/login?redirect=%2Fplan"
+    },
+    {
+      "name": "sw-registrations-http",
+      "count": "err:page.evaluate: TypeError: Cannot read properties of undefine"
+    },
+    {
+      "name": "offline-nav-url",
+      "url": "chrome-error://chromewebdata/"
+    },
+    {
+      "name": "keyboard-tab-order",
+      "order": [
+        "A:Перейти к содержимому",
+        "A:Перейти к содержимому",
+        "A:MULTI-CHEF",
+        "INPUT[email]:you@example.ru",
+        "INPUT[password]:",
+        "BUTTON[submit]:Войти",
+        "A:Зарегистрироваться",
+        "BODY:Перейти к содержимомуПерейти к"
+      ]
+    }
+  ],
+  "console": ["error: Failed to load resource: the server responded with a status of 403 (Forbidden)"],
+  "api": ["POST /api/v1/auth/register -> 201", "POST /api/v1/auth/login -> 403"],
+  "axe": {
+    "/": [],
+    "/auth/login": [],
+    "/auth/register": [],
+    "/today": [],
+    "/fridge": [],
+    "/plan": [],
+    "/shopping": [],
+    "/profile": [],
+    "/offline": []
+  },
+  "notes": [
+    "offline nav: Error: page.goto: net::ERR_INTERNET_DISCONNECTED at http://192.168.1.95:8080/today\nCall log:\n  - navigating to \"http://1"
+  ]
+}
