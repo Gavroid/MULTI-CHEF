@@ -1,3 +1,4 @@
+import type { OnModuleDestroy } from '@nestjs/common';
 // MC-042 — Roulette reject counter (server is the source of truth).
 //
 // PRD §2.3.5: the user may reject at most 2 cards per session; the
@@ -42,10 +43,17 @@ export interface RedisLike {
   incr(key: string): Promise<number>;
   expire(key: string, seconds: number): Promise<number>;
   get(key: string): Promise<string | null>;
+  disconnect(): void;
 }
 
-export class RedisRouletteCounter implements RouletteCounter {
+export class RedisRouletteCounter implements RouletteCounter, OnModuleDestroy {
   constructor(private readonly redis: RedisLike) {}
+
+  // E26: the open ioredis socket kept the process alive after
+  // app.close() — integration harnesses (mc033) hung on teardown.
+  onModuleDestroy(): void {
+    this.redis.disconnect();
+  }
 
   async incr(key: string, ttlSeconds: number): Promise<number> {
     const value = await this.redis.incr(key);

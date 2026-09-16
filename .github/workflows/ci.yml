@@ -179,7 +179,15 @@ jobs:
         run: pnpm --filter @multichef/database prisma generate
 
       - name: Apply migrations
+        # Runs as superuser: mc003 creates pg_trgm/pgvector extensions.
         run: pnpm --filter @multichef/database prisma migrate deploy
+
+      - name: Drop superuser for RLS tests (T28-D/E26)
+        # BYPASSRLS roles defeat row-level security assertions; the
+        # migrations (the only superuser-needing step) already ran.
+        run: >
+          PGPASSWORD=test_password psql -h 127.0.0.1 -U multichef -d multichef_test
+          -c 'ALTER ROLE multichef NOSUPERUSER NOBYPASSRLS';
 
       - name: Schema drift check (T17-A)
         # Fails when schema.prisma and the database disagree on anything

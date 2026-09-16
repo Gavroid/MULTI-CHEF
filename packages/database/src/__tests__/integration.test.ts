@@ -209,16 +209,24 @@ test('only one ACTIVE MealPlan per household (partial unique index)', async (t) 
     generationSettings: { mood: 'NEUTRAL' },
   };
 
-  await prisma.mealPlan.create({
-    data: { ...basePlan, id: newId(), status: 'ACTIVE' },
-  });
+  // mc089 turns on FORCE RLS for MealPlan (tenant_isolation policy on
+  // app.household_id) — creates must run inside the tenant context,
+  // exactly like the production withTenantContext() writes.
+  const db = prisma as PrismaClient;
+  const createPlan = (status: 'ACTIVE' | 'DRAFT'): Promise<{ status: string }> =>
+    db.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT set_config('app.household_id', ${household.id}, true)`;
+      return tx.mealPlan.create({
+        data: { ...basePlan, id: newId(), status },
+      });
+    });
+
+  await createPlan('ACTIVE');
 
   // A second ACTIVE plan on the same household must violate the
   // partial unique index. Postgres surfaces this as P2002 or 23505.
   await assert.rejects(
-    prisma.mealPlan.create({
-      data: { ...basePlan, id: newId(), status: 'ACTIVE' },
-    }),
+    createPlan('ACTIVE'),
     (err: unknown) => {
       const message = err instanceof Error ? err.message : String(err);
       return (
@@ -231,8 +239,6 @@ test('only one ACTIVE MealPlan per household (partial unique index)', async (t) 
   );
 
   // A non-ACTIVE plan on the same household is fine.
-  const draft = await prisma.mealPlan.create({
-    data: { ...basePlan, id: newId(), status: 'DRAFT' },
-  });
+  const draft = await createPlan('DRAFT');
   assert.equal(draft.status, 'DRAFT');
 });

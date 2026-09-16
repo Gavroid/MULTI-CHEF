@@ -113,6 +113,7 @@ test('RedisRouletteCounter: sets TTL only on first incr, parses get', async () =
       return 1;
     },
     get: async () => (value === 0 ? null : String(value)),
+    disconnect: () => undefined,
   };
   const counter = new RedisRouletteCounter(fake);
   assert.equal(await counter.incr('h1', ROULETTE_TTL_SECONDS), 1);

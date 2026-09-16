@@ -131,11 +131,11 @@ export async function seedRecipes(prisma: PrismaClient): Promise<{
         recipesCreated += 1;
       }
 
-      // 3. Full replace of RecipeIngredient (id PK is (recipeId, ingredientId)).
+      // 3. Full replace of RecipeIngredient (PK = (recipeId, ingredientId)
+      // — the model has NO id column; generateId() is not used here).
       await tx.recipeIngredient.deleteMany({ where: { recipeId } });
       await tx.recipeIngredient.createMany({
         data: ingredientRows.map((row) => ({
-          id: generateId(recipeId, row.ingredientId),
           recipeId,
           ingredientId: row.ingredientId,
           quantity: row.ing.quantityG,
@@ -190,6 +190,3 @@ export async function seedRecipes(prisma: PrismaClient): Promise<{
 }
 
 /** Deterministic ingredient-scoped id (26 chars, no slashes). */
-function generateId(recipeId: string, ingredientId: string): string {
-  return `${recipeId.slice(0, 13)}${ingredientId.slice(0, 13)}`.slice(0, 26);
-}
