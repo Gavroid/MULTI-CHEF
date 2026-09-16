@@ -11,6 +11,7 @@ import type { ArgumentsHost, ExceptionFilter } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { getPrisma } from '@multichef/database';
 import { hashSessionToken } from '../auth/session-token.js';
+import { captureException } from './sentry.js';
 import type { ErrorCode, ErrorInput } from './error-envelope.js';
 import {
   envelopeFromRequest,
@@ -116,6 +117,8 @@ export class AppHttpExceptionFilter implements ExceptionFilter {
         (request as { raw?: { url?: string } } | undefined)?.raw?.url ??
         'unknown';
       this.logger.warn(`metric_5xx path=${path} code=${body.error.code}`);
+      // T69-C (E26): 5xx -> Sentry (no-op without SENTRY_DSN).
+      captureException(exception);
     }
     sendErrorResponse(response, body);
   }

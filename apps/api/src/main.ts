@@ -9,6 +9,7 @@ import { Logger } from '@nestjs/common';
 import { loadServerEnv, EnvValidationError } from '@multichef/config';
 import { swaggerSchemas } from '@multichef/contracts';
 import { AppModule } from './app.module.js';
+import { initSentry } from './common/sentry.js';
 
 // MC-002: load + validate env before NestFactory boots. The API must
 // fail fast at startup if anything is missing or malformed — we never
@@ -26,6 +27,8 @@ try {
 }
 
 async function bootstrap(): Promise<void> {
+  // T69-C (E26): no-op without SENTRY_DSN.
+  initSentry(env);
   // Audit fix: trust only our nginx gateway (single hop) — client
   // X-Forwarded-For is not trusted for rate-limit IP extraction.
   const fastifyAdapter = new FastifyAdapter({ trustProxy: '127.0.0.1', logger: false });
@@ -44,6 +47,25 @@ async function bootstrap(): Promise<void> {
         done(null, body);
       },
     );
+  // T69-D (E26): tee the raw request bytes onto req.rawBody during
+  // preParsing (before the body parser consumes the stream) — the
+  // webhook HMAC must verify the exact bytes the sender signed.
+  fastifyAdapter.getInstance().addHook('preParsing', ((
+    req: unknown,
+    _reply: unknown,
+    payload: unknown,
+    done: (err: null, payload: unknown) => void,
+  ) => {
+    const chunks: Buffer[] = [];
+    const stream = payload as {
+      on(event: string, cb: (c?: Buffer) => void): unknown;
+    };
+    stream.on('data', (c) => chunks.push(c as Buffer));
+    stream.on('end', () => {
+      (req as { rawBody?: Buffer }).rawBody = Buffer.concat(chunks);
+    });
+    done(null, payload);
+  }) as never);
   // @fastify/cors MUST be registered first — before any other plugin
   // that touches the response (helmet, cookie) so the OPTIONS
   // preflight is short-circuited with the right headers. We

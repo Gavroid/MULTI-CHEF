@@ -7,6 +7,7 @@ import { RecipesModule } from '../recipes/recipes.module.js';
 import { RecommendationsController } from './recommendations.controller.js';
 import { RecommendationsService } from './recommendations.service.js';
 import { TemplateAiProvider } from './ai/template-provider.js';
+import { LlmAiProvider } from './ai/llm-provider.js';
 import {
   InMemoryRouletteCounter,
   RedisRouletteCounter,
@@ -31,8 +32,20 @@ export function createRouletteCounter(): RouletteCounter {
   controllers: [RecommendationsController],
   providers: [
     RecommendationsService,
-    // DI seam: later phases swap TemplateAiProvider for an LLM-backed one.
-    { provide: 'AiExplanationProvider', useClass: TemplateAiProvider },
+    TemplateAiProvider,
+    // T69-A/B (E26): the DI seam is live — with AI_LLM_ENABLED=true plus
+    // a vendor key, explanations route through the resilient LLM client
+    // (template stays as the synchronous + failure fallback).
+    {
+      provide: 'AiExplanationProvider',
+      useFactory: (template: TemplateAiProvider) => {
+        const llmEnabled =
+          process.env['AI_LLM_ENABLED'] === 'true' &&
+          Boolean(process.env['OPENAI_API_KEY'] ?? process.env['ANTHROPIC_API_KEY']);
+        return llmEnabled ? new LlmAiProvider(process.env, template) : template;
+      },
+      inject: [TemplateAiProvider],
+    },
     { provide: 'RouletteCounter', useFactory: createRouletteCounter },
   ],
 })

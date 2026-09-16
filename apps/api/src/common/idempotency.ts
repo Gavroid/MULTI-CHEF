@@ -8,7 +8,8 @@
 // (24h TTL, request fingerprint match, cached replay) lives in
 // idempotency-cache.ts — applied globally via IdempotencyReplayInterceptor.
 
-import { Injectable } from '@nestjs/common';
+import { Injectable, SetMetadata } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import type { CanActivate, ExecutionContext } from '@nestjs/common';
 import { AppHttpException } from './exception-filter.js';
 
@@ -49,8 +50,20 @@ export function requireIdempotencyKey(
   return raw;
 }
 
+// T69-D (E26): routes that carry their OWN idempotency (signed webhook
+// event ids) opt out — external senders must not need our header.
+export const IDEMPOTENCY_SKIP_KEY = 'idempotency:skip';
+
+export function SkipIdempotency(): MethodDecorator {
+  return SetMetadata(IDEMPOTENCY_SKIP_KEY, true);
+}
+
 @Injectable()
 export class IdempotencyKeyGuard implements CanActivate {
+  // APP_GUARD registration bypasses DI for this guard's params —
+  // instantiate the (stateless) Reflector internally.
+  private readonly reflector = new Reflector();
+
   canActivate(context: ExecutionContext): boolean {
     const req = context
       .switchToHttp()
@@ -59,6 +72,11 @@ export class IdempotencyKeyGuard implements CanActivate {
     if (method === 'GET' || method === 'HEAD' || method === 'OPTIONS') {
       return true;
     }
+    const skip = this.reflector.getAllAndOverride<boolean>(IDEMPOTENCY_SKIP_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+    if (skip) return true;
     requireIdempotencyKey(req.headers);
     return true;
   }

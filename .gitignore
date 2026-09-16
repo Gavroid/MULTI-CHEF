@@ -58,3 +58,4 @@ test-results/
 
 # E24: runtime image storage (lives in /var/www/multichef-images/storage)
 data/images/
+.webhook-test-secret

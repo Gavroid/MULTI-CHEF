@@ -18,6 +18,7 @@ import { JobsModule } from './jobs/jobs.module.js';
 import { MealPlansModule } from './meal-plans/meal-plans.module.js';
 import { ShoppingListsModule } from './shopping-lists/shopping-lists.module.js';
 import { StorageModule } from './storage/storage.module.js';
+import { WebhooksModule } from './webhooks/webhooks.module.js';
 
 // MC-010 — global app wiring.
 //
@@ -46,6 +47,7 @@ import { StorageModule } from './storage/storage.module.js';
     MealPlansModule,
     ShoppingListsModule,
     StorageModule,
+    WebhooksModule,
   ],
   providers: [
     // Global exception filter — converts every thrown error into the

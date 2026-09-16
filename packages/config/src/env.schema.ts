@@ -130,6 +130,18 @@ export const serverEnvSchema = z.object({
   IMAGE_S3_ENDPOINT: optionalString,
   IMAGE_S3_ACCESS_KEY_ID: optionalString,
   IMAGE_S3_SECRET_ACCESS_KEY: optionalString,
+  // T69-A/B (E26): LLM explanation provider scaffold. Disabled by
+  // default — TemplateAiProvider answers; flipping AI_LLM_ENABLED=true
+  // (plus a vendor key) routes explanations through the resilient
+  // HTTP client with automatic template fallback.
+  AI_LLM_ENABLED: optionalString,
+  AI_LLM_VENDOR: optionalString, // 'openai' | 'anthropic'
+  AI_LLM_BASE_URL: optionalString,
+  AI_LLM_MODEL: optionalString,
+  AI_LLM_TIMEOUT_MS: optionalString,
+  AI_LLM_MAX_RETRIES: optionalString,
+  // T69-D (E26): inbound webhook HMAC-SHA256 verification secret.
+  WEBHOOK_SIGNING_SECRET: optionalString,
   // nginx internal location for X-Accel-Redirect (empty = stream from API).
   IMAGE_X_ACCEL_PREFIX: optionalString,
   SENTRY_TRACES_SAMPLE_RATE: z.coerce.number().min(0).max(1).default(0.1),

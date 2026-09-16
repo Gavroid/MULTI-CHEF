@@ -15,7 +15,7 @@
 | E22 Mobile/PWA responsive               | ✅ закрыт (2026-09-16)   | T66-A/B/C/D; feat(web) E22, e2e 40/40                                       |
 | E23 i18n foundation                     | ✅ закрыт (2026-09-16)   | T46-A/B/C/D; feat(i18n) E23                                                 |
 | E24 Image storage abstraction + upload  | ✅ закрыт (2026-09-16)   | T54-A/C/D; feat(storage) E24                                                |
-| E26 External integrations + AI scaffold | ⬜ открыт                | T69-A/B/C/D                                                                 |
+| E26 External integrations + AI scaffold | ✅ закрыт (2026-09-16)   | T69-A/B/C/D                                                                 |
 | E28 RLS финал                           | ⏸ ждёт решения владельца | предусловие — ADR-0023 (auth-bootstrap), наивное включение ломает login     |
 
 ## Остатки-хвосты (низкий приоритет)
@@ -110,7 +110,22 @@
 - **Acceptance:** upload → resize → отдача; смена драйвера конфигом; 0 404 на
   существующих. **Метрика:** 100% imageKey проходят валидацию драйвера.
 
-## E26. External integrations + AI scaffold — Фаза 3, L (4-7 pd)
+## E26. External integrations + AI scaffold — Фаза 3, L — ✅ ЗАКРЫТ (2026-09-16)
+
+- **T69-A/B:** `recommendations/ai/llm-provider.ts` — LlmAiProvider поверх
+  ResilientHttp (timeout, экспоненциальный retry на 429/5xx/сеть,
+  circuit-breaker 3 сбоев/30s cooldown), вендоры openai/anthropic,
+  env-флаг AI_LLM_ENABLED + ключ; КАЖДЫЙ сбой падает в TemplateAiProvider
+  (пользователь никогда не видит отсутствующее объяснение). Юнит-тесты
+  с мок-LLM (fetchImpl): retry-подсчёт, fallback, без ключа.
+- **T69-C:** `common/sentry.ts` — @sentry/node инициализируется только
+  при SENTRY_DSN; exception filter отправляет 5xx через captureException
+  (no-op без DSN).
+- **T69-D:** `webhooks/` — POST /webhooks/inbound: HMAC-SHA256 над raw
+  байтами (preParsing tee req.rawBody; SkipIdempotency — свой дедуп по
+  event id, 10k/инстанс), реестр обработчиков вместо новых эндпоинтов,
+  неизвестные типы ack 200; `GET /webhooks/health`. Спека:
+  `docs/api/webhooks.md`.
 
 - **Закрывает:** T69-A (TemplateAiProvider без HTTP-клиента), T69-B (ключи мертвы),
   T69-C (Sentry без SDK), T69-D (нет webhook-каркаса).
@@ -129,4 +144,4 @@
 
 ## Порядок исполнения
 
-1. ~~E22~~ ✅ → 2. ~~E23~~ ✅ → 3. ~~E24~~ ✅ → 4. **E26** (следующий) → 5. **E28** (после решения владельца).
+1. ~~E22~~ ✅ → 2. ~~E23~~ ✅ → 3. ~~E24~~ ✅ → 4. ~~E26~~ ✅ → 5. **E28** (после решения владельца) — единственный открытый эпик.
