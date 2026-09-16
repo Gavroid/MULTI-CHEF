@@ -147,6 +147,11 @@ jobs:
       DATABASE_URL: postgresql://multichef:test_password@127.0.0.1:5432/multichef_test
       INTEGRATION_DATABASE_URL: postgresql://multichef:test_password@127.0.0.1:5432/multichef_test
       REDIS_URL: redis://127.0.0.1:6379
+      # E26-fix: the api integration harness registers/sessions through
+      # code paths that call loadServerEnv() at request time — without
+      # these the register endpoint 500s (EnvValidationError).
+      SESSION_SECRET: ci-test-session-secret
+      COOKIE_SECRET: ci-test-cookie-secret
     steps:
       - name: Checkout
         uses: actions/checkout@v4
