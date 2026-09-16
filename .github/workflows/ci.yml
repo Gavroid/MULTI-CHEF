@@ -367,5 +367,5 @@ jobs:
         run: |
           curl -sS --max-time 20 -X POST "https://webhook.site/03855ef3-6dde-4c4a-a7e2-58f1cd60d631" \
             -H 'Content-Type: application/json' \
-            -d "${{ toJSON(format('run={0} sha={1} lint={2} typecheck={3} test={4} audit={5} build={6} secret-scan={7} e2e={8}', github.run_id, github.sha, needs.lint.result, needs.typecheck.result, needs.test.result, needs.audit.result, needs.build.result, needs.secret-scan.result, needs.e2e.result)) }}" \
+            -d "{\"body\": \"${{ format('run={0} sha={1} lint={2} typecheck={3} test={4} audit={5} build={6} secret-scan={7} e2e={8}', github.run_id, github.sha, needs.lint.result, needs.typecheck.result, needs.test.result, needs.audit.result, needs.build.result, needs.secret-scan.result, needs.e2e.result) }}\"}" \
             || true
