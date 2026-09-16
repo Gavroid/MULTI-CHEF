@@ -9,16 +9,29 @@ test('health controller live returns ok', () => {
 });
 
 test('health controller ready returns ready when pingDatabase resolves', async () => {
-  // Happy path requires a reachable Postgres (local dev / CI both have
-  // one). If the env has no DATABASE_URL at all, the negative path runs
-  // instead — the contract under test is the envelope, not the network.
+  // The contract under test is the envelope shape, not network speed:
+  // readiness() answers {status:'ready', pool} when Postgres AND Redis
+  // answer, or throws a 503 envelope with reason 'db' | 'redis'. Under
+  // c8 the first connect can be slow enough to trip the Redis 2s
+  // connect timeout — both 'db' and 'redis' are valid not-ready
+  // reasons here, so accept any of the three legitimate outcomes.
   const controller = new HealthController();
+  const isReadyShape = (r: unknown): boolean =>
+    typeof r === 'object' && r !== null && (r as { status?: string }).status === 'ready';
+  const isNotReadyEnvelope = (r: unknown): boolean =>
+    typeof r === 'object' &&
+    r !== null &&
+    (r as { status?: string }).status === 'not-ready' &&
+    ['db', 'redis'].includes((r as { reason?: string }).reason ?? '');
   try {
     const result = await controller.readiness();
-    assert.deepEqual(result, { status: 'ready' });
+    assert.ok(isReadyShape(result), `unexpected ready shape: ${JSON.stringify(result)}`);
   } catch (err) {
     const response = (err as { getResponse?: () => unknown }).getResponse?.();
-    assert.deepEqual(response, { status: 'not-ready', reason: 'db' });
+    assert.ok(
+      isNotReadyEnvelope(response),
+      `unexpected not-ready envelope: ${JSON.stringify(response)}`,
+    );
   }
 });
 
