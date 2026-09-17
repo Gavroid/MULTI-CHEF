@@ -23,12 +23,6 @@ import { ApiBearerAuth, ApiCookieAuth, ApiOperation, ApiResponse, ApiTags } from
 import type { FastifyRequest } from 'fastify';
 import type { AuthenticatedUser } from '../auth/auth.service.js';
 import { ProfileService, type PreferenceKind } from './profile.service.js';
-import {
-  NutritionPutSchema,
-  OnboardingSchema,
-  PreferenceCreateSchema,
-  ProfilePatchSchema,
-} from './profile.dto.js';
 import type {
   NutritionPutBody,
   OnboardingBody,
@@ -42,7 +36,6 @@ import type {
   ProfilePatchDto,
 } from './profile.dto-classes.js';
 import { AuthGuard, currentUser } from '../common/auth-guard.js';
-import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import { AppHttpException } from '../common/exception-filter.js';
 
 @ApiTags('profile')
@@ -68,7 +61,7 @@ export class ProfileController {
   @ApiResponse({ status: 200, description: 'Updated user' })
   @ApiResponse({ status: 401, description: 'Not authenticated' })
   @ApiResponse({ status: 409, description: 'Email already in use' })
-  async patch(@Req() req: FastifyRequest, @Body(new ZodValidationPipe(ProfilePatchSchema)) body: ProfilePatchDto): Promise<unknown> {
+  async patch(@Req() req: FastifyRequest, @Body() body: ProfilePatchDto): Promise<unknown> {
     const user = currentUser(req as unknown as { user: AuthenticatedUser });
     const patch: ProfilePatchBody = {
       ...(body.email !== undefined ? { email: body.email } : {}),
@@ -89,7 +82,7 @@ export class ProfileController {
   @HttpCode(200)
   @ApiOperation({ summary: 'Upsert NutritionProfile (full replace semantics)' })
   @ApiResponse({ status: 200, description: 'NutritionProfile after upsert' })
-  async putNutrition(@Req() req: FastifyRequest, @Body(new ZodValidationPipe(NutritionPutSchema)) body: NutritionPutDto): Promise<unknown> {
+  async putNutrition(@Req() req: FastifyRequest, @Body() body: NutritionPutDto): Promise<unknown> {
     const user = currentUser(req as unknown as { user: AuthenticatedUser });
     const put: NutritionPutBody = {
       ...(body.targetCalories !== undefined ? { targetCalories: body.targetCalories } : {}),
@@ -130,7 +123,7 @@ export class ProfileController {
   @ApiResponse({ status: 404, description: 'Ingredient not found' })
   async addPreference(
     @Req() req: FastifyRequest,
-    @Body(new ZodValidationPipe(PreferenceCreateSchema)) body: PreferenceCreateDto,
+    @Body() body: PreferenceCreateDto,
   ): Promise<unknown> {
     const user = currentUser(req as unknown as { user: AuthenticatedUser });
     const input: PreferenceCreateBody = {
@@ -152,7 +145,7 @@ export class ProfileController {
   @Post('onboarding')
   @HttpCode(200)
   @ApiOperation({ summary: 'Run onboarding: updates NutritionProfile + adds Preference[]' })
-  async onboarding(@Req() req: FastifyRequest, @Body(new ZodValidationPipe(OnboardingSchema)) body: OnboardingDto): Promise<unknown> {
+  async onboarding(@Req() req: FastifyRequest, @Body() body: OnboardingDto): Promise<unknown> {
     const user = currentUser(req as unknown as { user: AuthenticatedUser });
     const input: OnboardingBody = {
       householdSize: body.householdSize,

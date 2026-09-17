@@ -7,10 +7,8 @@ import type { FastifyRequest } from 'fastify';
 import type { AuthenticatedUser } from '../auth/auth.service.js';
 import { HouseholdService } from './household.service.js';
 import type { HouseholdPatchDto } from '../profile/profile.dto-classes.js';
-import { HouseholdPatchSchema } from '../profile/profile.dto.js';
 import type { HouseholdPatchBody } from '../profile/profile.dto.js';
 import { AuthGuard, currentUser } from '../common/auth-guard.js';
-import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 @ApiTags('household')
 @ApiCookieAuth('mc_session')
 @ApiBearerAuth('session-token')
@@ -29,7 +27,7 @@ export class HouseholdController {
   @Patch()
   @HttpCode(200)
   @ApiOperation({ summary: 'Update household metadata (owner-only)' })
-  async patch(@Req() req: FastifyRequest, @Body(new ZodValidationPipe(HouseholdPatchSchema)) body: HouseholdPatchDto): Promise<unknown> {
+  async patch(@Req() req: FastifyRequest, @Body() body: HouseholdPatchDto): Promise<unknown> {
     const user = currentUser(req as unknown as { user: AuthenticatedUser });
     const input: HouseholdPatchBody = {
       ...(body.name !== undefined ? { name: body.name } : {}),

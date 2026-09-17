@@ -61,7 +61,6 @@ export class ShoppingListsController {
   async fitBudget(
     @Req() req: FastifyRequest,
     @Param() params: Record<string, string>,
-    // eslint-disable-next-line multichef/require-zod-body-schema -- body is intentionally `unknown`; service uses ad-hoc validation via internal contract
     @Body() body: unknown,
   ): Promise<FitBudgetResponseDto> {
     const user = currentUser(req as unknown as { user: AuthenticatedUser });
@@ -87,7 +86,6 @@ export class ShoppingListsController {
   async apply(
     @Req() req: FastifyRequest,
     @Param() params: Record<string, string>,
-    // eslint-disable-next-line multichef/require-zod-body-schema -- body is intentionally `unknown`; service uses ad-hoc validation via internal contract
     @Body() body: unknown,
   ): Promise<{ applied: boolean; estimatedTotalKopecks: number }> {
     const user = currentUser(req as unknown as { user: AuthenticatedUser });
@@ -114,7 +112,6 @@ export class ShoppingListsController {
   async setPurchased(
     @Req() req: FastifyRequest,
     @Param() params: Record<string, string>,
-    // eslint-disable-next-line multichef/require-zod-body-schema -- body is intentionally `unknown`; service uses ad-hoc validation via internal contract
     @Body() body: unknown,
   ): Promise<{ purchased: boolean }> {
     const user = currentUser(req as unknown as { user: AuthenticatedUser });
