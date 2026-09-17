@@ -52,10 +52,12 @@ test('AC-2: pipe rejects "not-an-email" with field-level email error', () => {
     () => pipe.transform({ email: 'not-an-email', password: 'abcdefgh' }, meta()),
     (err: unknown) => {
       const r = asValidation(err);
+      const fields = r?.details?.fields;
       return (
         r?.code === 'VALIDATION_ERROR' &&
-        Array.isArray(r?.details?.fields?.email) &&
-        r.details!.fields!.email.length > 0
+        fields !== undefined &&
+        Array.isArray(fields['email']) &&
+        fields['email'].length > 0
       );
     },
   );
@@ -89,10 +91,12 @@ test('AC-4: pipe rejects short password with field-level error', () => {
     () => pipe.transform({ email: 'valid@example.com', password: 'abc' }, meta()),
     (err: unknown) => {
       const r = asValidation(err);
+      const fields = r?.details?.fields;
       return (
         r?.code === 'VALIDATION_ERROR' &&
-        Array.isArray(r?.details?.fields?.password) &&
-        r.details!.fields!.password.length > 0
+        fields !== undefined &&
+        Array.isArray(fields['password']) &&
+        fields['password'].length > 0
       );
     },
   );
