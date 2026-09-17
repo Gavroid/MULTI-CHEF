@@ -19,10 +19,10 @@
 //     shape so clients don't see two different error formats.
 
 import {
-  ArgumentMetadata,
   BadRequestException,
   Injectable,
-  PipeTransform,
+  type ArgumentMetadata,
+  type PipeTransform,
 } from '@nestjs/common';
 import type { ZodTypeAny } from 'zod';
 

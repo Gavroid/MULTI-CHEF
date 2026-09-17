@@ -35,7 +35,8 @@ export function createZodDto<T>(schema: z.ZodType<T>): ZodDto<T> {
     }
   }
   (AugmentedZodDto as unknown as { isZodDto: boolean }).isZodDto = true;
-  (AugmentedZodDto as unknown as { schema: z.ZodTypeAny }).schema = schema as unknown as z.ZodTypeAny;
+  (AugmentedZodDto as unknown as { schema: z.ZodTypeAny }).schema =
+    schema as unknown as z.ZodTypeAny;
   return AugmentedZodDto as unknown as ZodDto<T>;
 }
 
