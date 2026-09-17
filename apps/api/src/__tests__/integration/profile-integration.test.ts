@@ -332,11 +332,15 @@ test('POST /profile/onboarding creates NutritionProfile + Preferences', async (t
   // a ULID. Unique names per run so the test is idempotent against
   // a non-truncated test database.
   const suffix = randomUUID().slice(0, 8);
-  const categoryId = `01CATEGOR${suffix.toUpperCase()}AAAAAAAAA`;
+  // ULID-safe prefixes: no I/L/O/U (Crockford alphabet excludes them,
+  // see docs/api/conventions.md §6 / ProfileDto ULID regex). These
+  // prefixes previously contained O (CATEGOR) and I (INGRED), which
+  // passed silently before MC-107 added ZodValidationPipe to onboarding.
+  const categoryId = `01CATEGR${suffix.toUpperCase()}AAAAAAAAAA`;
   await db().ingredientCategory.create({
     data: { id: categoryId, name: `Vegetables-${suffix}`, sortOrder: 1 },
   });
-  const ingId = `01INGRED${suffix.toUpperCase()}AAAAAAAAAA`;
+  const ingId = `01NGREDX${suffix.toUpperCase()}AAAAAAAAAA`;
   await db().ingredient.create({
     data: {
       id: ingId,
