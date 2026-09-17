@@ -10,3 +10,19 @@ export const UlidParamsSchema = z
 export function ulidParams(key = 'id') {
   return z.object({ [key]: UlidParamsSchema });
 }
+
+// MC-060: PATCH /meal-plans/prep-tasks/:taskId — toggle a prep task done flag.
+export const TogglePrepTaskRequestDtoSchema = z
+  .object({
+    done: z.boolean(),
+  })
+  .strict();
+export type TogglePrepTaskRequestDto = z.infer<typeof TogglePrepTaskRequestDtoSchema>;
+
+// MC-052: PATCH /shopping-lists/items/:itemId — mark an item as purchased/not-purchased.
+export const MarkPurchasedRequestDtoSchema = z
+  .object({
+    purchased: z.boolean(),
+  })
+  .strict();
+export type MarkPurchasedRequestDto = z.infer<typeof MarkPurchasedRequestDtoSchema>;

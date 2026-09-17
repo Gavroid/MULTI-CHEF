@@ -17,12 +17,17 @@ import type { FastifyRequest } from 'fastify';
 import type { FitBudgetResponseDto } from '@multichef/contracts';
 import { AppHttpException } from '../common/exception-filter.js';
 import { AuthGuard, currentUser } from '../common/auth-guard.js';
+import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import type { AuthenticatedUser } from '../auth/auth.service.js';
 import {
   ApplyBudgetProposalDtoSchema,
   FitBudgetRequestDtoSchema,
+  MarkPurchasedRequestDtoSchema,
   ShoppingListIdParamsSchema,
   ShoppingListItemIdParamsSchema,
+  type ApplyBudgetProposalDto,
+  type FitBudgetRequestDto,
+  type MarkPurchasedRequestDto,
 } from './shopping-lists.dto.js';
 import { ShoppingListsService } from './shopping-lists.service.js';
 
@@ -61,24 +66,14 @@ export class ShoppingListsController {
   async fitBudget(
     @Req() req: FastifyRequest,
     @Param() params: Record<string, string>,
-    // eslint-disable-next-line multichef/require-zod-body-schema -- body is intentionally `unknown`; service uses ad-hoc validation via internal contract
-    @Body() body: unknown,
+    @Body(new ZodValidationPipe(FitBudgetRequestDtoSchema)) body: FitBudgetRequestDto,
   ): Promise<FitBudgetResponseDto> {
     const user = currentUser(req as unknown as { user: AuthenticatedUser });
     const listIdParsed = ShoppingListIdParamsSchema.safeParse(params);
     if (!listIdParsed.success) {
       throw validationError(listIdParsed.error.issues);
     }
-    const listId = listIdParsed.data.id;
-    const parsed = FitBudgetRequestDtoSchema.safeParse(body ?? {});
-    if (!parsed.success) {
-      throw new AppHttpException({
-        code: 'VALIDATION_ERROR',
-        message: 'Invalid request body',
-        details: { fields: { targetBudgetKopecks: ['required integer'] } },
-      });
-    }
-    return this.svc.fitBudget(user.id, listId, parsed.data.targetBudgetKopecks);
+    return this.svc.fitBudget(user.id, listIdParsed.data.id, body.targetBudgetKopecks);
   }
 
   @Post(':id/apply-proposal')
@@ -87,24 +82,14 @@ export class ShoppingListsController {
   async apply(
     @Req() req: FastifyRequest,
     @Param() params: Record<string, string>,
-    // eslint-disable-next-line multichef/require-zod-body-schema -- body is intentionally `unknown`; service uses ad-hoc validation via internal contract
-    @Body() body: unknown,
+    @Body(new ZodValidationPipe(ApplyBudgetProposalDtoSchema)) body: ApplyBudgetProposalDto,
   ): Promise<{ applied: boolean; estimatedTotalKopecks: number }> {
     const user = currentUser(req as unknown as { user: AuthenticatedUser });
     const listIdParsed = ShoppingListIdParamsSchema.safeParse(params);
     if (!listIdParsed.success) {
       throw validationError(listIdParsed.error.issues);
     }
-    const listId = listIdParsed.data.id;
-    const parsed = ApplyBudgetProposalDtoSchema.safeParse(body ?? {});
-    if (!parsed.success) {
-      throw new AppHttpException({
-        code: 'VALIDATION_ERROR',
-        message: 'Invalid request body',
-        details: { fields: { _: ['invalid proposal'] } },
-      });
-    }
-    return this.svc.applyProposal(user.id, listId, parsed.data);
+    return this.svc.applyProposal(user.id, listIdParsed.data.id, body);
   }
 
   /** MC-056: toggle the purchased flag of one item. */
@@ -114,17 +99,14 @@ export class ShoppingListsController {
   async setPurchased(
     @Req() req: FastifyRequest,
     @Param() params: Record<string, string>,
-    // eslint-disable-next-line multichef/require-zod-body-schema -- body is intentionally `unknown`; service uses ad-hoc validation via internal contract
-    @Body() body: unknown,
+    @Body(new ZodValidationPipe(MarkPurchasedRequestDtoSchema)) body: MarkPurchasedRequestDto,
   ): Promise<{ purchased: boolean }> {
     const user = currentUser(req as unknown as { user: AuthenticatedUser });
     const itemParsed = ShoppingListItemIdParamsSchema.safeParse(params);
     if (!itemParsed.success) {
       throw validationError(itemParsed.error.issues);
     }
-    const itemId = itemParsed.data.itemId;
-    const purchased = (body as { purchased?: unknown } | null)?.purchased === true;
-    return this.svc.setItemPurchased(user.id, itemId, purchased);
+    return this.svc.setItemPurchased(user.id, itemParsed.data.itemId, body.purchased);
   }
 
   /** MC-056: complete the list — purchased goods are credited to the pantry. */

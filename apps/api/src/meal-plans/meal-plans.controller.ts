@@ -30,13 +30,15 @@ import {
 import type { FastifyRequest } from 'fastify';
 import type {
   CreateMealPlanResponseDto,
+  MealPlanSetupDto,
   PrepSessionDto,
   StoragePlanDto,
+  TogglePrepTaskRequestDto,
 } from '@multichef/contracts';
-import { AppHttpException } from '../common/exception-filter.js';
+import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import { AuthGuard, currentUser } from '../common/auth-guard.js';
 import type { AuthenticatedUser } from '../auth/auth.service.js';
-import { MealPlanSetupDtoSchema } from './meal-plans.dto.js';
+import { MealPlanSetupDtoSchema, TogglePrepTaskRequestDtoSchema } from './meal-plans.dto.js';
 import { MealPlansService } from './meal-plans.service.js';
 
 @ApiTags('meal-plans')
@@ -59,24 +61,10 @@ export class MealPlansController {
   @ApiResponse({ status: 401, description: 'No session' })
   async create(
     @Req() req: FastifyRequest,
-    // eslint-disable-next-line multichef/require-zod-body-schema -- body is intentionally `unknown`; service uses ad-hoc validation via internal contract
-    @Body() body: unknown,
+    @Body(new ZodValidationPipe(MealPlanSetupDtoSchema)) body: MealPlanSetupDto,
   ): Promise<CreateMealPlanResponseDto> {
     const user = currentUser(req as unknown as { user: AuthenticatedUser });
-    const parsed = MealPlanSetupDtoSchema.safeParse(body ?? {});
-    if (!parsed.success) {
-      const fields: Record<string, string[]> = {};
-      for (const issue of parsed.error.issues) {
-        const key = issue.path.join('.') || '_root';
-        (fields[key] ??= []).push(issue.message);
-      }
-      throw new AppHttpException({
-        code: 'VALIDATION_ERROR',
-        message: 'Invalid request body',
-        details: { fields },
-      });
-    }
-    return this.svc.create(user.id, parsed.data);
+    return this.svc.create(user.id, body);
   }
 
   @Get('active')
@@ -103,11 +91,10 @@ export class MealPlansController {
   async toggleTask(
     @Req() req: FastifyRequest,
     @Param('taskId') taskId: string,
-    // eslint-disable-next-line multichef/require-zod-body-schema -- body is intentionally `unknown`; service uses ad-hoc validation via internal contract
-    @Body() body: unknown,
+    @Body(new ZodValidationPipe(TogglePrepTaskRequestDtoSchema)) body: TogglePrepTaskRequestDto,
   ): Promise<{ done: boolean }> {
     const user = currentUser(req as unknown as { user: AuthenticatedUser });
-    const done = (body as { done?: unknown } | null)?.done === true;
+    const done = body.done === true;
     return this.svc.togglePrepTask(user.id, taskId, done);
   }
 

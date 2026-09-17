@@ -8,17 +8,20 @@ import { Body, Controller, HttpCode, Inject, Post, Req, UseGuards } from '@nestj
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { FastifyRequest } from 'fastify';
 import { AuthGuard, currentUser } from '../common/auth-guard.js';
+import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import type { AuthenticatedUser } from '../auth/auth.service.js';
-import { AppHttpException } from '../common/exception-filter.js';
 import { RecommendationsService } from './recommendations.service.js';
 import {
   RescueRequestDtoSchema,
   RouletteDrawRequestDtoSchema,
   TodayRequestDtoSchema,
   type RescueResponseDto,
+  type RouletteDrawRequestDto,
   type RouletteDrawResponseDto,
   type RouletteRejectResponseDto,
+  type TodayRequestDto,
   type TodayRecommendationDto,
+  type RescueRequestDto,
 } from './recommendations.dto.js';
 
 @ApiTags('recommendations')
@@ -34,23 +37,12 @@ export class RecommendationsController {
   @ApiResponse({ status: 401, description: 'No session' })
   @ApiResponse({ status: 400, description: 'Invalid body' })
   @ApiResponse({ status: 403, description: 'No owned household' })
-  // eslint-disable-next-line multichef/require-zod-body-schema -- body is intentionally `unknown`; service uses ad-hoc validation via internal contract
-  async today(@Req() req: FastifyRequest, @Body() body: unknown): Promise<TodayRecommendationDto> {
+  async today(
+    @Req() req: FastifyRequest,
+    @Body(new ZodValidationPipe(TodayRequestDtoSchema)) body: TodayRequestDto,
+  ): Promise<TodayRecommendationDto> {
     const user = currentUser(req as unknown as { user: AuthenticatedUser });
-    const parsed = TodayRequestDtoSchema.safeParse(body ?? {});
-    if (!parsed.success) {
-      const fields: Record<string, string[]> = {};
-      for (const issue of parsed.error.issues) {
-        const key = issue.path.join('.') || '_root';
-        (fields[key] ??= []).push(issue.message);
-      }
-      throw new AppHttpException({
-        code: 'VALIDATION_ERROR',
-        message: 'Invalid request body',
-        details: { fields },
-      });
-    }
-    return this.svc.getToday(user.id, parsed.data, new Date());
+    return this.svc.getToday(user.id, body, new Date());
   }
 
   /** MC-040 «Спаси продукт»: recipes that use a pantry ingredient. */
@@ -61,23 +53,12 @@ export class RecommendationsController {
   @ApiResponse({ status: 401, description: 'No session' })
   @ApiResponse({ status: 404, description: 'INGREDIENT_NOT_FOUND — not in this household pantry' })
   @ApiResponse({ status: 422, description: 'EMPTY_RESCUE — no published recipe uses it' })
-  // eslint-disable-next-line multichef/require-zod-body-schema -- body is intentionally `unknown`; service uses ad-hoc validation via internal contract
-  async rescue(@Req() req: FastifyRequest, @Body() body: unknown): Promise<RescueResponseDto> {
+  async rescue(
+    @Req() req: FastifyRequest,
+    @Body(new ZodValidationPipe(RescueRequestDtoSchema)) body: RescueRequestDto,
+  ): Promise<RescueResponseDto> {
     const user = currentUser(req as unknown as { user: AuthenticatedUser });
-    const parsed = RescueRequestDtoSchema.safeParse(body ?? {});
-    if (!parsed.success) {
-      const fields: Record<string, string[]> = {};
-      for (const issue of parsed.error.issues) {
-        const key = issue.path.join('.') || '_root';
-        (fields[key] ??= []).push(issue.message);
-      }
-      throw new AppHttpException({
-        code: 'VALIDATION_ERROR',
-        message: 'Invalid request body',
-        details: { fields },
-      });
-    }
-    return this.svc.getRescue(user.id, parsed.data, new Date());
+    return this.svc.getRescue(user.id, body, new Date());
   }
 
   /** MC-042: draw one weighted-random card. */
@@ -88,19 +69,10 @@ export class RecommendationsController {
   @ApiResponse({ status: 401, description: 'No session' })
   async rouletteDraw(
     @Req() req: FastifyRequest,
-    // eslint-disable-next-line multichef/require-zod-body-schema -- body is intentionally `unknown`; service uses ad-hoc validation via internal contract
-    @Body() body: unknown,
+    @Body(new ZodValidationPipe(RouletteDrawRequestDtoSchema)) body: RouletteDrawRequestDto,
   ): Promise<RouletteDrawResponseDto> {
     const user = currentUser(req as unknown as { user: AuthenticatedUser });
-    const parsed = RouletteDrawRequestDtoSchema.safeParse(body ?? {});
-    if (!parsed.success) {
-      throw new AppHttpException({
-        code: 'VALIDATION_ERROR',
-        message: 'Invalid request body',
-        details: { fields: { _: ['invalid body'] } },
-      });
-    }
-    return this.svc.drawRoulette(user.id, parsed.data, new Date());
+    return this.svc.drawRoulette(user.id, body, new Date());
   }
 
   /** MC-042: reject the current card (max 2, then 409). */

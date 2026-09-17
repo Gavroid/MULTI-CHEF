@@ -6,13 +6,20 @@ import {
   ApplyBudgetProposalDtoSchema,
   FitBudgetRequestDtoSchema,
   FitBudgetResponseDtoSchema,
+  MarkPurchasedRequestDtoSchema,
 } from '@multichef/contracts';
 
-export { ApplyBudgetProposalDtoSchema, FitBudgetRequestDtoSchema, FitBudgetResponseDtoSchema };
+export {
+  ApplyBudgetProposalDtoSchema,
+  FitBudgetRequestDtoSchema,
+  FitBudgetResponseDtoSchema,
+  MarkPurchasedRequestDtoSchema,
+};
 export type {
   ApplyBudgetProposalDto,
   FitBudgetRequestDto,
   FitBudgetResponseDto,
+  MarkPurchasedRequestDto,
 } from '@multichef/contracts';
 
 const ULID = /^[0-9A-HJKMNP-TV-Z]{26}$/;
