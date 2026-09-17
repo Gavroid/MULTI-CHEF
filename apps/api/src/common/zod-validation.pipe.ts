@@ -25,7 +25,7 @@
 //   static-field lookup is kept as a fallback for callers that still
 //   use `@Body(new ZodValidationPipe())` (no schema).
 //
-//   See docs/decisions/ADR-0010-zod-validation-strategy.md for the
+//   See docs/decisions/ADR-0024-zod-validation-strategy.md for the
 //   full rationale and the decision to keep MC-102 service guards
 //   even after MC-103 closes (defense in depth).
 
