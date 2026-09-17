@@ -42,9 +42,11 @@ import type { FastifyRequest } from 'fastify';
 import type { AuthenticatedUser } from '../auth/auth.service.js';
 import { AuthGuard, currentUser } from '../common/auth-guard.js';
 import { AppHttpException } from '../common/exception-filter.js';
+import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import { PantryService, type PantryItemView } from './pantry.service.js';
 import {
   CreatePantryItemSchema,
+  PatchPantryItemSchema,
   ListPantryQuerySchema,
   PANTRY_SORT_FIELDS,
   PANTRY_SORT_ORDERS,
@@ -81,7 +83,7 @@ export class PantryController {
   @ApiResponse({ status: 404, description: 'INGREDIENT_NOT_FOUND' })
   async create(
     @Req() req: FastifyRequest,
-    @Body() body: CreatePantryItemDto,
+    @Body(new ZodValidationPipe(CreatePantryItemSchema)) body: CreatePantryItemDto,
   ): Promise<{ data: PantryItemView }> {
     const user = currentUser(req as unknown as { user: AuthenticatedUser });
     // nestjs-zod validates the body against CreatePantryItemSchema;
@@ -150,7 +152,7 @@ export class PantryController {
   async patch(
     @Req() req: FastifyRequest,
     @Param() params: Record<string, string>,
-    @Body() body: PatchPantryItemDto,
+    @Body(new ZodValidationPipe(PatchPantryItemSchema)) body: PatchPantryItemDto,
   ): Promise<{ data: PantryItemView }> {
     const user = currentUser(req as unknown as { user: AuthenticatedUser });
     const paramsParsed = PantryItemIdParamsSchema.safeParse(params);

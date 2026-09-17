@@ -59,6 +59,7 @@ export class MealPlansController {
   @ApiResponse({ status: 401, description: 'No session' })
   async create(
     @Req() req: FastifyRequest,
+    // eslint-disable-next-line multichef/require-zod-body-schema -- body is intentionally `unknown`; service uses ad-hoc validation via internal contract
     @Body() body: unknown,
   ): Promise<CreateMealPlanResponseDto> {
     const user = currentUser(req as unknown as { user: AuthenticatedUser });
@@ -102,6 +103,7 @@ export class MealPlansController {
   async toggleTask(
     @Req() req: FastifyRequest,
     @Param('taskId') taskId: string,
+    // eslint-disable-next-line multichef/require-zod-body-schema -- body is intentionally `unknown`; service uses ad-hoc validation via internal contract
     @Body() body: unknown,
   ): Promise<{ done: boolean }> {
     const user = currentUser(req as unknown as { user: AuthenticatedUser });

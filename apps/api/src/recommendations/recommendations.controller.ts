@@ -34,6 +34,7 @@ export class RecommendationsController {
   @ApiResponse({ status: 401, description: 'No session' })
   @ApiResponse({ status: 400, description: 'Invalid body' })
   @ApiResponse({ status: 403, description: 'No owned household' })
+  // eslint-disable-next-line multichef/require-zod-body-schema -- body is intentionally `unknown`; service uses ad-hoc validation via internal contract
   async today(@Req() req: FastifyRequest, @Body() body: unknown): Promise<TodayRecommendationDto> {
     const user = currentUser(req as unknown as { user: AuthenticatedUser });
     const parsed = TodayRequestDtoSchema.safeParse(body ?? {});
@@ -60,6 +61,7 @@ export class RecommendationsController {
   @ApiResponse({ status: 401, description: 'No session' })
   @ApiResponse({ status: 404, description: 'INGREDIENT_NOT_FOUND — not in this household pantry' })
   @ApiResponse({ status: 422, description: 'EMPTY_RESCUE — no published recipe uses it' })
+  // eslint-disable-next-line multichef/require-zod-body-schema -- body is intentionally `unknown`; service uses ad-hoc validation via internal contract
   async rescue(@Req() req: FastifyRequest, @Body() body: unknown): Promise<RescueResponseDto> {
     const user = currentUser(req as unknown as { user: AuthenticatedUser });
     const parsed = RescueRequestDtoSchema.safeParse(body ?? {});
@@ -86,6 +88,7 @@ export class RecommendationsController {
   @ApiResponse({ status: 401, description: 'No session' })
   async rouletteDraw(
     @Req() req: FastifyRequest,
+    // eslint-disable-next-line multichef/require-zod-body-schema -- body is intentionally `unknown`; service uses ad-hoc validation via internal contract
     @Body() body: unknown,
   ): Promise<RouletteDrawResponseDto> {
     const user = currentUser(req as unknown as { user: AuthenticatedUser });
