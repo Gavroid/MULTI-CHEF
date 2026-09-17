@@ -1,4 +1,4 @@
-// MC-101 (Audit R15) — Minimal Zod-based validation pipe.
+// MC-101 (Audit R15) / MC-103 (Audit R16) — Zod-based validation pipe.
 //
 // Why a custom pipe (not `nestjs-zod`'s ZodValidationPipe): nestjs-zod
 // imports rxjs, and pnpm's nested-store layout does not hoist rxjs into
@@ -8,15 +8,26 @@
 // apps/api/node_modules — it stays inside the project's own resolution
 // tree and works under pnpm without any extra hoisting config.
 //
-// Behaviour:
-//   - Reads the DTO class from the parameter metadata.
-//   - Detects the Zod schema from `createZodDto(Schema)`'s static
-//     `zodSchema` field (the same shape nestjs-zod exposes).
-//   - On success: replaces the body with the parsed value (Zod's
-//     `parse` returns the typed object — no `any`).
-//   - On failure: throws BadRequestException with a structured
-//     VALIDATION_ERROR envelope identical to the existing AppHttpException
-//     shape so clients don't see two different error formats.
+// MC-103 (Audit R16) — explicit-schema pipe variant.
+//
+//   The MC-101 approach read the Zod schema off the DTO class as a
+//   *static field* (`metatype.schema` populated by `createZodDto`).
+//   In NestJS 11 + Fastify this is unreliable: the @Body() pipe fires
+//   but `metadata.metatype` is sometimes `Object` / `Function` instead
+//   of the DTO class, so the static lookup misses. Symptom: malformed
+//   bodies (e.g. `email: "not-an-email"`) reach the service and either
+//   crash with TypeError or are persisted as-is.
+//
+//   The fix: pass the schema *explicitly* to the pipe via the
+//   constructor — `@Body(new ZodValidationPipe(RegisterBody))`. The
+//   pipe no longer relies on `metadata.metatype` for schema discovery;
+//   it uses the schema passed at construction time. The metatype
+//   static-field lookup is kept as a fallback for callers that still
+//   use `@Body(new ZodValidationPipe())` (no schema).
+//
+//   See docs/decisions/ADR-0010-zod-validation-strategy.md for the
+//   full rationale and the decision to keep MC-102 service guards
+//   even after MC-103 closes (defense in depth).
 
 import {
   BadRequestException,
@@ -33,19 +44,29 @@ interface ZodDtoConstructor {
 
 @Injectable()
 export class ZodValidationPipe implements PipeTransform<unknown, unknown> {
+  constructor(private readonly explicitSchema?: ZodTypeAny) {}
+
   transform(value: unknown, metadata: ArgumentMetadata): unknown {
     if (metadata.type !== 'body') {
       return value;
     }
-    const metatype = metadata.metatype as ZodDtoConstructor | undefined;
-    if (!metatype?.isZodDto) {
-      // Not a Zod DTO — let downstream handle it (raw body, plain class).
-      return value;
-    }
-    const schema = metatype.schema;
+
+    let schema: ZodTypeAny | undefined = this.explicitSchema;
+
+    // Fallback: static field on the DTO class (MC-101 legacy path).
     if (!schema) {
+      const metatype = metadata.metatype as ZodDtoConstructor | undefined;
+      if (metatype?.isZodDto && metatype.schema) {
+        schema = metatype.schema;
+      }
+    }
+
+    if (!schema) {
+      // No schema resolved — let downstream handle it. MC-102 service
+      // guards are the safety net for endpoints without Zod coverage.
       return value;
     }
+
     const result = schema.safeParse(value);
     if (!result.success) {
       const fields: Record<string, string[]> = {};
