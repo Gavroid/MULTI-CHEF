@@ -21,7 +21,7 @@ export default [
     rules: {
       '@typescript-eslint/no-explicit-any': 'warn',
       // Rule self-gates on *.controller.ts filenames; safe to enable globally.
-      'multichef/require-zod-body-schema': 'warn',
+      'multichef/require-zod-body-schema': 'error',
     },
   },
 ];
