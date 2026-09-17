@@ -40,11 +40,11 @@
 
 ### SSH keys (manager host: `/root/.ssh/`)
 
-| Private key | GitHub account | Purpose |
-|---|---|---|
-| `id_ed25519_github` | `Gavroid` | `git push` / `git fetch` (read+write) |
-| `id_ed25519_cicd` | `Gavroid` | (alternate, same account) |
-| `id_ed25519_actions_deploy` | `Gavroid` | GitHub Actions deploy key |
+| Private key                 | GitHub account | Purpose                               |
+| --------------------------- | -------------- | ------------------------------------- |
+| `id_ed25519_github`         | `Gavroid`      | `git push` / `git fetch` (read+write) |
+| `id_ed25519_cicd`           | `Gavroid`      | (alternate, same account)             |
+| `id_ed25519_actions_deploy` | `Gavroid`      | GitHub Actions deploy key             |
 
 All three authenticate as `Gavroid` for `git@github.com:Gavroid/MULTI-CHEF.git`. SSH keys give **write to git only** — they do NOT grant REST API access.
 
@@ -54,9 +54,9 @@ Stored in `~/.config/gh/host.yml`:
 
 ```yaml
 github.com:
-    oauth_token: ghp_***REDACTED***   # Personal Access Token
-    user: Gavroid
-    git_protocol: ssh
+  oauth_token: ghp_***REDACTED*** # Personal Access Token
+  user: Gavroid
+  git_protocol: ssh
 ```
 
 The Hermes runtime masks the actual token bytes in any tool output.
@@ -68,6 +68,7 @@ curl -sS -H "Authorization: token $TOK" "https://api.github.com/repos/Gavroid/MU
 ```
 
 Required scopes (verify at <https://github.com/settings/tokens>):
+
 - `repo` (full control of private repositories)
 - `read:org` (optional, only if you query org-level data)
 
@@ -77,13 +78,14 @@ The PAT itself MUST NOT be written into `/root/.deploy-secrets/multichef/INVENTO
 
 ```markdown
 ### 2.3. Personal Access Token (for REST API)
-| Field | Value |
-|---|---|
-| Token location | `~/.config/gh/host.yml` (`oauth_token`) |
-| Account | Gavroid |
-| Scopes | `repo`, `read:org` |
-| Created | YYYY-MM-DD |
-| Expires | YYYY-MM-DD |
+
+| Field            | Value                                                                                                                |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------- |
+| Token location   | `~/.config/gh/host.yml` (`oauth_token`)                                                                              |
+| Account          | Gavroid                                                                                                              |
+| Scopes           | `repo`, `read:org`                                                                                                   |
+| Created          | YYYY-MM-DD                                                                                                           |
+| Expires          | YYYY-MM-DD                                                                                                           |
 | Rotation runbook | https://github.com/settings/tokens → "Regenerate" → update `~/.config/gh/host.yml` → test with `curl .../check-runs` |
 ```
 
@@ -91,15 +93,15 @@ The PAT itself MUST NOT be written into `/root/.deploy-secrets/multichef/INVENTO
 
 ## 3. SSH access to prod (multichef)
 
-| Field | Value |
-|---|---|
-| Hostname / IP | `multichef` / `192.168.1.95` |
-| User | `deploy` |
-| Key | `~/.ssh/id_ed25519_deploy` (manager → prod) |
-| `~/.ssh/config` | includes `Host multichef` alias |
-| `deploy` privileges | `NOPASSWD sudo` for systemd, pnpm build, postgres ops |
-| Service user | `multichef_app` (UID 1000-ish, owns /opt/multichef contents) |
-| Service files owner | sometimes **UID 501** (docker-build artifact, see §6.2) |
+| Field               | Value                                                        |
+| ------------------- | ------------------------------------------------------------ |
+| Hostname / IP       | `multichef` / `192.168.1.95`                                 |
+| User                | `deploy`                                                     |
+| Key                 | `~/.ssh/id_ed25519_deploy` (manager → prod)                  |
+| `~/.ssh/config`     | includes `Host multichef` alias                              |
+| `deploy` privileges | `NOPASSWD sudo` for systemd, pnpm build, postgres ops        |
+| Service user        | `multichef_app` (UID 1000-ish, owns /opt/multichef contents) |
+| Service files owner | sometimes **UID 501** (docker-build artifact, see §6.2)      |
 
 ---
 
@@ -131,15 +133,15 @@ The script (`infrastructure/scripts/deploy-safe.sh`) executes the **seven-stage*
 
 Run **exactly the same 7 checks that GitHub Actions runs** on `multichef` against the **about-to-be-deployed** commit. If any gate fails, abort.
 
-| # | Gate | Command | Same as CI? |
-|---|---|---|---|
-| 1 | `lint` | `pnpm lint` | ✅ exact (`pnpm turbo run lint`) |
-| 2 | `typecheck` | `cd apps/api && pnpm typecheck` (+ parallel for web/worker/packages) | ✅ exact |
-| 3 | `test` | `pnpm test` (unit only; integration requires Docker) | ✅ exact |
-| 4 | `build` | `pnpm build` | ✅ exact |
-| 5 | `format:check` | `pnpm format:check` | ✅ exact |
-| 6 | `secret-scan` | `gitleaks detect --source . --redact` | ✅ exact |
-| 7 | `audit` | `pnpm audit --prod --audit-level=high` | ✅ exact |
+| #   | Gate           | Command                                                              | Same as CI?                      |
+| --- | -------------- | -------------------------------------------------------------------- | -------------------------------- |
+| 1   | `lint`         | `pnpm lint`                                                          | ✅ exact (`pnpm turbo run lint`) |
+| 2   | `typecheck`    | `cd apps/api && pnpm typecheck` (+ parallel for web/worker/packages) | ✅ exact                         |
+| 3   | `test`         | `pnpm test` (unit only; integration requires Docker)                 | ✅ exact                         |
+| 4   | `build`        | `pnpm build`                                                         | ✅ exact                         |
+| 5   | `format:check` | `pnpm format:check`                                                  | ✅ exact                         |
+| 6   | `secret-scan`  | `gitleaks detect --source . --redact`                                | ✅ exact                         |
+| 7   | `audit`        | `pnpm audit --prod --audit-level=high`                               | ✅ exact                         |
 
 **Note:** the `e2e (T28-B)` CI job requires a fresh web build + Playwright + a running app; it is NOT run by `deploy-safe.sh` (it would race with the running prod). `e2e` runs in GitHub Actions on PR.
 
@@ -177,13 +179,13 @@ Run `infrastructure/scripts/backup.sh` (already exists, MC-072.3). Writes `/var/
 
 Run `infrastructure/scripts/health-check.sh http://127.0.0.1:8080`. The check probes:
 
-- `GET /api/v1/health/live`  →  200
-- `GET /api/v1/health/ready` →  200
+- `GET /api/v1/health/live` → 200
+- `GET /api/v1/health/ready` → 200
 - 4-case auth smoke:
-  - `POST /auth/register` no email  →  400
+  - `POST /auth/register` no email → 400
   - `POST /auth/register` empty email → 400
-  - `POST /auth/register` short pwd  →  400
-  - `POST /auth/register` valid      →  201
+  - `POST /auth/register` short pwd → 400
+  - `POST /auth/register` valid → 201
 - Plus any project-specific smoke cases added at the top of `health-check.sh`.
 
 **Gate:** all green → ✅ **deploy complete**.
@@ -294,18 +296,18 @@ where things stopped.
 
 ## 8. Known limitations
 
-| Limitation | Mitigation |
-|---|---|
-| e2e (Playwright) is not in `deploy-safe.sh` | Runs in GitHub Actions on PR; operator runs manually before risky deploys |
-| Postgres integration tests require Docker | Only run on CI runner or a dedicated test host, not prod |
-| `pnpm audit` may flag transitive deps that we can't fix immediately | `--audit-level=high` keeps the noise down; high-severity issues block deploy |
-| `UID 501` files block `multichef_app` writes | See §6.2 |
-| `safe.directory` for git on multichef | Always run `git -c safe.directory=/opt/multichef ...` in one-off commands; `deploy-safe.sh` sets it globally |
+| Limitation                                                          | Mitigation                                                                                                   |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| e2e (Playwright) is not in `deploy-safe.sh`                         | Runs in GitHub Actions on PR; operator runs manually before risky deploys                                    |
+| Postgres integration tests require Docker                           | Only run on CI runner or a dedicated test host, not prod                                                     |
+| `pnpm audit` may flag transitive deps that we can't fix immediately | `--audit-level=high` keeps the noise down; high-severity issues block deploy                                 |
+| `UID 501` files block `multichef_app` writes                        | See §6.2                                                                                                     |
+| `safe.directory` for git on multichef                               | Always run `git -c safe.directory=/opt/multichef ...` in one-off commands; `deploy-safe.sh` sets it globally |
 
 ---
 
 ## 9. Change history
 
-| Date | Author | Change |
-|---|---|---|
+| Date       | Author                   | Change                                 |
+| ---------- | ------------------------ | -------------------------------------- |
 | 2026-09-17 | Hermes Agent (Audit R15) | Initial document + `deploy-safe.sh` v1 |
