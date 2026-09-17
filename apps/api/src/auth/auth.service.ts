@@ -76,6 +76,27 @@ export class AuthService {
   // Re-add a Logger only with a concrete log statement that needs it.
 
   async register(input: RegisterInput): Promise<AuthResult> {
+    // MC-102 (Audit R15): defensive input guard. The global Zod pipe
+    // (apps/api/src/common/zod-validation.pipe.ts) is registered but
+    // NestJS+Fastify does not invoke it on body parameters whose
+    // metatype lacks reflect-metadata (the createZodDto factories
+    // produce such DTOs). Until MC-101 is fully resolved upstream we
+    // validate here so a malformed body never reaches Prisma and
+    // never crashes on input.email.trim().
+    if (typeof input.email !== 'string' || input.email.length === 0) {
+      throw new AppHttpException({
+        code: 'VALIDATION_ERROR',
+        message: 'Email обязателен и должен быть непустой строкой',
+        details: { fields: { email: ['required'] } },
+      });
+    }
+    if (typeof input.password !== 'string' || input.password.length < 8) {
+      throw new AppHttpException({
+        code: 'VALIDATION_ERROR',
+        message: 'Пароль должен быть строкой не короче 8 символов',
+        details: { fields: { password: ['min length 8'] } },
+      });
+    }
     const email = input.email.trim().toLowerCase();
     const existing = await getPrisma().user.findUnique({ where: { email } });
     if (existing) {
@@ -164,6 +185,21 @@ export class AuthService {
   }
 
   async login(input: { email: string; password: string }): Promise<AuthResult> {
+    // MC-102 (Audit R15): see register() — defensive input guard.
+    if (typeof input.email !== 'string' || input.email.length === 0) {
+      throw new AppHttpException({
+        code: 'VALIDATION_ERROR',
+        message: 'Email обязателен и должен быть непустой строкой',
+        details: { fields: { email: ['required'] } },
+      });
+    }
+    if (typeof input.password !== 'string' || input.password.length < 1) {
+      throw new AppHttpException({
+        code: 'VALIDATION_ERROR',
+        message: 'Пароль обязателен',
+        details: { fields: { password: ['required'] } },
+      });
+    }
     const email = input.email.trim().toLowerCase();
     const user = await getPrisma().user.findUnique({ where: { email } });
 

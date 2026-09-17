@@ -9,6 +9,7 @@ import { Logger } from '@nestjs/common';
 import { loadServerEnv, EnvValidationError } from '@multichef/config';
 import { swaggerSchemas } from '@multichef/contracts';
 import { AppModule } from './app.module.js';
+import { ZodValidationPipe } from './common/zod-validation.pipe.js';
 import { initSentry } from './common/sentry.js';
 
 // MC-002: load + validate env before NestFactory boots. The API must
@@ -107,6 +108,13 @@ async function bootstrap(): Promise<void> {
     bufferLogs: true,
   });
   app.useLogger(new Logger('MC-010'));
+
+  // Audit R15 (MC-101): register ZodValidationPipe globally so every
+  // controller DTO built via createZodDto (auth/register, login, etc.)
+  // is validated against its Zod schema before reaching the service.
+  // Without this, malformed bodies reach AuthService.register and
+  // crash on `input.email.trim()` (TypeError -> 500 INTERNAL_ERROR).
+  app.useGlobalPipes(new ZodValidationPipe());
 
   app.setGlobalPrefix('api/v1');
   app.enableShutdownHooks();

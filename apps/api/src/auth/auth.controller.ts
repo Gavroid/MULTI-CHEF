@@ -26,6 +26,7 @@ import { loadServerEnv } from '@multichef/config';
 import { generateSessionToken } from './session-token.js';
 import { AuthService, type AuthResult } from './auth.service.js';
 import type { LocaleDto, LoginDto, LogoutDto, RegisterDto } from './auth.dto-classes.js';
+import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import { AppHttpException } from '../common/exception-filter.js';
 
 // @fastify/cookie decorates FastifyRequest / FastifyReply at runtime;
@@ -164,7 +165,7 @@ export class AuthController {
   @ApiResponse({ status: 201, description: 'User registered' })
   @ApiResponse({ status: 409, description: 'Email already registered' })
   async register(
-    @Body() body: RegisterDto,
+    @Body(new ZodValidationPipe()) body: RegisterDto,
     @Res({ passthrough: true }) res: FastifyReply,
   ): Promise<{ user: AuthResult['user']; household: { id: string }; sessionToken: string }> {
     const result = await this.auth.register(body);
@@ -188,7 +189,7 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Authenticated' })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
   async login(
-    @Body() body: LoginDto,
+    @Body(new ZodValidationPipe()) body: LoginDto,
     @Res({ passthrough: true }) res: FastifyReply,
   ): Promise<{ user: AuthResult['user']; household: { id: string }; sessionToken: string }> {
     const result = await this.auth.login(body);
@@ -212,7 +213,7 @@ export class AuthController {
   async logout(
     @Req() req: FastifyRequest,
     @Res({ passthrough: true }) res: FastifyReply,
-    @Body() _body: LogoutDto,
+    @Body(new ZodValidationPipe()) _body: LogoutDto,
   ): Promise<void> {
     const token = (req as CookieRequest).cookies[SESSION_COOKIE];
     if (typeof token === 'string') {
@@ -266,7 +267,7 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'No/invalid session' })
   async updateLocale(
     @Req() req: FastifyRequest,
-    @Body() body: LocaleDto,
+    @Body(new ZodValidationPipe()) body: LocaleDto,
   ): Promise<{ locale: string }> {
     const token = (req as CookieRequest).cookies[SESSION_COOKIE];
     const session = typeof token === 'string' ? await this.auth.getSession(token) : null;
