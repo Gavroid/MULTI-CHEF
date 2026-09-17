@@ -28,6 +28,24 @@ case "$STATUS" in
   *) echo "health: web /today FAILED ($STATUS)"; exit 1 ;;
 esac
 
+# MC-WP1 (Audit R17): port-binding gate per ADR-0025.
+# API (3001) and Web (3000) must bind to a loopback interface. If either
+# listens on 0.0.0.0 / :: / a public IP, the Node.js process is
+# reachable directly from the LAN, bypassing nginx.
+for PORT_PORT in 3000 3001; do
+  BIND=$(ss -tlnH "sport = :${PORT_PORT}" 2>/dev/null | awk '{print $4}' | head -1)
+  if [ -z "$BIND" ]; then
+    # Port not listening at all — surface as a separate health failure
+    # (systemd-managed service is down).
+    echo "health: port ${PORT_PORT} NOT LISTENING"
+    exit 1
+  fi
+  case "$BIND" in
+    127.0.0.1:*|[::1]:*) echo "health: port ${PORT_PORT} bound to ${BIND} (loopback OK)" ;;
+    *) echo "health: port ${PORT_PORT} bound to ${BIND} (NON-LOOPBACK — fails ADR-0025)"; exit 1 ;;
+  esac
+done
+
 # Audit-R15 auth smoke. Each case uses a unique Idempotency-Key that
 # embeds the current timestamp (>= 16 chars) so we don't trip the
 # Idempotency validator before our own checks run.

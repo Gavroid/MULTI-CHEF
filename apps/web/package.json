@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "next dev -p ${WEB_PORT:-3000}",
     "build": "next build",
-    "start": "next start -p ${WEB_PORT:-3000}",
+    "start": "next start -p ${WEB_PORT:-3000} -H ${WEB_HOST:-127.0.0.1}",
     "lint": "eslint .",
     "format:check": "prettier --check \"src/**/*.{ts,tsx}\" \"*.{js,json,md}\"",
     "typecheck": "tsc --noEmit",

@@ -144,7 +144,8 @@ async function bootstrap(): Promise<void> {
     });
   }
 
-  await app.listen(env.API_PORT, '0.0.0.0');
+  // MC-WP1 (Audit R17): bind to API_HOST (default 127.0.0.1) per ADR-0025.
+  await app.listen(env.API_PORT, env.API_HOST);
   // T18-F (audit round 18): banner through the Nest logger so boot
   // lines share one format with the rest of the application log.
   const bootstrap = new Logger('Bootstrap');
