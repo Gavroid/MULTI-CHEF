@@ -109,8 +109,7 @@ async function main(): Promise<void> {
     let renamed = 0,
       gramsFixed = 0,
       enriched = 0,
-      described = 0,
-      imaged = 0;
+      described = 0;
 
     for (const r of recipes) {
       const category = categoryOf(r.tags);
