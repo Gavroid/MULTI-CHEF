@@ -5,11 +5,10 @@
 // chain timeline, «Готовлю это» + «Подробнее о КБЖУ» (per manager
 // decision #1 the §2.5.7 disclaimer itself lives on /recipe/[id]).
 
-import React, { useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import { ChefHat, Link2, ShoppingCart } from 'lucide-react';
 import { Badge, Button, Card } from '@multichef/ui';
-import { recipeImageUrl } from '@/lib/recipe-image';
 import type { TodayOptionDto } from '@multichef/contracts';
 import { ExplanationChip } from './ExplanationChip';
 import { ChainTimeline } from './ChainTimeline';
@@ -37,7 +36,6 @@ export function OptionCard({
   acceptBusy = false,
   acceptError = null,
 }: OptionCardProps): React.ReactElement {
-  const [imageFailed, setImageFailed] = useState(false);
   const { recipe, score, explanation } = option;
   const badge = OPTION_BADGES[option.type];
   const servings = recipe.servings > 0 ? recipe.servings : 2;
@@ -64,25 +62,8 @@ export function OptionCard({
       </div>
 
       <div className="mb-3 flex gap-3">
-        <div className="h-16 w-16 shrink-0 overflow-hidden rounded-[var(--radius-sm)] bg-[var(--color-surface-2)]">
-          {recipe.imageKey && !imageFailed ? (
-            // T3: below-the-fold thumbnail is lazy and decoded off-thread;
-            // explicit 64x64 (h-16 w-16) dimensions keep CLS at 0.
-            <img
-              src={recipeImageUrl(recipe.imageKey) ?? undefined}
-              alt={recipe.title}
-              className="h-full w-full object-cover"
-              loading="lazy"
-              decoding="async"
-              width={64}
-              height={64}
-              onError={() => setImageFailed(true)}
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center text-[var(--color-text-muted)]">
-              <ChefHat size={22} aria-hidden />
-            </div>
-          )}
+        <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-[var(--radius-sm)] bg-[var(--color-surface-2)] text-[var(--color-text-muted)]">
+          <ChefHat size={22} aria-hidden />
         </div>
         <div className="min-w-0">
           <h3

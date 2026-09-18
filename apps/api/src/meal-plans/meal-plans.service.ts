@@ -84,7 +84,6 @@ export class MealPlansService {
               id: entry.recipe.id,
               title: entry.recipe.title,
               description: entry.recipe.description,
-              imageKey: entry.recipe.imageKey,
               servings: entry.recipe.servings,
               prepMinutes: entry.recipe.prepMinutes,
               cookMinutes: entry.recipe.cookMinutes,

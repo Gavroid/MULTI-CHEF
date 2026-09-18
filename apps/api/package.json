@@ -17,7 +17,6 @@
     "test:coverage": "RUN_DB_INTEGRATION= c8 --reporter=text --reporter=lcov --include=src node --test --import tsx --test-reporter=spec src/__tests__/*.test.ts src/recipes/__tests__/recipes.mappers.spec.ts src/recommendations/__tests__/*.spec.ts"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.1133.0",
     "@fastify/cookie": "^11.0.2",
     "@fastify/cors": "^11.3.0",
     "@fastify/helmet": "^13.0.1",

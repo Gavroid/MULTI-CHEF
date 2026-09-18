@@ -85,7 +85,6 @@ export type PrismaRecipeWithRelations = {
   id: string;
   title: string;
   description: string | null;
-  imageKey: string | null;
   servings: number;
   prepMinutes: number;
   cookMinutes: number;

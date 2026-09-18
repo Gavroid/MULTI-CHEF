@@ -1,7 +1,7 @@
 // MC-085 — retrofit of the original 269 seeded recipes
 // (PLAN-2000-RECIPES.md §7): title fixes where the seed title promises
 // ingredients the catalog doesn't have, gram normalization for thin
-// portions, instruction enrichment, descriptions, imageKey + card image
+// portions, instruction enrichment, descriptions
 // task list, then RecipeNutrition recompute (v2).
 //
 // Usage: pnpm --filter @multichef/database exec tsx scripts/retrofit-existing.ts
@@ -105,7 +105,7 @@ async function main(): Promise<void> {
       (await prisma.recipe.findMany({ select: { title: true } })).map((r) => r.title.toLowerCase()),
     );
 
-    const imageTasks: Array<{ slug: string; title: string; category: string }> = [];
+    const retrofitTasks: Array<{ slug: string; title: string; category: string }> = [];
     let renamed = 0,
       gramsFixed = 0,
       enriched = 0,
@@ -177,9 +177,7 @@ async function main(): Promise<void> {
       }
 
       const slug = slugify(title);
-      const imageKey = `/images/recipes/${slug}.webp`;
-      if (!r.imageKey) imaged += 1;
-      imageTasks.push({ slug, title, category });
+      retrofitTasks.push({ slug, title, category });
 
       const taken =
         title === r.title
@@ -191,12 +189,12 @@ async function main(): Promise<void> {
       if (!taken) {
         await prisma.recipe.update({
           where: { id: r.id },
-          data: { title, description, instructions: newSteps, imageKey },
+          data: { title, description, instructions: newSteps },
         });
       } else {
         await prisma.recipe.update({
           where: { id: r.id },
-          data: { description, instructions: newSteps, imageKey },
+          data: { description, instructions: newSteps },
         });
       }
     }
@@ -204,11 +202,11 @@ async function main(): Promise<void> {
     mkdirSync(join('..', '..', 'data', 'recipes'), { recursive: true });
     writeFileSync(
       join('..', '..', 'data', 'recipes', 'retrofit.json'),
-      JSON.stringify(imageTasks, null, 1),
+      JSON.stringify(retrofitTasks, null, 1),
     );
     console.log(
       `retrofit: renamed=${renamed} gramsFixed=${gramsFixed} instructionsEnriched=${enriched} ` +
-        `descriptionsAdded=${described} imagesQueued=${imaged}`,
+        `descriptionsAdded=${described}`,
     );
 
     const s7 = await recomputeRecipeNutrition(prisma);

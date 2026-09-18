@@ -68,7 +68,6 @@ export interface RecipeDetail {
   prepMinutes: number;
   cookMinutes: number;
   difficulty: 1 | 2 | 3;
-  imageKey: string | null;
   mealTypes: MealType[];
   tags: string[];
   requiredAppliances: string[];

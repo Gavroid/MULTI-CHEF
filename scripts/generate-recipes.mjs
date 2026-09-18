@@ -351,8 +351,6 @@ while (written.length < TARGET && pass < 6) {
           grams: it.grams,
         })),
         instructions: built.steps,
-        imagePrompt: `${title.trim()} — готовое блюдо, домашняя подача, естественный дневной свет, ракурс 45 градусов, фотореалистично`,
-        imageAlt: `${title.trim()} — готовое блюдо`,
       };
 
       const res = validateCard(card, { catalog, nutrition, seenTitles });

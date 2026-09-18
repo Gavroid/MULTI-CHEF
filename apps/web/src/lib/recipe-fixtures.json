@@ -8,7 +8,6 @@
       "prepMinutes": 10,
       "cookMinutes": 15,
       "difficulty": 1,
-      "imageKey": "/images/recipes/r_pasta_grib.webp",
       "mealTypes": ["LUNCH", "DINNER"],
       "tags": ["быстрое", "одна сковорода"],
       "requiredAppliances": ["STOVE"],
@@ -43,9 +42,21 @@
         }
       ],
       "instructions": [
-        { "order": 1, "text": "Отварите пасту до состояния аль денте.", "timerMinutes": 9 },
-        { "order": 2, "text": "Обжарьте грибы на сливочном масле до золотистости.", "timerMinutes": 7 },
-        { "order": 3, "text": "Добавьте сливки и пасту, прогрейте 2 минуты.", "timerMinutes": 2 }
+        {
+          "order": 1,
+          "text": "Отварите пасту до состояния аль денте.",
+          "timerMinutes": 9
+        },
+        {
+          "order": 2,
+          "text": "Обжарьте грибы на сливочном масле до золотистости.",
+          "timerMinutes": 7
+        },
+        {
+          "order": 3,
+          "text": "Добавьте сливки и пасту, прогрейте 2 минуты.",
+          "timerMinutes": 2
+        }
       ],
       "nutrition": {
         "servingCalories": 620,
@@ -56,7 +67,12 @@
         "calculationVersion": 2
       },
       "storageRules": [
-        { "storageMethod": "FREEZE_OK", "maxHoursFridge": 48, "maxDaysFreezer": 30, "addBeforeServing": ["зелень"] },
+        {
+          "storageMethod": "FREEZE_OK",
+          "maxHoursFridge": 48,
+          "maxDaysFreezer": 30,
+          "addBeforeServing": ["зелень"]
+        },
         {
           "storageMethod": "ADD_BEFORE_SERVING",
           "maxHoursFridge": null,
@@ -74,7 +90,6 @@
       "prepMinutes": 15,
       "cookMinutes": 15,
       "difficulty": 1,
-      "imageKey": null,
       "mealTypes": ["LUNCH"],
       "tags": ["быстрое", "без духовки"],
       "requiredAppliances": ["STOVE"],
@@ -102,8 +117,16 @@
         }
       ],
       "instructions": [
-        { "order": 1, "text": "Отварите киноа 15 минут.", "timerMinutes": 15 },
-        { "order": 2, "text": "Нарежьте овощи и смешайте с киноа.", "timerMinutes": null }
+        {
+          "order": 1,
+          "text": "Отварите киноа 15 минут.",
+          "timerMinutes": 15
+        },
+        {
+          "order": 2,
+          "text": "Нарежьте овощи и смешайте с киноа.",
+          "timerMinutes": null
+        }
       ],
       "nutrition": {
         "servingCalories": 310,
@@ -114,7 +137,12 @@
         "calculationVersion": 1
       },
       "storageRules": [
-        { "storageMethod": "FRIDGE_ONLY", "maxHoursFridge": 24, "maxDaysFreezer": null, "addBeforeServing": [] }
+        {
+          "storageMethod": "FRIDGE_ONLY",
+          "maxHoursFridge": 24,
+          "maxDaysFreezer": null,
+          "addBeforeServing": []
+        }
       ],
       "nutritionAccuracy": "ESTIMATED"
     }

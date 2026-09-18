@@ -66,7 +66,6 @@ async function main(): Promise<void> {
           prepMinutes: card.prepMinutes,
           cookMinutes: card.cookMinutes,
           difficulty: card.difficulty,
-          imageKey: `/images/recipes/${slug}.webp`,
           instructions: card.instructions,
           mealTypes: card.mealTypes,
           tags: card.tags,

@@ -27,7 +27,6 @@ const result: RescueResponseDto = {
         id: 'r1',
         title: 'Оладьи из кабачков',
         description: null,
-        imageKey: null,
         servings: 2,
         prepMinutes: 10,
         cookMinutes: 20,

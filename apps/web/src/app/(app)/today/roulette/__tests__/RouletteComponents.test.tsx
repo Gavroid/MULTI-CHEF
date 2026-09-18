@@ -14,7 +14,6 @@ const recipe = (id: string, title: string) => ({
   id,
   title,
   description: null,
-  imageKey: null,
   servings: 2,
   prepMinutes: 10,
   cookMinutes: 20,

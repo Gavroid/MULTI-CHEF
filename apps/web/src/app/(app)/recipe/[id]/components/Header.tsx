@@ -1,13 +1,12 @@
 'use client';
 
-// Header — recipe photo, title, meta row and the servings stepper
+// Header — title, meta row and the servings stepper
 // (MC-035). Presentational: all interactivity arrives via props, so the
 // component is testable without the Next.js router.
 
-import React, { useState } from 'react';
+import React from 'react';
 import { AlertTriangle, BarChart3, ChefHat, Clock, Minus, Plus } from 'lucide-react';
 import { Badge } from '@multichef/ui';
-import { isSafeRecipeImage, recipeImageUrl } from '@/lib/recipe-image';
 import {
   MAX_SERVINGS,
   MIN_SERVINGS,
@@ -30,7 +29,6 @@ export function Header({
   onServingsChange,
   onBack,
 }: HeaderProps): React.ReactElement {
-  const [imageFailed, setImageFailed] = useState(false);
   const totalMinutes = recipe.prepMinutes + recipe.cookMinutes;
   const atMin = servings <= MIN_SERVINGS;
   const atMax = servings >= MAX_SERVINGS;
@@ -38,27 +36,12 @@ export function Header({
   return (
     <header className="mb-4" data-testid="recipe-header">
       <div className="relative mb-4 aspect-[4/3] overflow-hidden rounded-[var(--radius-lg)] bg-[var(--color-surface-2)] md:aspect-[16/9] lg:aspect-[21/9]">
-        {isSafeRecipeImage(recipe.imageKey) && !imageFailed ? (
-          // T3: LCP candidate — eager load at high priority, decoded
-          // off-thread; the 4/3 aspect wrapper reserves the box (CLS = 0).
-          <img
-            src={recipeImageUrl(recipe.imageKey) ?? undefined}
-            alt={recipe.title}
-            className="h-full w-full object-cover"
-            loading="eager"
-            fetchPriority="high"
-            decoding="async"
-            onError={() => setImageFailed(true)}
-            data-testid="recipe-image"
-          />
-        ) : (
-          <div
-            className="flex h-full w-full items-center justify-center bg-[var(--color-surface-2)] text-[var(--color-text-muted)]"
-            data-testid="recipe-image-placeholder"
-          >
-            <ChefHat size={48} aria-hidden />
-          </div>
-        )}
+        <div
+          className="flex h-full w-full items-center justify-center text-[var(--color-text-muted)]"
+          data-testid="recipe-image-placeholder"
+        >
+          <ChefHat size={48} aria-hidden />
+        </div>
         {onBack ? (
           <button
             type="button"

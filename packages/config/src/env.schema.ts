@@ -125,14 +125,6 @@ export const serverEnvSchema = z.object({
 
   SENTRY_DSN: optionalString,
   // T54-C (E24): image storage drivers (local default / S3-compatible).
-  IMAGE_STORAGE_DRIVER: optionalString,
-  IMAGE_STORAGE_ROOT: optionalString,
-  IMAGE_PUBLIC_BASE: optionalString,
-  IMAGE_S3_BUCKET: optionalString,
-  IMAGE_S3_REGION: optionalString,
-  IMAGE_S3_ENDPOINT: optionalString,
-  IMAGE_S3_ACCESS_KEY_ID: optionalString,
-  IMAGE_S3_SECRET_ACCESS_KEY: optionalString,
   // T69-A/B (E26): LLM explanation provider scaffold. Disabled by
   // default — TemplateAiProvider answers; flipping AI_LLM_ENABLED=true
   // (plus a vendor key) routes explanations through the resilient
@@ -146,7 +138,6 @@ export const serverEnvSchema = z.object({
   // T69-D (E26): inbound webhook HMAC-SHA256 verification secret.
   WEBHOOK_SIGNING_SECRET: optionalString,
   // nginx internal location for X-Accel-Redirect (empty = stream from API).
-  IMAGE_X_ACCEL_PREFIX: optionalString,
   SENTRY_TRACES_SAMPLE_RATE: z.coerce.number().min(0).max(1).default(0.1),
 
   ANALYTICS_WRITE_KEY: optionalString,

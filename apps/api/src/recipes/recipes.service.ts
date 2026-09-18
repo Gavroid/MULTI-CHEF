@@ -34,7 +34,6 @@ export function toDto(row: RecipeRowWithRelations): RecipeDto {
     id: row.id,
     title: row.title,
     description: row.description,
-    imageKey: row.imageKey,
     servings: row.servings,
     prepMinutes: row.prepMinutes,
     cookMinutes: row.cookMinutes,

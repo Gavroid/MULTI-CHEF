@@ -17,7 +17,6 @@ const RECIPE_DTO = {
   id: '01HMZ8X9R6K7P3WXY5T2N0V4J8',
   title: 'Куриный суп',
   description: null,
-  imageKey: null,
   servings: 4,
   prepMinutes: 10,
   cookMinutes: 25,
@@ -141,35 +140,4 @@ test('TodayRecommendationDtoSchema: 3 options, ESTIMATED accuracy', () => {
   // guarantee, not a schema-level one (zod discriminated union validates
   // each option independently). Order is covered by pick-top3 unit tests
   // and the controller integration spec.
-});
-
-// T54-B (audit round 54, P1): imageKey — только внутренние пути
-// сид-хранилища; data:/http(s)/javascript: отклоняются контрактом.
-test('RecipeDtoSchema.imageKey: rejects non-internal sources (XSS)', () => {
-  const base = { ...RECIPE_DTO };
-  for (const evil of [
-    'data:text/html;base64,PHNjcmlwdD4=',
-    'javascript:alert(1)',
-    'https://evil.example.com/x.webp',
-    '/images/recipes/x.svg',
-    '/etc/passwd.webp',
-  ]) {
-    const result = RecipeDtoSchema.safeParse({ ...base, imageKey: evil });
-    assert.equal(result.success, false, `must reject: ${evil}`);
-  }
-});
-
-test('RecipeDtoSchema.imageKey: accepts opaque storage keys (T54-C, E24)', () => {
-  // catalog keys and household upload keys both start with recipes/
-  for (const key of [
-    'recipes/tolokno-s-lukom-poreem.webp',
-    'recipes/u/01hfakehousehold0000000000/3b8ad9a0-12cd-4e01-a333-000000000001.jpg',
-  ]) {
-    const result = RecipeDtoSchema.safeParse({ ...RECIPE_DTO, imageKey: key });
-    assert.equal(result.success, true, `should accept ${key}`);
-  }
-});
-
-test('RecipeDtoSchema.imageKey: nullable is preserved', () => {
-  assert.equal(RecipeDtoSchema.safeParse({ ...RECIPE_DTO, imageKey: null }).success, true);
 });

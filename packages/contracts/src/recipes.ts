@@ -27,20 +27,10 @@ export const ListRecipesQuerySchema = z.object({
 });
 export type ListRecipesQuery = z.infer<typeof ListRecipesQuerySchema>;
 
-// T54-C (E24): opaque storage key — no leading slash, no traversal,
-// whitelisted extensions. Shared by API validation and the web resolver.
-export const RecipeImageKeySchema = z
-  .string()
-  .regex(/^recipes\/[a-z0-9][a-z0-9-/]*\.(webp|jpg|jpeg|png)$/);
-
 export const RecipeDtoSchema = z.object({
   id: z.string().min(1),
   title: z.string().min(1),
   description: z.string().nullable(),
-  // T54-B (round 54) + T54-C (E24): imageKey — OPAQUE storage key
-  // (recipes/<slug>.webp catalog, recipes/u/<household>/<ulid>.<ext>
-  // uploads). Запрещает data:/http(s)/SVG-инъекции через src у <img>.
-  imageKey: RecipeImageKeySchema.nullable(),
   servings: z.number().int().positive(),
   prepMinutes: z.number().int().nonnegative(),
   cookMinutes: z.number().int().nonnegative(),

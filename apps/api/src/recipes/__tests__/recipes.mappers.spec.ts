@@ -72,7 +72,6 @@ const ROW: PrismaRecipeWithRelations = {
   id: 'r1',
   title: 'Паста с грибами',
   description: null,
-  imageKey: null,
   servings: 2,
   prepMinutes: 10,
   cookMinutes: 15,
