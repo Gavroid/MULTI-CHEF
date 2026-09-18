@@ -10,6 +10,10 @@ export const RegisterBody = z
   .object({
     email: z.string().email().toLowerCase(),
     password: z.string().min(8).max(256),
+    // PRD §2.3.1 — optional family name captured by the register form;
+    // auth.service defaults to «Моя семья» when absent. (Re-added after
+    // MC-107 .strict() promotion silently rejected the field the UI sends.)
+    householdName: z.string().min(1).max(120).optional(),
     guestProfile: z
       .object({
         peopleCount: z.number().int().min(1).max(20).optional(),
