@@ -155,3 +155,16 @@ test('buildTags follows seed convention', () => {
 test('slugify transliterates cyrillic', () => {
   assert.equal(slugify('Сырники классические'), 'syrniki-klassicheskie');
 });
+
+// MC-200 stage 3: NaN/undefined leaked into step text by the generator
+// template must hard-fail validation (PLAN-2000-RECIPES §5.3).
+test('validateCard rejects NaN/undefined in step text', () => {
+  const badSteps = [...steps];
+  badSteps[0] = 'Взбейте 4 яйца (NaN г) с молоком (undefined г) и щепоткой соли.';
+  const r = validateCard(happy({ instructions: badSteps }), { ...ctx, seenTitles: new Set() });
+  assert.ok(
+    r.errors.some((e) => e.startsWith('STEPS:nanOrUndefined')),
+    r.errors,
+  );
+  assert.equal(r.ok, false);
+});

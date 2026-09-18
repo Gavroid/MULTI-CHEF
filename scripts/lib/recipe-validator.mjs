@@ -146,6 +146,10 @@ export function validateCard(card, ctx) {
   if (totalLen < 300) err(`STEPS:tooShort:${totalLen}`);
   if (!steps.some((x) => /\d/.test(x))) err('STEPS:noNumbers');
   if (new Set(steps).size !== steps.length) err('STEPS:duplicate');
+  // MC-200 stage 3: template bug leaked raw JS values into step text
+  // («4 яйца (NaN г)», «молоко (undefined г)») — hard gate, no import.
+  const badSteps = steps.filter((x) => typeof x === 'string' && /\bNaN\b|\bundefined\b/.test(x));
+  if (badSteps.length > 0) err(`STEPS:nanOrUndefined:${badSteps.length}`);
 
   return { ok: errors.length === 0, errors };
 }

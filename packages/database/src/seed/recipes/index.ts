@@ -116,8 +116,12 @@ export async function seedRecipes(prisma: PrismaClient): Promise<{
     // T60-B (audit round 60): рецепт + ингредиенты + нутрицы + правило —
     // одна транзакция; падение между шагами не оставит «голый» рецепт.
     await prisma.$transaction(async (tx) => {
+      // MC-200 stage 1: natural key is lower(title) — a functional
+      // UNIQUE index exists in the DB (Recipe_title_lower_key, invisible
+      // to Prisma). resolve to id case-insensitively so re-seeds update
+      // the existing row instead of hitting the unique index.
       const existing = await tx.recipe.findFirst({
-        where: { title: recipe.canonicalTitle },
+        where: { title: { equals: recipe.canonicalTitle, mode: 'insensitive' } },
         select: { id: true },
       });
 

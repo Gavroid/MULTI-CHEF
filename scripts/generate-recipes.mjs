@@ -313,6 +313,24 @@ while (written.length < TARGET && pass < 6) {
       withGrams = fit.items;
       const macro = fit.macro;
 
+      // MC-200 stage 3: family build() templates render quantities from
+      // the slot items — push the final grams back (previously the slots
+      // had no grams yet, so step text leaked «NaN г»/«undefined г»).
+      const finalByName = new Map(withGrams.map((it) => [it.name, it]));
+      for (const it of flat) {
+        const g = finalByName.get(it.name);
+        if (!g) continue;
+        it.grams = g.grams;
+        it.quantity = g.quantity;
+        const unit = it.unit ?? catalog.get(it.name)?.unit ?? 'G';
+        it.label =
+          unit === 'ML'
+            ? `${g.grams} мл`
+            : unit === 'PIECE'
+              ? `${g.quantity} шт (≈${g.grams} г)`
+              : `${g.grams} г`;
+      }
+
       const title = q.f.title(s);
       const titleKey = title.trim().toLowerCase();
       if (seenTitles.has(titleKey)) continue;
