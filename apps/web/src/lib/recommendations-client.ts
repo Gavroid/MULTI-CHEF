@@ -241,7 +241,7 @@ export async function acceptRecommendation(
         return {
           error: {
             status: 502,
-            error: { code: 'CONTRACT_MISMATCH', message: 'Сервер обновился (job poll)' },
+            error: { code: 'CONTRACT_MISMATCH', message: 'Сервер обновился' },
           },
         };
       }
@@ -271,7 +271,7 @@ export async function acceptRecommendation(
       return {
         error: {
           status: 502,
-          error: { code: 'CONTRACT_MISMATCH', message: 'Сервер обновился (active plan)' },
+          error: { code: 'CONTRACT_MISMATCH', message: 'Сервер обновился' },
         },
       };
     }

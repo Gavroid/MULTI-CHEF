@@ -194,7 +194,10 @@ export async function request<T>(
   }
 
   if (response.ok) {
-    const envelope = payload as { data?: T; error?: ErrorEnvelope } | null;
+    const envelope = payload as {
+      data?: T;
+      error?: ErrorEnvelope;
+    } | null;
     // Most endpoints return `{ data: T, error?: never }` (the wire
     // envelope per docs/api/conventions.md §2). Some legacy auth
     // endpoints (login/register, MC-010) return the bare payload
@@ -202,37 +205,24 @@ export async function request<T>(
     if (envelope && typeof envelope === 'object' && 'data' in envelope) {
       return { data: envelope.data as T };
     }
-    if (
-      envelope &&
-      typeof envelope === 'object' &&
-      !('data' in envelope) &&
-      !('error' in envelope)
-    ) {
-      // Bare payload — treat the whole body as the success data.
-      return { data: envelope as unknown as T };
+    // 204 / empty body.
+    if (envelope === null || envelope === undefined) {
+      return { data: undefined as T };
     }
-    // Some endpoints (e.g. logout) return 204 with no body.
-    return { data: undefined as unknown as T };
-  }
-
-  // R20: bare payload whose own `error` key is null (e.g. JobDto from
-  // GET /jobs/:id) is a SUCCESS body — only a non-null error value is
-  // an error envelope. Without this branch such responses collapsed to
-  // `{ data: undefined }` and the UI showed "Сервер обновился".
-  if (
-    payload &&
-    typeof payload === 'object' &&
-    'error' in payload &&
-    (payload as { error?: unknown }).error !== null &&
-    (payload as { error?: unknown }).error !== undefined
-  ) {
-    const env = payload as { error: { code: string; message: string } };
-    return {
-      error: {
-        status: response.status,
-        error: env.error,
-      },
-    };
+    // R20: bare payload (no data/error wrapper) is the success body —
+    // including bodies that carry their own `error: null` field (JobDto
+    // from GET /jobs/:id). Only a NON-null error value is an error
+    // envelope.
+    const errValue = (envelope as { error?: unknown }).error;
+    if (errValue !== null && errValue !== undefined) {
+      return {
+        error: {
+          status: response.status,
+          error: errValue as ErrorEnvelope['error'],
+        },
+      };
+    }
+    return { data: envelope as T };
   }
 
   const envelope = payload as { status?: number; error?: ErrorEnvelope['error'] } | null;
