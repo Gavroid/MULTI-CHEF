@@ -13,12 +13,12 @@ AUDIT-R20-GLOBAL-SUMMARY.md §«R20-fixes: статус»).
 
 | #     | Sev   | Плоскость     | Находка                                                                                                                             |
 | ----- | ----- | ------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| T71-A | 🟠 P2 | продукт       | Accept-флоу теряет настройки генерации визарда (budget/maxMinutes/antiFilters) — план генерируется с дефолтами                      |
-| T71-B | 🟠 P2 | продукт       | `peopleCount` домохозяйства не влияет на генерацию: `setup.peopleCount ?? 2`                                                        |
+| T71-A | 🟠 P2 | продукт       | ✅ fixed (e5633fa) — accept прокидывает настройки визарда в генерацию                                                               |
+| T71-B | 🟠 P2 | продукт       | ✅ fixed (e5633fa) — план берёт peopleCount из Household.defaultPeopleCount при отсутствии в setup                                  |
 | T71-C | 🟠 P2 | архитектура   | Смешанное состояние RLS: 11 таблиц ENABLE+FORCE, 14 — выключено (в т.ч. Job с userId/paramsHash и Session) — E28 pending            |
 | T71-D | 🟡 P3 | продукт/UX    | locale=en локализует только ошибки API; UI остаётся русским — смешанный язык                                                        |
-| T71-E | 🟡 P3 | продукт/UX    | Переключатель языка в профиле меняет язык ошибок, но не UI — ожидание пользователя не совпадает с поведением                        |
-| T71-F | 🟡 P3 | web/privacy   | SW DATA_CACHE не очищается при logout — кэш персональных ответов остаётся в Cache Storage общего браузера                           |
+| T71-E | 🟡 P3 | продукт/UX    | ✅ fixed (e5633fa) — подсказка в профиле про область действия переключателя                                                         |
+| T71-F | 🟡 P3 | web/privacy   | ✅ fixed (e5633fa) — logout постит purge-data-cache в SW, DATA_CACHE очищается                                                      |
 | T71-G | 🟡 P3 | infra         | rollback в deploy-safe требует доступа к npm-registry (pnpm install при откате) — недоступность реестра ломает откат                |
 | T71-H | 🟡 P3 | web/security  | На страницах Next нет Content-Security-Policy (только helmet-CSP на API); inline theme-скрипт потребует nonce при введении CSP      |
 | T71-I | 🟡 P3 | продукт       | E24 upload-инфраструктура не имеет потребителя: POST /uploads/image никто не вызывает, imageKey всех рецептов NULL (решение MC-200) |
@@ -133,8 +133,7 @@ Permissions-Policy/X-Frame-Options DENY от nginx). Инъекция через
 
 ## Рекомендации (приоритет)
 
-1. **T71-A/B** — прокинуть настройки визарда + household peopleCount в
-   генерацию плана (закрывает главный продуктовый разрыв accept-флоу).
+1. ~~T71-A/B~~ ✅ исполнено в R71-fixes (e5633fa).
 2. **T71-F** — purge SW-кэшей на logout (пост `{type:'purge'}` в SW).
 3. **T71-J** — завести Sentry DSN (staging) — код готов.
 4. **T71-H** — CSP c nonce для inline-скриптов (после E28).
