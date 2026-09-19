@@ -14,6 +14,9 @@ const EMAIL = `e2e-${unique}@test.ru`;
 const PASSWORD = 'Passw0rd-e2e';
 
 test('register → stock the fridge → get a recommendation → accept it', async ({ page }) => {
+  // Полный сценарий: регистрация + сток + визард + генерация плана
+  // (джоба) + accept — 30-с дефолт мал.
+  test.setTimeout(180_000);
   // 1. Register through the API (Idempotency-Key required). Auth endpoints
   //    are @Throttle(10/min) — retry 429s until the window frees up.
   let register;
