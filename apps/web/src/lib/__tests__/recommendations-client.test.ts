@@ -4,11 +4,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import {
-  acceptRecommendation,
-  getRecommendationsToday,
-  usesMealPlanMock,
-} from '../recommendations-client';
+import { acceptRecommendation, getRecommendationsToday } from '../recommendations-client';
 import type { TodayRecommendationDto } from '@multichef/contracts';
 
 /* ---------------- fixture ---------------- */
@@ -103,80 +99,133 @@ test('getRecommendationsToday: HTTP error passes through', async () => {
   assert.equal(result.error?.error.code, 'INTERNAL_ERROR');
 });
 
-/* ---------------- acceptRecommendation mock ---------------- */
+/* ---------------- acceptRecommendation (R20 F2, вариант b) ---------------- */
 
-test('usesMealPlanMock: only the exact string "1" enables the mock', () => {
-  const original = process.env['NEXT_PUBLIC_USE_MEALPLAN_MOCK'];
-  try {
-    process.env['NEXT_PUBLIC_USE_MEALPLAN_MOCK'] = '1';
-    assert.equal(usesMealPlanMock(), true);
-    process.env['NEXT_PUBLIC_USE_MEALPLAN_MOCK'] = '0';
-    assert.equal(usesMealPlanMock(), false);
-    delete process.env['NEXT_PUBLIC_USE_MEALPLAN_MOCK'];
-    assert.equal(usesMealPlanMock(), false);
-  } finally {
-    if (original !== undefined) process.env['NEXT_PUBLIC_USE_MEALPLAN_MOCK'] = original;
-  }
+function fakeFetchSequence(responses: Array<{ status: number; body: unknown }>) {
+  let call = 0;
+  const urls: string[] = [];
+  const impl = (async (url: string | URL | Request) => {
+    const r = responses[Math.min(call, responses.length - 1)]!;
+    urls.push(String(url));
+    call += 1;
+    return jsonResponse(r.status, r.body);
+  }) as typeof fetch;
+  return { impl, urls };
+}
+
+test('acceptRecommendation: POST /meal-plans -> poll job -> active plan id', async () => {
+  const { impl } = fakeFetchSequence([
+    { status: 202, body: { jobId: 'job-1', deduplicated: false } },
+    {
+      status: 200,
+      body: {
+        data: {
+          id: 'job-1',
+          type: 'GENERATE_PLAN',
+          status: 'PROCESSING',
+          progress: 10,
+          stage: null,
+          resultRef: null,
+          error: null,
+          createdAt: '2026-09-16T00:00:00Z',
+          updatedAt: '2026-09-16T00:00:00Z',
+        },
+      },
+    },
+    {
+      status: 200,
+      body: {
+        data: {
+          id: 'job-1',
+          type: 'GENERATE_PLAN',
+          status: 'COMPLETED',
+          progress: 100,
+          stage: null,
+          resultRef: 'plan-1',
+          error: null,
+          createdAt: '2026-09-16T00:00:00Z',
+          updatedAt: '2026-09-16T00:01:00Z',
+        },
+      },
+    },
+    {
+      status: 200,
+      body: {
+        data: {
+          id: 'plan-1',
+          householdId: 'h1',
+          status: 'ACTIVE',
+          startDate: '2026-09-16',
+          endDate: '2026-09-22',
+          peopleCount: 2,
+          days: [],
+        },
+      },
+    },
+  ]);
+  const result = await acceptRecommendation(
+    { recipeId: 'r1', servings: 2 },
+    { baseUrl: 'http://api.test', fetchImpl: impl },
+  );
+  assert.equal(result.error, undefined);
+  assert.equal(result.data?.mealPlanId, 'plan-1');
+  // R20 (b): shopping list создаётся воркером; клиент навигирует на
+  // /shopping и читает активный список там — здесь идентификатор пуст.
+  assert.equal(result.data?.shoppingListId, '');
 });
 
-test('acceptRecommendation mock: returns prefixed ids without fetch', async () => {
-  const original = process.env['NEXT_PUBLIC_USE_MEALPLAN_MOCK'];
-  process.env['NEXT_PUBLIC_USE_MEALPLAN_MOCK'] = '1';
-  try {
-    let fetchCalled = 0;
-    const g = globalThis as unknown as Record<string, unknown>;
-    const origFetch = g['fetch'];
-    g['fetch'] = () => {
-      fetchCalled += 1;
-      return Promise.reject(new Error('no network'));
-    };
-    try {
-      const result = await acceptRecommendation({ recipeId: 'r1', servings: 2 });
-      assert.equal(result.error, undefined);
-      assert.match(result.data?.mealPlanId ?? '', /^mock-plan-/);
-      assert.match(result.data?.shoppingListId ?? '', /^mock-list-/);
-      assert.equal(fetchCalled, 0, 'mock must not touch the network');
-    } finally {
-      g['fetch'] = origFetch;
-    }
-  } finally {
-    if (original !== undefined) process.env['NEXT_PUBLIC_USE_MEALPLAN_MOCK'] = original;
-  }
+test('acceptRecommendation: FAILED job -> JOB_FAILED error', async () => {
+  const { impl } = fakeFetchSequence([
+    { status: 202, body: { jobId: 'job-2', deduplicated: false } },
+    {
+      status: 200,
+      body: {
+        data: {
+          id: 'job-2',
+          type: 'GENERATE_PLAN',
+          status: 'FAILED',
+          progress: 0,
+          stage: null,
+          resultRef: null,
+          error: 'ветер',
+          createdAt: '2026-09-16T00:00:00Z',
+          updatedAt: '2026-09-16T00:00:05Z',
+        },
+      },
+    },
+  ]);
+  const result = await acceptRecommendation(
+    { recipeId: 'r1', servings: 2 },
+    { baseUrl: 'http://api.test', fetchImpl: impl },
+  );
+  assert.equal(result.error?.error.code, 'JOB_FAILED');
+  assert.match(result.error?.error.message ?? '', /ветер/);
 });
 
-test('acceptRecommendation real mode: posts to /meal-plans and validates', async () => {
-  const original = process.env['NEXT_PUBLIC_USE_MEALPLAN_MOCK'];
-  delete process.env['NEXT_PUBLIC_USE_MEALPLAN_MOCK'];
-  try {
-    let capturedBody = '';
-    const result = await acceptRecommendation({ recipeId: 'r1', servings: 2 }, {
-      baseUrl: 'http://api.test',
-      fetchImpl: (async (url: string | URL | Request, init?: RequestInit) => {
-        capturedBody = String(init?.body ?? '');
-        void url;
-        return jsonResponse(200, {
-          data: { mealPlanId: 'plan-1', shoppingListId: 'list-1' },
-        });
-      }) as never,
-    } as never);
-    assert.equal(result.error, undefined);
-    assert.deepEqual(result.data, { mealPlanId: 'plan-1', shoppingListId: 'list-1' });
-    assert.match(capturedBody, /"recipeId":"r1"/);
-  } finally {
-    if (original !== undefined) process.env['NEXT_PUBLIC_USE_MEALPLAN_MOCK'] = original;
-  }
-});
-
-test('acceptRecommendation real mode: malformed body → CONTRACT_MISMATCH', async () => {
-  const original = process.env['NEXT_PUBLIC_USE_MEALPLAN_MOCK'];
-  delete process.env['NEXT_PUBLIC_USE_MEALPLAN_MOCK'];
-  try {
-    const result = await acceptRecommendation({ recipeId: 'r1', servings: 2 }, {
-      baseUrl: 'http://api.test',
-      fetchImpl: (async () => jsonResponse(200, { data: { mealPlanId: 'plan-1' } })) as never, // missing shoppingListId
-    } as never);
-    assert.equal(result.error?.error.code, 'CONTRACT_MISMATCH');
-  } finally {
-    if (original !== undefined) process.env['NEXT_PUBLIC_USE_MEALPLAN_MOCK'] = original;
-  }
+test('acceptRecommendation: malformed active plan -> CONTRACT_MISMATCH', async () => {
+  const { impl } = fakeFetchSequence([
+    { status: 202, body: { jobId: 'job-3', deduplicated: false } },
+    {
+      status: 200,
+      body: {
+        data: {
+          id: 'job-3',
+          type: 'GENERATE_PLAN',
+          status: 'COMPLETED',
+          progress: 100,
+          stage: null,
+          resultRef: 'plan-1',
+          error: null,
+          createdAt: '2026-09-16T00:00:00Z',
+          updatedAt: '2026-09-16T00:01:00Z',
+        },
+      },
+    },
+    { status: 200, body: { data: { broken: true } } },
+  ]);
+  const result = await acceptRecommendation(
+    { recipeId: 'r1', servings: 2 },
+    { baseUrl: 'http://api.test', fetchImpl: impl },
+  );
+  assert.equal(result.error?.error.code, 'CONTRACT_MISMATCH');
 });

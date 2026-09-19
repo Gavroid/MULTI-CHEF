@@ -230,6 +230,9 @@ export class PantryService {
         data.quantity = new Prisma.Decimal(body.quantityG);
         data.estimatedGrams = new Prisma.Decimal(body.quantityG);
       }
+      // R20 F1: единица измерения редактируема; estimatedGrams в этой
+      // упрощённой модели зеркалит quantity (1:1) независимо от unit.
+      if (body.unit !== undefined) data.unit = body.unit;
       if (body.amountStatus !== undefined) data.amountStatus = body.amountStatus;
       if (body.priority !== undefined) data.priority = body.priority;
       if (body.storageLocation !== undefined) data.storageLocation = body.storageLocation;

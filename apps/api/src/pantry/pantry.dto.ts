@@ -1,7 +1,8 @@
 // MC-022 — Pantry DTO schemas.
 //
-// Schema reality (MC-003 — packages/database/prisma/schema.prisma):
-//   PantryItem has NO `notes`, NO `archivedAt`, NO `addedAt`.
+// Schema reality (ADR-0021 + T15-B обновили модель — см.
+// packages/database/prisma/schema.prisma): PantryItem HAS `notes` и
+// `archivedAt` (soft delete); `addedAt` так и не появился.
 //   It DOES have `quantity` (Decimal), `unit` (Unit enum),
 //   `estimatedGrams` (Decimal), `amountStatus`, `priority`,
 //   `storageLocation`, `opened`, `purchaseDate`, `expiresAt`,
@@ -70,6 +71,9 @@ export type CreatePantryItemBody = z.infer<typeof CreatePantryItemSchema>;
 export const PatchPantryItemSchema = z
   .object({
     quantityG: z.number().positive().max(1_000_000).optional(),
+    // R20 F1: UI отправляет unit в PATCH (EditPantryItemDialog) —
+    // strict-схема его отвергала → 400 при каждом редактировании.
+    unit: z.enum(UNIT_VALUES).optional(),
     expiresAt: isoDate.nullable().optional(),
     amountStatus: z.enum(AMOUNT_STATUS_VALUES).optional(),
     priority: z.enum(PRIORITY_VALUES).optional(),

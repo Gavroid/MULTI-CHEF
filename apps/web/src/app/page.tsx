@@ -29,9 +29,7 @@ export default function HomePage(): React.ReactElement {
           </Link>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Badge tone="fresh">Phase 0 done</Badge>
-          <Badge tone="info">MC-013 app-shell</Badge>
-          <Badge tone="warning">Frontend</Badge>
+          <Badge tone="fresh">MVP</Badge>
         </div>
       </section>
 

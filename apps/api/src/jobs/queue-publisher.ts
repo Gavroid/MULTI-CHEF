@@ -22,6 +22,15 @@ export interface QueuePublisher {
 
 const QUEUE_NAME = 'planning';
 
+// R20 F9: retry policy — a failed job is retried up to 3 times with
+// exponential backoff (5s base). Exported as data so the contract is
+// unit-testable without BullMQ.
+export const JOB_RETRY_OPTS = {
+  attempts: 3,
+  backoff: { type: 'exponential', delay: 5000 },
+  removeOnComplete: 500,
+} as const;
+
 class BullmqQueuePublisher implements QueuePublisher {
   private queue: Queue | null = null;
 
@@ -31,7 +40,10 @@ class BullmqQueuePublisher implements QueuePublisher {
     this.queue ??= new Queue(QUEUE_NAME, {
       connection: new IORedis(this.url, { maxRetriesPerRequest: null }),
     });
-    await this.queue.add(QUEUE_NAME, payload, { jobId: payload.jobId });
+    await this.queue.add(QUEUE_NAME, payload, {
+      jobId: payload.jobId,
+      ...JOB_RETRY_OPTS,
+    });
   }
 }
 

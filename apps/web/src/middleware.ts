@@ -28,8 +28,12 @@ export function middleware(req: NextRequest): NextResponse {
   const hasSession = Boolean(req.cookies.get(SESSION_COOKIE)?.value);
   if (hasSession) return NextResponse.next();
 
-  const loginUrl = req.nextUrl.clone();
-  loginUrl.pathname = '/auth/login';
+  // R20 F7: Next 15.5 за прокси строит nextUrl из биндинга сервера
+  // (localhost:3000), а не из Host — redirect уводил пользователя в
+  // connection refused. Собираем URL из прокси-заголовков.
+  const host = req.headers.get('x-forwarded-host') ?? req.headers.get('host') ?? '127.0.0.1:3000';
+  const proto = req.headers.get('x-forwarded-proto') ?? 'http';
+  const loginUrl = new URL(`${proto}://${host}/auth/login`);
   loginUrl.searchParams.set('redirect', pathname + (search ?? ''));
   return NextResponse.redirect(loginUrl);
 }

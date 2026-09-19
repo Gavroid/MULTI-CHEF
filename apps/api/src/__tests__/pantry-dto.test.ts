@@ -89,6 +89,18 @@ test('PatchPantryItemSchema: all fields optional', () => {
   assert.equal(PatchPantryItemSchema.safeParse({ quantityG: 50 }).success, true);
 });
 
+test('PatchPantryItemSchema: accepts unit (R20 F1) — the edit dialog sends it', () => {
+  const full = PatchPantryItemSchema.safeParse({
+    quantityG: 400,
+    unit: 'ML',
+    notes: 'перелито в бутылку',
+  });
+  assert.equal(full.success, true);
+  if (full.success) assert.equal(full.data.unit, 'ML');
+  assert.equal(PatchPantryItemSchema.safeParse({ unit: 'PIECE' }).success, true);
+  assert.equal(PatchPantryItemSchema.safeParse({ unit: 'BURST' }).success, false);
+});
+
 test('ListPantryQuerySchema: defaults sort=createdAt, order=desc, limit=50, offset=0, includeArchived=false', () => {
   const r = ListPantryQuerySchema.safeParse({});
   assert.equal(r.success, true);

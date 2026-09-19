@@ -65,10 +65,11 @@ export const SESSION_COOKIE = 'mc_session';
 // register/login alongside the session cookie (readable by JS by
 // design — double-submit needs the JS to echo it in a header).
 export const CSRF_COOKIE = 'mc_csrf';
-// T32-A: cookie ограничен /api/v1 — не уходит на статику/health/docs.
-// (Все авторизованные вызовы идут через /api/v1/*, сужение до
-// /api/v1/auth сломало бы pantry/plan/shopping запросы.)
-const COOKIE_PATH = '/api/v1';
+// R20 F8 (2026-09-19): Path='/' — браузер не отправляет cookie с
+// Path=/api/v1 на page-навигации (/today, /fridge...), из-за чего
+// middleware считал пользователя разлогиненным на каждом full-reload
+// (и ломал SW precache на 307). CSRF-cookie синхронно.
+export const COOKIE_PATH = '/';
 
 interface CookieFlags {
   secure: boolean;

@@ -12,10 +12,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation';
 import { RefreshCw } from 'lucide-react';
 import { Button, Card, toast } from '@multichef/ui';
-import {
-  acceptRecommendation as acceptRecommendationApi,
-  usesMealPlanMock,
-} from '@/lib/recommendations-client';
+import { acceptRecommendation as acceptRecommendationApi } from '@/lib/recommendations-client';
 import { TabTitle } from '@/components/TabTitle';
 import { loadSessionResult, type SessionResult } from '../loading/LoadingClient';
 import { OptionCard } from './components/OptionCard';
@@ -79,8 +76,6 @@ export function ResultClient({ deps: depsOverride }: ResultClientProps): React.R
     [deps, router, session],
   );
 
-  const mockMode = useMemo(() => usesMealPlanMock(), []);
-
   if (!checkedSession) {
     return (
       <div
@@ -100,15 +95,6 @@ export function ResultClient({ deps: depsOverride }: ResultClientProps): React.R
   return (
     <>
       <TabTitle sublabel="3 варианта на сегодня">Ваш выбор</TabTitle>
-
-      {mockMode ? (
-        <p
-          className="mb-3 rounded-[var(--radius-sm)] bg-[var(--color-surface-2)] px-3 py-1.5 text-[11px] text-[var(--color-text-muted)]"
-          data-testid="mock-banner"
-        >
-          Демо-режим: план будет создан локально (бэкенд планов появится позже).
-        </p>
-      ) : null}
 
       {session.result.options.map((option) => (
         <OptionCard
