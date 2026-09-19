@@ -157,7 +157,14 @@ done
 PREV_SHA=$(capture_prev_sha)
 echo "deploy-safe: PREV_SHA=$PREV_SHA"
 
-git fetch origin >/dev/null 2>&1
+# R20: flaky GitHub SSH — retry the fetch; a silently stale origin/main
+# deploys the WRONG commit.
+FETCH_OK=0
+for _attempt in 1 2 3 4 5; do
+  if git fetch origin; then FETCH_OK=1; break; fi
+  sleep 15
+done
+[ "$FETCH_OK" = 1 ] || fail "git fetch origin failed after retries" 3
 git rev-parse --verify "$REF" >/dev/null 2>&1 || fail "ref $REF not resolvable" 3
 NEW_SHA=$(git rev-parse "$REF")
 echo "deploy-safe: NEW_SHA=$NEW_SHA"
