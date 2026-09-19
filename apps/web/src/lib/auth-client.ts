@@ -109,6 +109,11 @@ export function register(
 }
 
 export function logout(options: FetchOptions = {}): Promise<ApiResponse<void>> {
+  // R20 T71-F: purge the service worker's personal data cache on logout
+  // (same-origin Cache Storage survives across browser profiles).
+  if (typeof navigator !== 'undefined' && navigator.serviceWorker?.controller) {
+    navigator.serviceWorker.controller.postMessage({ type: 'purge-data-cache' });
+  }
   return request<void>(authUrl('/auth/logout'), 'POST', {}, options);
 }
 

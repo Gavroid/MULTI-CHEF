@@ -168,6 +168,12 @@ export default function ProfilePage(): React.ReactElement {
         <p className="text-caption text-[var(--color-text-muted)] mt-2" data-testid="profile-tz">
           {t('timezone')}: {tz}
         </p>
+        <p
+          className="text-caption text-[var(--color-text-muted)] mt-1"
+          data-testid="profile-locale-hint"
+        >
+          Интерфейс остаётся на русском; язык влияет на сообщения об ошибках API.
+        </p>
       </Card>
 
       <Card className="mb-6" data-testid="profile-logout">

@@ -60,7 +60,16 @@ export function ResultClient({ deps: depsOverride }: ResultClientProps): React.R
       setAcceptError(null);
       const servings =
         session.result.options.find((o) => o.recipe.id === recipeId)?.recipe.servings ?? 2;
-      const result = await deps.acceptRecommendation({ recipeId, servings });
+      // R20 T71-A: настройки визарда (бюджет/время) участвуют и в
+      // генерации недельного плана, а не только в подборе вариантов.
+      const result = await deps.acceptRecommendation({
+        recipeId,
+        servings,
+        setup: {
+          budgetMode: session.settings.budgetMode,
+          maxMinutes: session.settings.maxMinutes,
+        },
+      });
       if (result.error) {
         setBusyRecipeId(null);
         if (result.error.error.code === 'NOT_FOUND') {

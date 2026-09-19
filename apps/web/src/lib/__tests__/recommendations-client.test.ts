@@ -174,6 +174,57 @@ test('acceptRecommendation: POST /meal-plans -> poll job -> active plan id', asy
   assert.equal(result.data?.shoppingListId, '');
 });
 
+test('acceptRecommendation: forwards wizard settings as plan setup (T71-A)', async () => {
+  let capturedSetup: unknown;
+  const { impl } = fakeFetchSequence([
+    { status: 202, body: { jobId: 'job-s', deduplicated: false } },
+    {
+      status: 200,
+      body: {
+        data: {
+          id: 'job-s',
+          type: 'GENERATE_PLAN',
+          status: 'COMPLETED',
+          progress: 100,
+          stage: null,
+          resultRef: 'plan-s',
+          error: null,
+          createdAt: '2026-09-16T00:00:00Z',
+          updatedAt: '2026-09-16T00:01:00Z',
+        },
+      },
+    },
+    {
+      status: 200,
+      body: {
+        data: {
+          id: 'plan-s',
+          householdId: 'h1',
+          status: 'ACTIVE',
+          startDate: '2026-09-16',
+          endDate: '2026-09-22',
+          peopleCount: 2,
+          days: [],
+        },
+      },
+    },
+  ]);
+  const wrapped = (async (url: string | URL | Request, init?: RequestInit) => {
+    if (String(url).endsWith('/meal-plans')) capturedSetup = JSON.parse(String(init?.body ?? '{}'));
+    return impl(url, init);
+  }) as typeof fetch;
+  const result = await acceptRecommendation(
+    {
+      recipeId: 'r1',
+      servings: 2,
+      setup: { budgetMode: 'MINIMAL', maxMinutes: 20 },
+    },
+    { baseUrl: 'http://api.test', fetchImpl: wrapped },
+  );
+  assert.equal(result.error, undefined);
+  assert.deepEqual(capturedSetup, { budgetMode: 'MINIMAL', maxMinutes: 20 });
+});
+
 test('acceptRecommendation: FAILED job -> JOB_FAILED error', async () => {
   const { impl } = fakeFetchSequence([
     { status: 202, body: { jobId: 'job-2', deduplicated: false } },

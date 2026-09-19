@@ -142,7 +142,7 @@ export async function runPlanWeek(
   const setup = data.params;
 
   await report('filtering');
-  const [recipeRows, pantryRows, preferenceRows, profile] = await Promise.all([
+  const [recipeRows, pantryRows, preferenceRows, profile, householdRow] = await Promise.all([
     prisma.recipe.findMany({
       where: { sourceType: 'CURATED', status: 'PUBLISHED' },
       include: {
@@ -183,6 +183,12 @@ export async function runPlanWeek(
         },
       }),
     ),
+    // R20 T71-B: household composition (onboarding peopleCount) is the
+    // fallback for plan generation when setup omits peopleCount.
+    prisma.household.findUnique({
+      where: { id: data.householdId },
+      select: { defaultPeopleCount: true },
+    }),
   ]);
 
   const recipes = (recipeRows as PlannerRecipeRow[]).map(mapRecipeRowForPlanner);
@@ -232,7 +238,7 @@ export async function runPlanWeek(
       ctx,
       days: setup.days ?? 7,
       mealsPerDay: setup.mealsPerDay ?? 3,
-      peopleCount: setup.peopleCount ?? 2,
+      peopleCount: setup.peopleCount ?? householdRow?.defaultPeopleCount ?? 2,
       noCookDays: setup.noCookDays ?? [],
       repeatPolicy: setup.repeatPolicy ?? 'ALLOW_REPEATS',
       ...(targetCalories && targetCalories > 0 ? { targetDailyCalories: targetCalories } : {}),
@@ -264,7 +270,7 @@ export async function runPlanWeek(
           householdId: data.householdId,
           startDate,
           endDate: new Date(startDate.getTime() + ((setup.days ?? 7) - 1) * dayMs),
-          peopleCount: setup.peopleCount ?? 2,
+          peopleCount: setup.peopleCount ?? householdRow?.defaultPeopleCount ?? 2,
           ...(setup.targetBudgetKopecks ? { targetBudgetKopecks: setup.targetBudgetKopecks } : {}),
           ...(profile?.targetCalories ? { targetCalories: profile.targetCalories } : {}),
           status: 'ACTIVE',

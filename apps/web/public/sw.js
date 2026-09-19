@@ -46,6 +46,18 @@ self.addEventListener('activate', (event) => {
   );
 });
 
+// R20 T71-F: logout purges personal API responses from Cache Storage
+// (same-origin SW cache is shared between browser profiles).
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'purge-data-cache') {
+    event.waitUntil(
+      caches.delete(DATA_CACHE).then(() => {
+        event.source?.postMessage?.({ type: 'data-cache-purged' });
+      }),
+    );
+  }
+});
+
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
   if (event.request.method !== 'GET') return;
