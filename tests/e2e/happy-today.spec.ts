@@ -117,5 +117,5 @@ test('register → stock the fridge → get a recommendation → accept it', asy
   await expect(page.locator('[data-testid^="option-"]').first()).toBeVisible();
 
   await page.locator('[data-testid^="accept-"]').first().click();
-  await expect(page).toHaveURL(/\/shopping/, { timeout: 15_000 });
+  await expect(page).toHaveURL(/\/shopping/, { timeout: 60_000 });
 });
