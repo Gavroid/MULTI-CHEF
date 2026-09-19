@@ -237,7 +237,14 @@ export async function acceptRecommendation(
       );
       if (jr.error) return jr;
       const parsedJob = JobDtoSchema.safeParse(jr.data);
-      if (!parsedJob.success) return { error: contractMismatch() };
+      if (!parsedJob.success) {
+        return {
+          error: {
+            status: 502,
+            error: { code: 'CONTRACT_MISMATCH', message: 'Сервер обновился (job poll)' },
+          },
+        };
+      }
       job = parsedJob.data;
       if (job.status === 'COMPLETED' || job.status === 'FAILED') break;
     }
@@ -261,7 +268,12 @@ export async function acceptRecommendation(
       .nullable()
       .safeParse(active.data);
     if (!parsedActive.success || !parsedActive.data) {
-      return { error: contractMismatch() };
+      return {
+        error: {
+          status: 502,
+          error: { code: 'CONTRACT_MISMATCH', message: 'Сервер обновился (active plan)' },
+        },
+      };
     }
     return { data: { mealPlanId: parsedActive.data.id, shoppingListId: '' } };
   } finally {
