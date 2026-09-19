@@ -215,6 +215,26 @@ export async function request<T>(
     return { data: undefined as unknown as T };
   }
 
+  // R20: bare payload whose own `error` key is null (e.g. JobDto from
+  // GET /jobs/:id) is a SUCCESS body — only a non-null error value is
+  // an error envelope. Without this branch such responses collapsed to
+  // `{ data: undefined }` and the UI showed "Сервер обновился".
+  if (
+    payload &&
+    typeof payload === 'object' &&
+    'error' in payload &&
+    (payload as { error?: unknown }).error !== null &&
+    (payload as { error?: unknown }).error !== undefined
+  ) {
+    const env = payload as { error: { code: string; message: string } };
+    return {
+      error: {
+        status: response.status,
+        error: env.error,
+      },
+    };
+  }
+
   const envelope = payload as { status?: number; error?: ErrorEnvelope['error'] } | null;
   if (envelope && envelope.error) {
     return {
