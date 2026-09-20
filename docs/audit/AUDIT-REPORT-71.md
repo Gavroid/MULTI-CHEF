@@ -143,6 +143,18 @@ Permissions-Policy/X-Frame-Options DENY от nginx). Инъекция через
 | T71-G | ⏳ backlog            | offline-mirror для registry-независимого rollback                                                                      |
 | T71-J | ✅ закрыт параллельно | Sentry DSN — заведён владельцем (staging)                                                                              |
 
+## R71-fixes: статус (2026-09-19, спринт исполнен)
+
+| ID    | Статус           | Исправление                                                                                                            |
+| ----- | ---------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| T71-A | ✅ fixed         | ResultClient прокидывает настройки визарда (budgetMode/maxMinutes) в acceptRecommendation setup (+юнит-тест пересылки) |
+| T71-B | ✅ fixed         | plan-week: peopleCount fallback = Household.defaultPeopleCount (было всегда 2)                                         |
+| T71-F | ✅ fixed         | logout постит purge-data-cache в SW; DATA_CACHE очищается (sw.js message-handler)                                      |
+| T71-E | ✅ fixed         | подсказка в профиле про область действия переключателя языка                                                           |
+| T71-H | ⏳ deferred      | CSP требует nonce для inline theme-скрипта — после появления публичного домена                                         |
+| T71-G | ⏳ backlog       | offline-mirror для registry-независимого rollback                                                                      |
+| T71-J | ⏳ pending owner | нужен SENTRY_DSN (код initSentry/captureException готов с E26)                                                         |
+
 ## Рекомендации (приоритет)
 
 1. ~~T71-A/B~~ ✅ исполнено в R71-fixes (e5633fa).
