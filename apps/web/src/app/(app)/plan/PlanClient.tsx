@@ -246,9 +246,23 @@ export function PlanClient({ deps: depsOverride }: PlanClientProps): React.React
             const avgP = Math.round(sum((d) => d.totalProteinG) / n);
             const avgF = Math.round(sum((d) => d.totalFatG) / n);
             const avgC = Math.round(sum((d) => d.totalCarbsG) / n);
+            const deviation = avgKcal - DEFAULT_DAILY_TARGET;
+            const deviationLabel =
+              Math.abs(deviation) <= 100
+                ? 'в пределах цели'
+                : deviation > 0
+                  ? `выше цели на ${deviation} ккал`
+                  : `ниже цели на ${Math.abs(deviation)} ккал`;
+            const proteinHint =
+              avgP < 90
+                ? ' · белка маловато: добавьте творог, курицу или рыбу'
+                : avgP > 150
+                  ? ' · белка с избытком — можно заменить часть мясного гарниром'
+                  : '';
             return (
               <p className="text-body" data-testid="plan-week-averages">
-                В среднем за день: {avgKcal} ккал · Б {avgP} г · Ж {avgF} г · У {avgC} г
+                В среднем за день: {avgKcal} ккал · Б {avgP} г · Ж {avgF} г · У {avgC} г —{' '}
+                {deviationLabel}.{proteinHint}
               </p>
             );
           })()}

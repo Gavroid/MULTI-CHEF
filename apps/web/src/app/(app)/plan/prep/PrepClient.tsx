@@ -6,9 +6,9 @@
 // survives reloads (DoD).
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Badge, Card } from '@multichef/ui';
+import { Badge, Card, Chip } from '@multichef/ui';
 import Link from 'next/link';
-import type { PrepSessionDto } from '@multichef/contracts';
+import type { PrepIntensity, PrepSessionDto } from '@multichef/contracts';
 import {
   generatePrepSession as generatePrepSessionApi,
   togglePrepTask as togglePrepTaskApi,
@@ -19,6 +19,19 @@ export interface PrepClientDeps {
   generatePrepSession: typeof generatePrepSessionApi;
   togglePrepTask: typeof togglePrepTaskApi;
 }
+
+// R21 (этап 5): пресеты «Готовить минимум» из идеи — интенсивность
+// заготовки, передаваемая в генератор prep-задач.
+export const PREP_PRESETS: Array<{
+  intensity: PrepIntensity;
+  label: string;
+  testId: string;
+}> = [
+  { intensity: 'MINIMAL_15', label: '15 минут', testId: 'prep-preset-minimal15' },
+  { intensity: 'COMPONENTS_1H', label: '1 час', testId: 'prep-preset-1h' },
+  { intensity: 'BATCH_3H', label: '2–3 часа', testId: 'prep-preset-batch3h' },
+  { intensity: 'FULL_WEEK', label: 'Вся неделя', testId: 'prep-preset-fullweek' },
+];
 
 const defaultDeps: PrepClientDeps = {
   generatePrepSession: generatePrepSessionApi,
@@ -34,17 +47,27 @@ export function PrepClient({
   const [session, setSession] = useState<PrepSessionDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // R21 (этап 5): пресеты интенсивности из идеи («Готовить минимум»).
+  const [intensity, setIntensity] = useState<PrepIntensity>('BATCH_3H');
 
-  const load = useCallback(async (): Promise<void> => {
-    const res = await deps.generatePrepSession('BATCH_3H');
-    if (res.error) setError(res.error.error.message);
-    else setSession(res.data);
-    setLoading(false);
-  }, [deps]);
+  const load = useCallback(
+    async (intensityValue: PrepIntensity): Promise<void> => {
+      setLoading(true);
+      const res = await deps.generatePrepSession(intensityValue);
+      if (res.error) setError(res.error.error.message);
+      else {
+        setSession(res.data);
+        setError(null);
+      }
+      setLoading(false);
+    },
+    [deps],
+  );
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    void load('BATCH_3H');
+    // начальная загрузка — дефолтная интенсивность
+  }, []);
 
   const toggle = useCallback(
     async (taskId: string, done: boolean): Promise<void> => {
@@ -92,6 +115,21 @@ export function PrepClient({
   return (
     <>
       <TabTitle sublabel={`Цель: ${session.targetMinutes} мин`}>Заготовка</TabTitle>
+      <div className="mb-3 flex flex-wrap gap-2" data-testid="prep-presets">
+        {PREP_PRESETS.map((p) => (
+          <Chip
+            key={p.intensity}
+            selected={intensity === p.intensity}
+            onClick={() => {
+              setIntensity(p.intensity);
+              void load(p.intensity);
+            }}
+            data-testid={`prep-preset-${p.intensity}`}
+          >
+            {p.label}
+          </Chip>
+        ))}
+      </div>
       <Card className="mb-3" data-testid="prep-progress">
         <div className="flex items-center justify-between">
           <span className="text-body">

@@ -37,9 +37,13 @@ export const CreateMealPlanResponseDtoSchema = z.object({
 export type CreateMealPlanResponseDto = z.infer<typeof CreateMealPlanResponseDtoSchema>;
 
 // R21 (продукт-план, этап 1): замена блюда в активном плане.
+// R21: id составной (`{planId}-d{N}-{mealType}`), не ULID — валидируем
+// форму, а существование проверяет воркер (ENTRY_NOT_FOUND).
 export const MealPlanReplaceDtoSchema = z
   .object({
-    entryId: z.string().regex(/^[0-9A-HJKMNP-TV-Z]{26}$/, 'entryId must be a ULID'),
+    entryId: z
+      .string()
+      .regex(/^[A-Za-z0-9-]{8,120}$/, 'entryId must be 8-120 chars of [A-Za-z0-9-]'),
   })
   .strict();
 export type MealPlanReplaceDto = z.infer<typeof MealPlanReplaceDtoSchema>;
