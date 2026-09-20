@@ -153,6 +153,7 @@ enum PrepStatus {
 
 enum JobType {
   GENERATE_TODAY
+  REPLACE_MEAL
   GENERATE_PLAN
   RESCUE
   LEFTOVERS

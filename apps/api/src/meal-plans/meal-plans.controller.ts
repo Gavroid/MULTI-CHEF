@@ -38,7 +38,11 @@ import type {
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import { AuthGuard, currentUser } from '../common/auth-guard.js';
 import type { AuthenticatedUser } from '../auth/auth.service.js';
-import { MealPlanSetupDtoSchema, TogglePrepTaskRequestDtoSchema } from './meal-plans.dto.js';
+import {
+  MealPlanReplaceDtoSchema,
+  MealPlanSetupDtoSchema,
+  TogglePrepTaskRequestDtoSchema,
+} from './meal-plans.dto.js';
 import { MealPlansService } from './meal-plans.service.js';
 
 @ApiTags('meal-plans')
@@ -65,6 +69,20 @@ export class MealPlansController {
   ): Promise<CreateMealPlanResponseDto> {
     const user = currentUser(req as unknown as { user: AuthenticatedUser });
     return this.svc.create(user.id, body);
+  }
+
+  /** R21 (продукт-план этап 1): заменить блюдо в активном плане. */
+  @Post('replace-meal')
+  @HttpCode(202)
+  @ApiOperation({ summary: 'Queue a meal replacement job for an ACTIVE plan entry' })
+  @ApiResponse({ status: 202, description: 'Job recorded and enqueued' })
+  @ApiResponse({ status: 401, description: 'No session' })
+  async replaceMeal(
+    @Req() req: FastifyRequest,
+    @Body(new ZodValidationPipe(MealPlanReplaceDtoSchema)) body: { entryId: string },
+  ): Promise<CreateMealPlanResponseDto> {
+    const user = currentUser(req as unknown as { user: AuthenticatedUser });
+    return this.svc.replaceMealEntry(user.id, body.entryId);
   }
 
   @Get('active')

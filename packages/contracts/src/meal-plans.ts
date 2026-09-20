@@ -4,7 +4,7 @@
 // the worker plans the week and the web polls GET /jobs/:id.
 
 import { z } from 'zod';
-import { BudgetModeSchema } from './recommendations.js';
+import { AntiFilterSchema, BudgetModeSchema } from './recommendations.js';
 
 export const RepeatPolicySchema = z.enum(['ALLOW_REPEATS', 'NO_REPEATS']);
 export type RepeatPolicy = z.infer<typeof RepeatPolicySchema>;
@@ -21,6 +21,7 @@ export const MealPlanSetupDtoSchema = z.object({
   /** 0-based day indices planned as no-cook («сборные») days. */
   noCookDays: z.array(z.number().int().min(0).max(13)).max(14).default([]),
   repeatPolicy: RepeatPolicySchema.default('ALLOW_REPEATS'),
+  antiFilters: z.array(AntiFilterSchema).max(8).optional(),
   budgetMode: BudgetModeSchema.optional(),
   maxMinutes: z.number().int().min(5).max(360).optional(),
   /** Weekly budget cap in KOPECKS. */
@@ -34,3 +35,11 @@ export const CreateMealPlanResponseDtoSchema = z.object({
   deduplicated: z.boolean(),
 });
 export type CreateMealPlanResponseDto = z.infer<typeof CreateMealPlanResponseDtoSchema>;
+
+// R21 (продукт-план, этап 1): замена блюда в активном плане.
+export const MealPlanReplaceDtoSchema = z
+  .object({
+    entryId: z.string().regex(/^[0-9A-HJKMNP-TV-Z]{26}$/, 'entryId must be a ULID'),
+  })
+  .strict();
+export type MealPlanReplaceDto = z.infer<typeof MealPlanReplaceDtoSchema>;

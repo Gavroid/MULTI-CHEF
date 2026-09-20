@@ -12,6 +12,7 @@ export type JobStatus = z.infer<typeof JobStatusSchema>;
 
 export const JobTypeSchema = z.enum([
   'GENERATE_TODAY',
+  'REPLACE_MEAL',
   'GENERATE_PLAN',
   'RESCUE',
   'LEFTOVERS',

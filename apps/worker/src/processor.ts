@@ -5,7 +5,7 @@
 
 import type { Job } from 'bullmq';
 import { runWithMirror } from './job-runner.js';
-import { runPlanWeek } from './plan-week.js';
+import { runPlanWeek, runReplaceMeal } from './plan-week.js';
 
 export interface ProcessPayload {
   jobId: string;
@@ -21,6 +21,8 @@ export async function processJob(bullJob: Job<ProcessPayload>): Promise<void> {
     switch (type) {
       case 'GENERATE_PLAN':
         return runPlanWeek(bullJob.data, report, new Date());
+      case 'REPLACE_MEAL':
+        return runReplaceMeal(bullJob.data, new Date());
       default:
         // Unknown types complete immediately (mirror stays consistent).
         return undefined;

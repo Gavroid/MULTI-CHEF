@@ -13,3 +13,5 @@ export type {
   RepeatPolicy,
   TogglePrepTaskRequestDto,
 } from '@multichef/contracts';
+
+export { MealPlanReplaceDtoSchema } from '@multichef/contracts';

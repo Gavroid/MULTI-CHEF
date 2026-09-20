@@ -42,6 +42,12 @@ export class MealPlansService {
     );
   }
 
+  /** R21 (продукт-план): заменить блюдо в активном плане (джоба REPLACE_MEAL). */
+  async replaceMealEntry(userId: string, entryId: string): Promise<CreateMealPlanResponseDto> {
+    const householdId = await this.requireOwnedHouseholdId(userId);
+    return this.jobs.enqueue(userId, householdId, 'REPLACE_MEAL', { entryId });
+  }
+
   /** Fetch the household's active plan (web «План» tab, MC-055). */
   async getActiveForUser(userId: string) {
     const householdId = await this.requireOwnedHouseholdId(userId);

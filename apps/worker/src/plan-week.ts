@@ -213,7 +213,7 @@ export async function runPlanWeek(
     preferences,
     maxMinutes: setup.maxMinutes ?? profile?.preferredPrepMinutes ?? 60,
     ...(setup.budgetMode ? { budgetMode: setup.budgetMode } : {}),
-    antiFilters: [],
+    antiFilters: setup.antiFilters ?? [],
     yesterdayMainProtein: 'NONE',
     recentRecipeIds7d: [],
     ...(profile?.targetCalories && profile.targetCalories > 0
@@ -403,4 +403,193 @@ export async function runPlanWeek(
 
 function mealTypePosition(mealType: string): number {
   return ['BREAKFAST', 'LUNCH', 'DINNER', 'SNACK'].indexOf(mealType);
+}
+
+/**
+ * R21 (продукт-план, этап 1) — REPLACE_MEAL: заменяет блюдо в ACTIVE
+ * плане на ближайшее по КБЖУ/времени и пересобирает активный список
+ * покупок. Пользовательские остатки (pantry) учитываются заново.
+ */
+export async function runReplaceMeal(
+  data: {
+    jobId: string;
+    userId: string;
+    householdId: string;
+    params: { entryId?: string };
+  },
+  _now: Date = new Date(),
+): Promise<string> {
+  const entryId = String(data.params?.entryId ?? '');
+
+  return withTenantContext({ householdId: data.householdId, userId: data.userId }, async (tx) => {
+    const entry = await tx.mealPlanEntry.findUnique({
+      where: { id: entryId },
+      include: {
+        day: {
+          select: {
+            id: true,
+            mealPlanId: true,
+            mealPlan: { select: { id: true, householdId: true, status: true } },
+          },
+        },
+        recipe: { include: { nutrition: true } },
+      },
+    });
+    if (!entry || entry.day.mealPlan.householdId !== data.householdId) {
+      throw new Error('ENTRY_NOT_FOUND');
+    }
+    if (entry.day.mealPlan.status !== 'ACTIVE') {
+      throw new Error('PLAN_NOT_ACTIVE');
+    }
+
+    const candidates = await tx.recipe.findMany({
+      where: {
+        sourceType: 'CURATED',
+        status: 'PUBLISHED',
+        id: { not: entry.recipeId },
+      },
+      include: { nutrition: true },
+    });
+    if (candidates.length === 0) throw new Error('NO_REPLACEMENT');
+
+    const cur = entry.recipe.nutrition;
+    if (!cur) throw new Error('ENTRY_HAS_NO_NUTRITION');
+    const curKcal = cur.servingCalories.toNumber();
+    const curMinutes = entry.recipe.prepMinutes + entry.recipe.cookMinutes;
+    let best = candidates[0]!;
+    let bestDelta = Number.POSITIVE_INFINITY;
+    for (const r of candidates) {
+      const nut = r.nutrition;
+      if (!nut) continue;
+      const kcalDelta = Math.abs(nut.servingCalories.toNumber() - curKcal);
+      const timeDelta = Math.abs(r.prepMinutes + r.cookMinutes - curMinutes);
+      const delta = kcalDelta + timeDelta * 2;
+      if (delta < bestDelta || (delta === bestDelta && r.id < best.id)) {
+        best = r;
+        bestDelta = delta;
+      }
+    }
+
+    const servingGrams = best.nutrition?.servingGrams.toNumber() ?? 0;
+    await tx.mealPlanEntry.update({
+      where: { id: entry.id },
+      data: { recipeId: best.id, portionGrams: servingGrams * entry.servings.toNumber() },
+    });
+
+    // Пересчёт дневных итогов по всем блюдам дня.
+    const dayEntries = await tx.mealPlanEntry.findMany({
+      where: { dayId: entry.dayId },
+      include: { recipe: { include: { nutrition: true } } },
+    });
+    const totals = dayEntries.reduce(
+      (acc, e) => {
+        const n = e.recipe.nutrition;
+        if (!n) return acc;
+        const mult = e.servings.toNumber();
+        return {
+          kcal: acc.kcal + n.servingCalories.toNumber() * mult,
+          p: acc.p + n.servingProteinG.toNumber() * mult,
+          f: acc.f + n.servingFatG.toNumber() * mult,
+          c: acc.c + n.servingCarbsG.toNumber() * mult,
+        };
+      },
+      { kcal: 0, p: 0, f: 0, c: 0 },
+    );
+    await tx.mealPlanDay.update({
+      where: { id: entry.dayId },
+      data: {
+        totalCalories: totals.kcal,
+        totalProteinG: totals.p,
+        totalFatG: totals.f,
+        totalCarbsG: totals.c,
+      },
+    });
+
+    // Пересборка активного списка покупок плана (как в plan-week).
+    const list = await tx.shoppingList.findFirst({
+      where: { mealPlanId: entry.day.mealPlan.id, status: 'ACTIVE' },
+    });
+    if (!list) return entry.day.mealPlan.id;
+
+    const planEntries = await tx.mealPlanEntry.findMany({
+      where: { day: { mealPlanId: entry.day.mealPlan.id } },
+      include: { recipe: { include: { ingredients: true } } },
+    });
+    const required = requiredGramsFromEntries(
+      planEntries.map((e) => ({
+        servings: e.servings.toNumber(),
+        ingredients: e.recipe.ingredients.map((i) => ({
+          ingredientId: i.ingredientId,
+          grams: i.grams.toNumber(),
+          optional: i.optional,
+        })),
+      })),
+    );
+    const ingredientIds = [...required.keys()];
+    const ingredientRows =
+      ingredientIds.length > 0
+        ? await tx.ingredient.findMany({
+            where: { id: { in: ingredientIds } },
+            select: {
+              id: true,
+              packageSize: true,
+              avgPriceKopecks: true,
+              categoryId: true,
+              category: { select: { sortOrder: true } },
+            },
+          })
+        : [];
+    const pantryRows = await tx.pantryItem.findMany({
+      where: { householdId: data.householdId, archivedAt: null, estimatedGrams: { gt: 0 } },
+      select: { ingredientId: true, estimatedGrams: true, priority: true },
+    });
+    const pantryGramsById = new Map<string, number>();
+    for (const r of pantryRows) {
+      pantryGramsById.set(
+        r.ingredientId,
+        (pantryGramsById.get(r.ingredientId) ?? 0) + r.estimatedGrams.toNumber(),
+      );
+    }
+    const listDrafts = buildShoppingList({
+      requiredGrams: new Map([...required.entries()].map(([id, v]) => [id, v.grams])),
+      pantryGrams: pantryGramsById,
+      staples: new Set(
+        pantryRows.filter((r) => r.priority === 'STAPLE').map((r) => r.ingredientId),
+      ),
+      dishCounts: new Map([...required.entries()].map(([id, v]) => [id, v.dishes])),
+      totalDishes: planEntries.length,
+      meta: ingredientRows.map((r) => ({
+        ingredientId: r.id,
+        packageSize: r.packageSize ?? 500,
+        avgPriceKopecks: r.avgPriceKopecks ?? 0,
+        categoryId: r.categoryId,
+        categorySortOrder: r.category?.sortOrder ?? 99,
+      })),
+    });
+    await tx.shoppingListItem.deleteMany({ where: { shoppingListId: list.id } });
+    await tx.shoppingList.update({
+      where: { id: list.id },
+      data: {
+        estimatedTotalKopecks: listDrafts.reduce((acc, d) => acc + d.estimatedPriceKopecks, 0),
+      },
+    });
+    for (const d of listDrafts) {
+      await tx.shoppingListItem.create({
+        data: {
+          id: `${list.id}-${d.ingredientId}`,
+          shoppingListId: list.id,
+          ingredientId: d.ingredientId,
+          requiredGrams: d.requiredGrams,
+          packageQuantity: d.packageQuantity,
+          packageSize: d.packageSize,
+          packageUnit: 'G',
+          estimatedPriceKopecks: d.estimatedPriceKopecks,
+          utilityScore: d.utilityScore,
+          categoryId: d.categoryId,
+          sortOrder: d.sortOrder,
+        },
+      });
+    }
+    return entry.day.mealPlan.id;
+  });
 }
