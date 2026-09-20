@@ -9,7 +9,7 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button, Card, Chip, Input, toast } from '@multichef/ui';
-import type { JobDto, MealPlanSetupDto } from '@multichef/contracts';
+import type { AntiFilter, JobDto, MealPlanSetupDto } from '@multichef/contracts';
 import { createMealPlan as createMealPlanApi, getJob as getJobApi } from '@/lib/plan-client';
 import { TabTitle } from '@/components/TabTitle';
 
@@ -21,6 +21,8 @@ export interface WizardState {
   noCookDays: number[];
   targetBudgetKopecks: number | null;
   targetDailyCalories: number | null;
+  /** R21 (этап 2): антифильтры недельной генерации. */
+  antiFilters: AntiFilter[];
 }
 
 export const initialState: WizardState = {
@@ -31,6 +33,7 @@ export const initialState: WizardState = {
   noCookDays: [],
   targetBudgetKopecks: null,
   targetDailyCalories: null,
+  antiFilters: [],
 };
 
 export function toSetup(state: WizardState): Partial<MealPlanSetupDto> {
@@ -39,10 +42,22 @@ export function toSetup(state: WizardState): Partial<MealPlanSetupDto> {
     days: state.days,
     mealsPerDay: state.mealsPerDay,
     noCookDays: state.noCookDays,
+    ...(state.antiFilters.length > 0 ? { antiFilters: state.antiFilters } : {}),
     ...(state.targetBudgetKopecks ? { targetBudgetKopecks: state.targetBudgetKopecks } : {}),
     ...(state.targetDailyCalories ? { targetDailyCalories: state.targetDailyCalories } : {}),
   };
 }
+
+const ANTI_CHIP_OPTIONS: Array<{ value: AntiFilter; label: string }> = [
+  { value: 'NO_OVEN', label: 'Без духовки' },
+  { value: 'NO_FRYING', label: 'Без жарки' },
+  { value: 'NO_CHOPPING', label: 'Без нарезки' },
+  { value: 'ONE_PAN', label: 'Одна посуда' },
+  { value: 'NO_LEFTOVERS', label: 'Без остатков' },
+  { value: 'SHORT_TIME', label: 'Недолго' },
+  { value: 'NO_MULTISTEP', label: 'Без сложных шагов' },
+  { value: 'NOT_CHICKEN_AGAIN', label: 'Не курицу снова' },
+];
 
 const STAGE_LABELS: Record<string, string> = {
   queued: 'В очереди…',
@@ -228,6 +243,25 @@ export function SetupClient({
                   data-testid={`setup-nocook-${i}`}
                 >
                   День {i + 1}
+                </Chip>
+              ))}
+            </div>
+            <p className="text-body mt-4 mb-2">Антирецепты (исключить)</p>
+            <div className="flex flex-wrap gap-2">
+              {ANTI_CHIP_OPTIONS.map((o) => (
+                <Chip
+                  key={o.value}
+                  selected={state.antiFilters.includes(o.value)}
+                  onClick={() =>
+                    patch({
+                      antiFilters: state.antiFilters.includes(o.value)
+                        ? state.antiFilters.filter((v) => v !== o.value)
+                        : [...state.antiFilters, o.value],
+                    })
+                  }
+                  data-testid={`setup-anti-${o.value}`}
+                >
+                  {o.label}
                 </Chip>
               ))}
             </div>

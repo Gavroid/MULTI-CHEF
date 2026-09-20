@@ -2,6 +2,8 @@
 
 import { z } from 'zod';
 import {
+  LeftoversRequestDtoSchema,
+  LeftoversResponseDtoSchema,
   RescueRequestDtoSchema,
   RouletteDrawRequestDtoSchema,
   TodayRequestDtoSchema,
@@ -9,12 +11,16 @@ import {
 } from '@multichef/contracts';
 
 export {
+  LeftoversRequestDtoSchema,
+  LeftoversResponseDtoSchema,
   RescueRequestDtoSchema,
   RouletteDrawRequestDtoSchema,
   TodayRequestDtoSchema,
   TodayRecommendationDtoSchema,
 };
 export type {
+  LeftoversRequestDto,
+  LeftoversResponseDto,
   RescueRequestDto,
   RescueResponseDto,
   RouletteDrawRequestDto,

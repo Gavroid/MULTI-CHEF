@@ -35,6 +35,19 @@ export async function createMealPlan(
   );
 }
 
+/** R21 (этап 1): заменить блюдо в активном плане — джоба REPLACE_MEAL. */
+export async function replaceMealPlan(
+  entryId: string,
+  deps: PlanClientDeps = {},
+): Promise<ApiResponse<{ jobId: string; deduplicated: boolean }>> {
+  return request<{ jobId: string; deduplicated: boolean }>(
+    `${base(deps)}/api/v1/meal-plans/replace-meal`,
+    'POST',
+    { entryId },
+    {},
+  );
+}
+
 export async function getJob(
   jobId: string,
   deps: PlanClientDeps = {},

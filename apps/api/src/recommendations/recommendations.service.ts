@@ -6,6 +6,7 @@
 
 import { Inject, Injectable } from '@nestjs/common';
 import { getPrisma, withTenantContext } from '@multichef/database';
+import type { LeftoversResponseDto } from '@multichef/contracts';
 import { rank, rankRescue } from '@multichef/recommendation';
 import type { GenerationContext } from '@multichef/recommendation';
 import type {
@@ -39,6 +40,11 @@ export class RecommendationsService {
     @Inject('AiExplanationProvider') private readonly ai: AiExplanationProvider,
     @Inject('RouletteCounter') private readonly rouletteCounter: RouletteCounter,
   ) {}
+
+  /** R21: lazy prisma accessor (getPrisma — как в других методах). */
+  private get db() {
+    return getPrisma();
+  }
 
   async getToday(
     userId: string,
@@ -158,6 +164,32 @@ export class RecommendationsService {
    * household's pantry (privacy: never 403), 422 when nothing can be
    * cooked from it.
    */
+  /**
+   * R21 (продукт-план): «Преображение остатков» — опубликованные
+   * рецепты-преобразования для указанных базовых блюд (leftoverSourceOf).
+   */
+  async getLeftoversForBase(
+    userId: string,
+    baseRecipeIds: string[],
+  ): Promise<LeftoversResponseDto> {
+    await this.requireOwnedHouseholdId(userId);
+    const rows = await this.db.recipe.findMany({
+      where: {
+        sourceType: 'CURATED',
+        status: 'PUBLISHED',
+        leftoverSourceOf: { hasSome: baseRecipeIds },
+      },
+      select: { id: true, title: true, leftoverSourceOf: true },
+      take: 10,
+    });
+    return {
+      options: rows.map((r) => ({
+        recipe: { id: r.id, title: r.title },
+        baseRecipeId: r.leftoverSourceOf.find((base: string) => baseRecipeIds.includes(base)) ?? '',
+      })),
+    };
+  }
+
   async getRescue(userId: string, input: RescueRequestDto, now: Date): Promise<RescueResponseDto> {
     const householdId = await this.requireOwnedHouseholdId(userId);
 

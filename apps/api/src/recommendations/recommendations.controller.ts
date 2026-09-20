@@ -12,16 +12,19 @@ import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import type { AuthenticatedUser } from '../auth/auth.service.js';
 import { RecommendationsService } from './recommendations.service.js';
 import {
+  LeftoversRequestDtoSchema,
   RescueRequestDtoSchema,
   RouletteDrawRequestDtoSchema,
   TodayRequestDtoSchema,
+  type LeftoversRequestDto,
+  type LeftoversResponseDto,
+  type RescueRequestDto,
   type RescueResponseDto,
   type RouletteDrawRequestDto,
   type RouletteDrawResponseDto,
   type RouletteRejectResponseDto,
   type TodayRequestDto,
   type TodayRecommendationDto,
-  type RescueRequestDto,
 } from './recommendations.dto.js';
 
 @ApiTags('recommendations')
@@ -59,6 +62,23 @@ export class RecommendationsController {
   ): Promise<RescueResponseDto> {
     const user = currentUser(req as unknown as { user: AuthenticatedUser });
     return this.svc.getRescue(user.id, body, new Date());
+  }
+
+  /**
+   * R21 (продукт-план): «Преображение остатков» — опубликованные
+   * рецепты-преобразования для базовых блюд (leftoverSourceOf).
+   */
+  @Post('leftovers')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Recipes that transform the given leftover dishes' })
+  @ApiResponse({ status: 200, description: 'Up to 10 transformation recipes' })
+  @ApiResponse({ status: 401, description: 'No session' })
+  async leftovers(
+    @Req() req: FastifyRequest,
+    @Body(new ZodValidationPipe(LeftoversRequestDtoSchema)) body: LeftoversRequestDto,
+  ): Promise<LeftoversResponseDto> {
+    const user = currentUser(req as unknown as { user: AuthenticatedUser });
+    return this.svc.getLeftoversForBase(user.id, body.baseRecipeIds);
   }
 
   /** MC-042: draw one weighted-random card. */

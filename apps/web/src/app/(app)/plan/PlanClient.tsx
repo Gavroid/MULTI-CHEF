@@ -7,11 +7,11 @@
 // Empty state deep-links to /plan/setup. Data loads client-side via
 // the shared hooks pattern (deps injectable for tests).
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Card, Skeleton } from '@multichef/ui';
 import type { ActivePlanDto } from '@multichef/contracts';
-import { getActivePlan, type PlanClientDeps } from '@/lib/plan-client';
+import { getActivePlan, getJob, replaceMealPlan, type PlanClientDeps } from '@/lib/plan-client';
 import { TabTitle } from '@/components/TabTitle';
 
 export const DEFAULT_DAILY_TARGET = 2000;
@@ -55,6 +55,26 @@ export function PlanClient({ deps: depsOverride }: PlanClientProps): React.React
   const [error, setError] = useState<string | null>(null);
   const [retrying, setRetrying] = useState(false);
   const [retryNonce, setRetryNonce] = useState(0);
+  const [replacingId, setReplacingId] = useState<string | null>(null);
+
+  // R21 (этап 1): заменить блюдо — джоба REPLACE_MEAL, затем перезагрузка плана.
+  const replaceEntry = useCallback(async (entryId: string): Promise<void> => {
+    setReplacingId(entryId);
+    const res = await replaceMealPlan(entryId);
+    if (res.error) {
+      setReplacingId(null);
+      return;
+    }
+    const deadline = Date.now() + 120_000;
+    while (Date.now() < deadline) {
+      await new Promise((r) => setTimeout(r, 1500));
+      const jr = await getJob(res.data.jobId);
+      if (jr.error) break;
+      if (jr.data.status === 'COMPLETED' || jr.data.status === 'FAILED') break;
+    }
+    setReplacingId(null);
+    window.location.reload();
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -193,8 +213,20 @@ export function PlanClient({ deps: depsOverride }: PlanClientProps): React.React
                     >
                       {entry.recipe.title}
                     </Link>
-                    <span className="text-xs text-[var(--color-text-muted)]">
-                      {mealLabel(entry.mealType)} · {Math.round(entry.servings)} порц.
+                    <span className="flex items-center gap-2">
+                      <span className="text-xs text-[var(--color-text-muted)]">
+                        {mealLabel(entry.mealType)} · {Math.round(entry.servings)} порц.
+                      </span>
+                      <button
+                        type="button"
+                        disabled={replacingId !== null}
+                        onClick={() => void replaceEntry(entry.id)}
+                        className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-primary)] disabled:opacity-50"
+                        data-testid={`plan-replace-${entry.id}`}
+                        aria-label="Заменить блюдо"
+                      >
+                        ⇄
+                      </button>
                     </span>
                   </li>
                 ))}
@@ -203,6 +235,26 @@ export function PlanClient({ deps: depsOverride }: PlanClientProps): React.React
           );
         })}
       </div>
+      {plan.days.length > 0 ? (
+        <Card className="mb-6" data-testid="plan-week-summary">
+          <h3 className="text-title mb-2">Итог недели</h3>
+          {(() => {
+            const n = Math.max(1, plan.days.length);
+            const sum = (sel: (d: ActivePlanDto['days'][number]) => number): number =>
+              plan.days.reduce((acc, d) => acc + sel(d), 0);
+            const avgKcal = Math.round(sum((d) => d.totalCalories) / n);
+            const avgP = Math.round(sum((d) => d.totalProteinG) / n);
+            const avgF = Math.round(sum((d) => d.totalFatG) / n);
+            const avgC = Math.round(sum((d) => d.totalCarbsG) / n);
+            return (
+              <p className="text-body" data-testid="plan-week-averages">
+                В среднем за день: {avgKcal} ккал · Б {avgP} г · Ж {avgF} г · У {avgC} г
+              </p>
+            );
+          })()}
+        </Card>
+      ) : null}
+
       <Card className="mb-6" data-testid="plan-regenerate">
         <Link
           href="/plan/setup"

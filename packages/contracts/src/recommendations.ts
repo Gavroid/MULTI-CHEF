@@ -78,3 +78,25 @@ export const TodayRecommendationDtoSchema = z.object({
   pantryUsage: PantryUsageSchema.optional(),
 });
 export type TodayRecommendationDto = z.infer<typeof TodayRecommendationDtoSchema>;
+
+// R21 (продукт-план, этап «Преображение остатков»): подобрать рецепты-
+// преобразования для указанных базовых блюд (leftoverSourceOf).
+export const LeftoversRequestDtoSchema = z
+  .object({
+    baseRecipeIds: z
+      .array(z.string().regex(/^[0-9A-HJKMNP-TV-Z]{26}$/))
+      .min(1)
+      .max(10),
+  })
+  .strict();
+export type LeftoversRequestDto = z.infer<typeof LeftoversRequestDtoSchema>;
+
+export const LeftoversOptionSchema = z.object({
+  recipe: z.object({ id: z.string().min(1), title: z.string().min(1) }),
+  baseRecipeId: z.string(),
+});
+export const LeftoversResponseDtoSchema = z.object({
+  options: z.array(LeftoversOptionSchema),
+});
+export type LeftoversOption = z.infer<typeof LeftoversOptionSchema>;
+export type LeftoversResponseDto = z.infer<typeof LeftoversResponseDtoSchema>;
