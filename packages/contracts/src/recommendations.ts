@@ -81,12 +81,10 @@ export type TodayRecommendationDto = z.infer<typeof TodayRecommendationDtoSchema
 
 // R21 (продукт-план, этап «Преображение остатков»): подобрать рецепты-
 // преобразования для указанных базовых блюд (leftoverSourceOf).
+// Элементы — названия базовых блюд (как в leftoverSourceOf) или id.
 export const LeftoversRequestDtoSchema = z
   .object({
-    baseRecipeIds: z
-      .array(z.string().regex(/^[0-9A-HJKMNP-TV-Z]{26}$/))
-      .min(1)
-      .max(10),
+    baseRecipeIds: z.array(z.string().min(1).max(200)).min(1).max(10),
   })
   .strict();
 export type LeftoversRequestDto = z.infer<typeof LeftoversRequestDtoSchema>;
