@@ -63,7 +63,7 @@ export function LeftoversCard({ deps }: LeftoversCardProps): React.ReactElement 
     } catch {
       setResults([]);
     } finally {
-      setBusy(false);
+      // ignore network errors — карточка просто не обновится
     }
   }, []);
 
