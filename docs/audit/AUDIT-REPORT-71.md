@@ -131,6 +131,18 @@ Permissions-Policy/X-Frame-Options DENY от nginx). Инъекция через
 - **deploy-safe**: rehearsal --force exit 0, все стадии исполняются реально
   (лог /tmp/deploy-mk3.log), rollback-ветки покрыты кодом.
 
+## R71-fixes: статус (2026-09-19, спринт исполнен)
+
+| ID    | Статус                | Исправление                                                                                                            |
+| ----- | --------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| T71-A | ✅ fixed              | ResultClient прокидывает настройки визарда (budgetMode/maxMinutes) в acceptRecommendation setup (+юнит-тест пересылки) |
+| T71-B | ✅ fixed              | plan-week: peopleCount fallback = Household.defaultPeopleCount (было всегда 2)                                         |
+| T71-F | ✅ fixed              | logout постит purge-data-cache в SW; DATA_CACHE очищается (sw.js message-handler)                                      |
+| T71-E | ✅ fixed              | подсказка в профиле про область действия переключателя языка                                                           |
+| T71-H | ⏳ deferred           | CSP требует nonce для inline theme-скрипта — после появления публичного домена                                         |
+| T71-G | ⏳ backlog            | offline-mirror для registry-независимого rollback                                                                      |
+| T71-J | ✅ закрыт параллельно | Sentry DSN — заведён владельцем (staging)                                                                              |
+
 ## Рекомендации (приоритет)
 
 1. ~~T71-A/B~~ ✅ исполнено в R71-fixes (e5633fa).
