@@ -173,20 +173,31 @@ export class RecommendationsService {
     baseRecipeIds: string[],
   ): Promise<LeftoversResponseDto> {
     await this.requireOwnedHouseholdId(userId);
+    // leftoverSourceOf хранит НАЗВАНИЯ базовых блюд, не id — резолвим
+    // id -> title и ищем рецепты, чьи цепочки ссылаются на эти названия.
+    const baseRows = await this.db.recipe.findMany({
+      where: { id: { in: baseRecipeIds } },
+      select: { title: true },
+    });
+    const baseTitles = baseRows.map((r) => r.title);
+    if (baseTitles.length === 0) return { options: [] };
     const rows = await this.db.recipe.findMany({
       where: {
         sourceType: 'CURATED',
         status: 'PUBLISHED',
-        leftoverSourceOf: { hasSome: baseRecipeIds },
+        leftoverSourceOf: { hasSome: baseTitles },
       },
       select: { id: true, title: true, leftoverSourceOf: true },
       take: 10,
     });
     return {
-      options: rows.map((r) => ({
-        recipe: { id: r.id, title: r.title },
-        baseRecipeId: r.leftoverSourceOf.find((base: string) => baseRecipeIds.includes(base)) ?? '',
-      })),
+      options: rows.map((r) => {
+        const matchedBase = baseTitles.find((t) => r.leftoverSourceOf.includes(t)) ?? '';
+        return {
+          recipe: { id: r.id, title: r.title },
+          baseRecipeId: matchedBase,
+        };
+      }),
     };
   }
 
