@@ -5,7 +5,7 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Button, Card, Chip } from '@multichef/ui';
+import { Card, Chip } from '@multichef/ui';
 import { getActivePlan } from '@/lib/plan-client';
 import { request } from '@/lib/auth-client';
 import { getApiBaseUrl } from '@/lib/env';
@@ -16,21 +16,11 @@ interface LeftoversCardProps {
   };
 }
 
-interface PlanDayLite {
-  entries: Array<{ id: string; recipe: { id: string; title: string } }>;
-}
-
-interface LeftoverOption {
-  recipe: { id: string; title: string };
-  baseRecipeId: string;
-}
-
 export function LeftoversCard({ deps }: LeftoversCardProps): React.ReactElement {
   const d = deps ?? { getActivePlan };
   const [dishes, setDishes] = useState<Array<{ id: string; title: string }>>([]);
   const [selected, setSelected] = useState<string | null>(null);
   const [results, setResults] = useState<Array<{ recipe: { id: string; title: string } }>>([]);
-  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -55,7 +45,6 @@ export function LeftoversCard({ deps }: LeftoversCardProps): React.ReactElement 
 
   const show = useCallback(async (baseRecipeId: string): Promise<void> => {
     setSelected(baseRecipeId);
-    setBusy(true);
     try {
       const csrf = document.cookie
         .split('; ')
