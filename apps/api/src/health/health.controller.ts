@@ -1,12 +1,14 @@
 import { Controller, Get, HttpException, HttpStatus } from '@nestjs/common';
 import { getPoolStats, pingDatabase } from '@multichef/database';
 import { loadServerEnv } from '@multichef/config';
+import { _sentryInitialized } from '../common/sentry.js';
 
 // Health endpoints under the global /api/v1 prefix (configured in main.ts).
 //
-//   GET /api/v1/health/live  — process is up. Always 200.
-//   GET /api/v1/health/ready — process is up AND Postgres is reachable.
-//                             200 on success, 503 with reason="db" otherwise.
+//   GET /api/v1/health/live       — process is up. Always 200.
+//   GET /api/v1/health/ready      — process is up AND Postgres + Redis are reachable.
+//                                   200 on success, 503 with reason otherwise.
+//   GET /api/v1/health/sentry-ping  (R17-WP13) — { active, dsn } — Sentry SDK state.
 //
 // MC-003: readiness runs `SELECT 1` against the configured Postgres
 // database (through @multichef/database.pingDatabase). If the DB is
@@ -35,27 +37,13 @@ export class HealthController {
     try {
       await pingDatabase();
     } catch (err) {
-      // Surface a structured 503 with the failing dependency. Do not
-      // leak the underlying Prisma error message — it can include the
-      // connection string and other secrets in older Prisma versions.
       const message = err instanceof Error ? err.message : String(err);
       console.error(`health/ready: postgres unreachable: ${message}`);
       const body: NotReadyResponse = { status: 'not-ready', reason: 'db' };
       throw new HttpException(body, HttpStatus.SERVICE_UNAVAILABLE);
     }
-    // Audit round-11: the worker and the sync recommendation endpoints
-    // depend on Redis (BullMQ queue) — readiness must reflect it too.
-    // T18-C (audit round 18): the URL now comes from the validated env
-    // schema like every other consumer. The previous direct
-    // process.env read silently SKIPPED the Redis probe when the
-    // variable was unset or mistyped, reporting "ready" with a dead
-    // queue dependency. REDIS_URL is required by serverEnvSchema, so
-    // an invalid env surfaces as not-ready/redis instead.
-    const redisUrl = loadServerEnv().REDIS_URL;
-    if (!redisUrl) {
-      const body: NotReadyResponse = { status: 'not-ready', reason: 'redis' };
-      throw new HttpException(body, HttpStatus.SERVICE_UNAVAILABLE);
-    }
+    const env = loadServerEnv();
+    const redisUrl = env.REDIS_URL;
     try {
       const { default: IORedis } = await import('ioredis');
       const redis = new IORedis(redisUrl, {
@@ -74,6 +62,19 @@ export class HealthController {
     }
     const pool = getPoolStats();
     return { status: 'ready', pool };
+  }
+
+  /**
+   * R17-WP13 — Sentry initialisation check. Returns {active: boolean}
+   * so the SRE team can `curl /health/sentry-ping` after a deploy and
+   * know whether the SDK is live. Does not capture a test event.
+   */
+  @Get('sentry-ping')
+  sentryPing(): { active: boolean; dsn: 'set' | 'unset' } {
+    return {
+      active: _sentryInitialized(),
+      dsn: process.env['SENTRY_DSN'] ? 'set' : 'unset',
+    };
   }
 }
 
