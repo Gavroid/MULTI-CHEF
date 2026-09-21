@@ -6,6 +6,9 @@
 // stub, even for authenticated users. Now it checks the real session
 // (GET /auth/session) and renders either the profile view (email,
 // household, theme toggle, logout) or the login CTA.
+//
+// R17-WP3: split PRD §2.3.16 list-of-sections into real navigable
+// links: /profile/nutrition, /profile/preferences, /profile/household.
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -17,6 +20,31 @@ import { logout } from '@/lib/auth-client';
 import { resetPantryCache } from '@/hooks/usePantry';
 import { resetPreferencesCache } from '@/hooks/usePreferences';
 import { broadcastCacheInvalidation } from '@/lib/cache-sync';
+
+interface SectionLinkProps {
+  href: string;
+  label: string;
+  hint: string;
+  testId: string;
+}
+
+function SectionLink({ href, label, hint, testId }: SectionLinkProps): React.ReactElement {
+  return (
+    <Link
+      href={href}
+      className="flex items-center justify-between py-3 border-b border-[var(--color-border)] last:border-0"
+      data-testid={testId}
+    >
+      <span className="flex flex-col">
+        <span className="text-body-strong">{label}</span>
+        <span className="text-caption text-[var(--color-text-muted)]">{hint}</span>
+      </span>
+      <span aria-hidden="true" className="text-[var(--color-text-muted)]">
+        →
+      </span>
+    </Link>
+  );
+}
 
 export default function ProfilePage(): React.ReactElement {
   const [checking, setChecking] = useState(true);
@@ -136,6 +164,28 @@ export default function ProfilePage(): React.ReactElement {
               : ''}
           </p>
         ) : null}
+      </Card>
+
+      {/* R17-WP3: PRD §2.3.16 list-of-sections. */}
+      <Card className="mb-3" data-testid="profile-sections">
+        <SectionLink
+          href="/profile/nutrition"
+          label="Цели и КБЖУ"
+          hint="Калории, Б/Ж/У, приёмы пищи, техника, уровень"
+          testId="profile-section-nutrition"
+        />
+        <SectionLink
+          href="/profile/preferences"
+          label="Предпочтения и аллергии"
+          hint="Любимые, нелюбимые, исключения"
+          testId="profile-section-preferences"
+        />
+        <SectionLink
+          href="/profile/household"
+          label="Домохозяйство"
+          hint="Название, число людей, бюджет"
+          testId="profile-section-household"
+        />
       </Card>
 
       <Card className="mb-3" data-testid="profile-theme">
