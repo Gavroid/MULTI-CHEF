@@ -88,13 +88,45 @@ export async function withTenantContext<T>(
   },
 ): Promise<T> {
   const client = (options?.client ?? getPrisma()) as PrismaClient;
-  return client.$transaction(
-    async (tx) => {
-      await tx.$executeRaw`SELECT set_config('app.household_id', ${ctx.householdId ?? ''}, true), set_config('app.user_id', ${ctx.userId ?? ''}, true)`;
-      return fn(tx);
-    },
-    options?.isolationLevel ? { isolationLevel: options.isolationLevel } : undefined,
-  );
+  // R18-WP29: R18-WP29 — Prisma 6's interactive $transaction creates
+  // savepoints internally, and `set_config(..., true)` (local-to-tx)
+  // set before the first statement is not visible to the savepoint
+  // running the actual INSERT (verified: INSERT returned affected=1
+  // but no row was persisted; the RLS WITH CHECK clause sees a NULL
+  // current_setting() and rejects the insert; the savepoint then
+  // rolls back the INSERT while the wrapper returns the generated
+  // id from Prisma's in-memory cache).
+  //
+  // Workaround: set the config at SESSION level (third arg = false)
+  // BEFORE opening the transaction. Prisma's interactive transaction
+  // pins the same physical connection from its pool for the lifetime
+  // of the callback, so a session-level setting stays in effect.
+  // After COMMIT/ROLLBACK we reset both vars to '' so they do not
+  // leak to the next unrelated query on the same pooled connection.
+  if (ctx.householdId || ctx.userId) {
+    await client.$executeRawUnsafe(
+      `SELECT set_config('app.household_id', ${
+        ctx.householdId ? `'${ctx.householdId.replace(/'/g, "''")}'` : "''"
+      }, false), set_config('app.user_id', ${
+        ctx.userId ? `'${ctx.userId.replace(/'/g, "''")}'` : "''"
+      }, false)`,
+    );
+  }
+  try {
+    return await client.$transaction(async (tx) => fn(tx), {
+      maxWait: 5_000,
+      timeout: 15_000,
+      ...(options?.isolationLevel ? { isolationLevel: options.isolationLevel } : {}),
+    });
+  } finally {
+    // Best-effort reset so the same pooled connection does not leak
+    // the tenant context to the next unrelated query.
+    await client
+      .$executeRawUnsafe(
+        "SELECT set_config('app.household_id', '', false), set_config('app.user_id', '', false)",
+      )
+      .catch(() => undefined);
+  }
 }
 
 /**
