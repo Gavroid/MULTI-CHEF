@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 import { NextIntlClientProvider } from 'next-intl';
 import { PwaRegister } from '@/components/PwaRegister';
+import { PwaInstallBanner } from '@/components/PwaInstallBanner';
 import ru from '@/i18n/ru';
 import { getSiteUrl } from '@/lib/site-url';
 import './globals.css';
@@ -109,6 +110,7 @@ export default function RootLayout({ children }: { children: ReactNode }): React
         <NextIntlClientProvider locale="ru" messages={ru}>
           {children}
           <PwaRegister />
+          <PwaInstallBanner />
         </NextIntlClientProvider>
       </body>
     </html>
