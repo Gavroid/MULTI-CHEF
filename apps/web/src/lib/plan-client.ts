@@ -92,3 +92,31 @@ export async function getActivePlan(
   }
   return { data: parsed.data };
 }
+
+/**
+ * R17-WP4: GET /api/v1/meal-plans/:id — detail view for a specific
+ * plan (not just the active one). Reuses the same ActivePlanDto
+ * contract since the API returns the same shape.
+ */
+export async function getMealPlan(
+  id: string,
+  deps: PlanClientDeps = {},
+): Promise<ApiResponse<ActivePlanDto | null>> {
+  const result = await request<unknown>(
+    `${base(deps)}/api/v1/meal-plans/${encodeURIComponent(id)}`,
+    'GET',
+    undefined,
+    {},
+  );
+  if (result.error) {
+    if (result.error.error.code === 'PLAN_NOT_FOUND') return { data: null };
+    return result;
+  }
+  const parsed = ActivePlanDtoSchema.safeParse(result.data);
+  if (!parsed.success) {
+    return {
+      error: { status: 502, error: { code: 'CONTRACT_MISMATCH', message: 'Сервер обновился' } },
+    };
+  }
+  return { data: parsed.data };
+}
