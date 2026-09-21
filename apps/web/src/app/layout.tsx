@@ -50,13 +50,27 @@ export const metadata: Metadata = {
   icons: {
     icon: '/icons/icon.svg',
     // T66-C: iOS home-screen icon (PNG, opaque — iOS fills transparency black).
-    apple: '/icons/apple-touch-icon.png',
+    apple: '/apple-touch-icon.png',
   },
+  // R17-WP23 (PWA iOS): iOS Safari doesn't fire beforeinstallprompt;
+  // it only enables Add-to-Home-Screen when these meta tags + a real
+  // apple-touch-icon are present. statusBarStyle=black-translucent
+  // paints behind the notch on iPhone 15 Pro Max.
+  appleWebApp: {
+    capable: true,
+    title: 'Мультишеф',
+    statusBarStyle: 'black-translucent',
+  },
+  formatDetection: { telephone: false },
 };
 
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
+  // R17-WP23: viewport-fit=cover lets the layout extend under the
+  // iPhone 15 Pro Max notch / Dynamic Island; safe-area-inset CSS
+  // env() values handle the actual padding.
+  viewportFit: 'cover',
   // T66-D (E22): explicit, WCAG 1.4.4-compliant zoom — users may scale up
   // to 5x; never set userScalable:false (it fails axe & Lighthouse a11y).
   maximumScale: 5,

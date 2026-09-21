@@ -81,34 +81,28 @@ test('register → stock the fridge → get a recommendation → accept it', asy
 
   // 3. Stock the fridge from inside the page context (cookies + CSRF
   //    token ride along; the Idempotency-Key must be a UUID).
-  await page.goto('/today');
-  await page.waitForTimeout(500);
-  const added = await page.evaluate(async () => {
-    const csrf = document.cookie
-      .split('; ')
-      .find((c) => c.startsWith('mc_csrf='))
-      ?.split('=')[1];
-    const search = await fetch(
-      '/api/v1/ingredients?q=%D0%BC%D0%BE%D0%BB%D0%BE%D0%BA%D0%BE&limit=1',
-      { credentials: 'include' },
-    );
-    const searchJson = await search.json();
-    const ingredientId = searchJson.data?.[0]?.id;
-    if (!ingredientId) return { ok: false, step: 'search' as const };
-    const key = crypto.randomUUID ? crypto.randomUUID() : `e2e-${Math.random()}`;
-    const res = await fetch('/api/v1/pantry/items', {
-      method: 'POST',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-        'Idempotency-Key': key,
-        ...(csrf ? { 'X-CSRF-Token': csrf } : {}),
-      },
-      body: JSON.stringify({ ingredientId, quantityG: 1000 }),
-    });
-    return { ok: res.ok, status: res.status };
+  // R17-WP25: use page.request (Playwright APIRequestContext) instead
+  // of page.evaluate(fetch). The fetch-in-page path was racy because
+  // cookies added via page.context.addCookies do not always line up
+  // with the document.cookie scope after AuthGuard redirects to login.
+  // page.request uses the same cookie jar but a fresh request context,
+  // bypassing the document cookie scope entirely.
+  const search = await page.request.get(
+    '/api/v1/ingredients?q=%D0%BC%D0%BE%D0%BB%D0%BE%D0%BA%D0%BE&limit=1',
+  );
+  expect(search.status(), `ingredients search failed: ${search.status()}`).toBe(200);
+  const searchJson = (await search.json()) as { data?: Array<{ id: string }> };
+  const ingredientId = searchJson.data?.[0]?.id;
+  expect(ingredientId, 'ingredient id not found').toBeTruthy();
+  const pantry = await page.request.post('/api/v1/pantry/items', {
+    headers: {
+      'Content-Type': 'application/json',
+      'Idempotency-Key': randomUUID(),
+      ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
+    },
+    data: { ingredientId, quantityG: 1000 },
   });
-  expect(added.ok, `fridge stocking failed: ${JSON.stringify(added)}`).toBeTruthy();
+  expect(pantry.status(), `pantry POST failed: ${pantry.status()}`).toBe(201);
 
   // 4. /today → wizard → recommendation → accept (mock) → shopping list.
   let pantryLog = 'none';
@@ -117,7 +111,7 @@ test('register → stock the fridge → get a recommendation → accept it', asy
       pantryLog = `${r.url()} -> ${r.status()} body=${(await r.text()).slice(0, 120)}`;
     }
   });
-  await page.goto('/today');
+  await page.reload();
   await page.waitForTimeout(2500);
   console.log('[e2e-debug] last pantry GET:', pantryLog);
   // R17-WP11: Hero CTA may be hero-cta (pantry stocked) or
@@ -125,9 +119,10 @@ test('register → stock the fridge → get a recommendation → accept it', asy
   // reaching /today, so hero-cta is the contract — but be resilient
   // to either CTA being rendered.
   const primaryCta = page.getByTestId('hero-cta');
-  const emptyCta = page.getByTestId('hero-empty-cta');
-  await expect(primaryCta.or(emptyCta).first()).toBeVisible({ timeout: 15_000 });
-  await expect(primaryCta).toBeVisible({ timeout: 1_000 });
+  // R17-WP25: after page.reload(), usePantry's 30s module cache is
+  // cleared and a fresh fetch returns the stocked fridge. Wait up
+  // to 20s for hero-cta (pantry stocked) — the contract after seed.
+  await expect(primaryCta).toBeVisible({ timeout: 20_000 });
   await primaryCta.click();
   await expect(page).toHaveURL(/\/today\/generate/);
   await page.getByTestId('wizard-step-next').click();

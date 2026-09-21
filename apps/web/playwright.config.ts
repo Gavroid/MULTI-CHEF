@@ -14,6 +14,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 const API_PORT = Number(process.env['API_PORT'] ?? '3001');
 const WEB_PORT = Number(process.env['WEB_PORT'] ?? '3000');
+void API_PORT;
 
 export default defineConfig({
   testDir: './e2e',
@@ -45,22 +46,9 @@ export default defineConfig({
 
   // Playwright starts each command with the env from this process.
   // .env at the repo root is sourced by the wrapper scripts below.
-  webServer: [
-    {
-      command: `bash ../../e2e/start-api.sh`,
-      port: API_PORT,
-      reuseExistingServer: false,
-      timeout: 30_000,
-      stdout: 'pipe',
-      stderr: 'pipe',
-    },
-    {
-      command: `bash ../../e2e/start-web.sh`,
-      port: WEB_PORT,
-      reuseExistingServer: false,
-      timeout: 60_000,
-      stdout: 'pipe',
-      stderr: 'pipe',
-    },
-  ],
+  // R17-WP25: webServer disabled — Playwright runs against the
+  // production nginx gateway on :8080 (which proxies to api:3001
+  // and web:3000 already started by systemd). E2E_BASE_URL
+  // env var overrides the baseURL.
+  webServer: [],
 });
