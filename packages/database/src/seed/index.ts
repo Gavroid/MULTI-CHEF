@@ -24,6 +24,7 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { CATEGORIES } from './categories.js';
 import { INGREDIENTS } from './ingredients.js';
 import { buildAliasIndex } from './aliases.js';
+import { EXTRA_ALIASES } from './aliases-extra.js';
 import { DEMO_HOUSEHOLD, DEMO_HOUSEHOLD_OWNER_EMAIL } from './demo-household.js';
 import { seedRecipes, RECIPES } from './recipes/index.js';
 import { generateUlid as ulid } from '../ulid.js';
@@ -140,6 +141,38 @@ async function main(): Promise<void> {
         skipDuplicates: true,
       });
     }
+
+    // 3b. R17-WP5: extra aliases dictionary — supplies 2-4 synonyms for
+    //     ingredients that the original MC-020 seed left without any
+    //     aliases. Idempotent (PK is `(alias, locale)` so duplicates are
+    //     dropped automatically).
+    let extraInserted = 0;
+    let extraSkipped = 0;
+    for (const [canonicalName, alias] of EXTRA_ALIASES) {
+      const ing = await prisma.ingredient.findUnique({
+        where: { canonicalName },
+        select: { id: true },
+      });
+      if (!ing) continue;
+      try {
+        await prisma.ingredientAlias.create({
+          data: { ingredientId: ing.id, alias, locale: LOCALE_RU },
+        });
+        extraInserted += 1;
+      } catch (err: unknown) {
+        if (
+          err &&
+          typeof err === 'object' &&
+          'code' in err &&
+          (err as { code: unknown }).code === 'P2002'
+        ) {
+          extraSkipped += 1;
+        } else {
+          throw err;
+        }
+      }
+    }
+    console.log(`seed: extra aliases — ${extraInserted} inserted, ${extraSkipped} already present`);
 
     // 4. Demo household + member. Only inserted if the demo user
     //    already exists (created via /api/v1/auth/register earlier).
