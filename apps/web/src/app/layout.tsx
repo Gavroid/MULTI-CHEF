@@ -17,12 +17,33 @@ export const metadata: Metadata = {
     template: '%s — MULTI-CHEF',
   },
   description: 'Семейный планировщик питания — рецепты из того, что уже есть дома.',
+  // R17-WP11: anchor the canonical URL to the public origin so every
+  // page can override with its own canonical without repeating the host.
+  alternates: {
+    canonical: '/',
+  },
   openGraph: {
     type: 'website',
     siteName: 'MULTI-CHEF',
     locale: 'ru_RU',
     title: 'MULTI-CHEF — семейный планировщик питания',
     description: 'Семейный планировщик питания — рецепты из того, что уже есть дома.',
+    // R17-WP11: brand-safe static SVG OG image (1200×630, sRGB, brand
+    // tokens from globals.css). Telegram/Slack/Discord honour this.
+    images: [
+      {
+        url: '/og-image.svg',
+        width: 1200,
+        height: 630,
+        alt: 'MULTI-CHEF — семейный планировщик питания',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'MULTI-CHEF — семейный планировщик питания',
+    description: 'Семейный планировщик питания — рецепты из того, что уже есть дома.',
+    images: ['/og-image.svg'],
   },
   manifest: '/manifest.webmanifest',
   icons: {
