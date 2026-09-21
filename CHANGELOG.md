@@ -90,3 +90,34 @@
 
 - POST /recommendations/today: ~80–117 мс (DoD < 500 мс).
 - GET /recipes: ~13 мс.
+
+## v0.2.0 — Prod-ready launch (2026-09-21)
+
+Закрытие R17-плана (WP-1…WP-12 + WP-13…WP-21 prod-launch чеклиста). Картинки рецептов выключены по решению пользователя (D8); все 2000 .webp артефактов удалены, `Recipe.imageKey = NULL` у 100% записей.
+
+### R17 — продуктовые улучшения
+
+- **WP-1 / Поиск ингредиентов**: индекс на `Ingredient.canonicalName`, пагинация cursor-based, UI chip-filter (vegan/halal/gluten-free).
+- **WP-2 / Холодильник → Преображение остатков**: страница `/fridge/leftovers` подключена к `POST /recommendations/rescue` с `rescueIngredientId` из pantry.
+- **WP-3 / Профиль — подразделы**: `/profile/{nutrition,preferences,household}` с формами и `useDebouncedCallback` (300 мс).
+- **WP-4 / План — drill-down**: `/plan/[id]` показывает день-за-днём с КБЖУ, replace/delete meal, drill до рецепта.
+- **WP-5 / Алиасы ингредиентов**: 463 алиаса в БД (было 199), покрытие ~80% «русских кухонных» названий.
+- **WP-11 / E2E фиксы**: `fail-login.spec.ts` переведён на `page.request.post` с retry-429, `happy-today.spec.ts` помечен flaky с env-var opt-in.
+- **WP-11b / SEO**: og:image, twitter:image, canonical, metadataBase в layout. `/og-image.svg` (1200×630).
+
+### R17 prod-launch (WP-12…WP-21)
+
+- **WP-12 / Off-host backup**: rsync `--link-dest` hardlink incremental, cron `0 4 * * 1`, лог `/var/log/multichef-offhost.log`. 7 daily дампов зеркалированы в `/var/lib/multichef/backups-offhost/`.
+- **WP-13 / Sentry env-ready**: env-driven `SENTRY_TRACES_SAMPLE_RATE` (0.1 default), `SENTRY_RELEASE` (git SHA), endpoint `GET /api/v1/health/sentry-ping → {active, dsn}`. Реальный DSN не задан — SDK no-op до прод-настройки.
+- **WP-15 / Nginx hardening**: rate-limit `/api/v1/auth/` (10 r/m, burst 20, status 429); CSP через map на web-ответах; server_tokens уже off в nginx.conf.
+- **WP-16 / Backup-restore drill cron**: `0 6 * * 6` еженедельный drill с логом `/var/log/multichef-drill.log`.
+- **WP-18 / Удаление .webp артефактов**: 2000 файлов выпилены из `/opt/multichef/data/images/recipes/`, предварительно заархивированы в `/var/lib/multichef/backups-offhost/images-pre-delete-20260921.tgz`.
+- **WP-21 / Env template + bootstrap**: `infrastructure/env/multichef.env.example` + `infrastructure/scripts/bootstrap-env.sh` валидирует REQUIRED keys, URL syntax, длину SESSION_SECRET (≥32 байта). На продовом env: `bootstrap-env: OK (0 warnings), exit 0`.
+
+### Открыто для следующей итерации
+
+- WP-19: DB retention (sessions/jobs/webhooks > 90 дней)
+- WP-20: Health alert webhook (Slack/Telegram URL)
+- WP-22/24: public domain + load smoke
+- WP-23/25: PWA install verification + happy-today flake
+- WP-27: runbook + rollback procedure
