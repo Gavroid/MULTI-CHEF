@@ -41,6 +41,25 @@ test('valid web env parses with NEXT_PUBLIC_APP_BASE_URL', () => {
   assert.equal(env.NEXT_PUBLIC_APP_BASE_URL, 'https://app.local');
 });
 
+// MC-R21 (2026-09-30): same-origin дефолт — пустая строка валидна и является
+// дефолтом; localhost:3001 больше не должен появляться из схемы.
+test('web env defaults to same-origin (empty) API base URL', () => {
+  const env = loadWebEnv({ source: { WEB_PORT: '4000' } });
+  assert.equal(env.NEXT_PUBLIC_APP_BASE_URL, '');
+  assert.equal(env.APP_BASE_URL, '');
+});
+
+test('web env rejects a garbage API base URL but accepts empty', () => {
+  // loadWebEnv бросает EnvValidationError на невалидном значении (в отличие
+  // от parseWebEnv, возвращающего discriminated union).
+  assert.throws(
+    () => loadWebEnv({ source: { WEB_PORT: '4000', NEXT_PUBLIC_APP_BASE_URL: 'not a url' } }),
+    (err: unknown) => err instanceof EnvValidationError,
+  );
+  const good = loadWebEnv({ source: { WEB_PORT: '4000', NEXT_PUBLIC_APP_BASE_URL: '' } });
+  assert.equal(good.NEXT_PUBLIC_APP_BASE_URL, '');
+});
+
 test('missing required key surfaces a clear error', () => {
   const incomplete: Record<string, string> = { ...REQUIRED_BASE };
   delete incomplete['DATABASE_URL'];

@@ -364,6 +364,19 @@ jobs:
         env:
           NEXT_TELEMETRY_DISABLED: '1'
 
+      - name: Bundle guard — no hardcoded API host in client chunks
+        # MC-R21 regression guard: бандл, собранный без/с неправильным
+        # NEXT_PUBLIC_APP_BASE_URL, вшивал 'localhost:3001' в клиентские
+        # чанки → все браузерные API-вызовы ломались на проде (P0 2026-09-30).
+        # Дефолт env.ts теперь '' (same-origin), поэтому ни localhost, ни
+        # другой хост не должны появиться в клиентском коде, если env не задан.
+        run: |
+          if grep -rl "localhost:3001" apps/web/.next/static/chunks/ 2>/dev/null | grep -v node_modules; then
+            echo "::error::Hardcoded localhost:3001 found in client bundle — NEXT_PUBLIC_APP_BASE_URL leaked dev default"
+            exit 1
+          fi
+          echo "bundle guard: OK (no hardcoded API host)"
+
       - name: Install Playwright chromium
         run: pnpm --filter @multichef/web exec playwright install --with-deps chromium 2>&1 | tee /tmp/pwinstall.log; test ${PIPESTATUS[0]} -eq 0
 

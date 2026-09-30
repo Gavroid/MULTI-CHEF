@@ -15,6 +15,23 @@ const optionalString = z.preprocess(trimEnvString, z.string().min(1).optional())
 // Numeric port: positive integer, 1-65535. Coerced from env string.
 const portSchema = z.coerce.number().int().min(1).max(65535);
 
+// MC-R21 (2026-09-30): WEB-дефолт изменился с 'http://localhost:3001' на ''.
+// Пустая строка = браузер ходит на СВОЙ origin (/api/v1/... через nginx-прокси).
+// Захардкоженный localhost в прод-бандле ломал все клиентские API-вызовы:
+// PWA на https://multi-chef.431a.ru пыталась фетчить http://localhost:3001
+// и получала «Нет соединения» (блок: небезопасный origin + нет сервера).
+// Серверный APP_BASE_URL (API/worker) сохраняет явный URL-дефолт — там
+// пустая строка невалидна для абсолютных ссылок (письма, webhooks).
+export const webUrlSchema = z.string().refine((value) => {
+  if (value === '') return true; // same-origin mode (relative /api/v1)
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}, 'URL must be empty (same-origin) or use http:// or https://');
+
 // URL parser that requires an explicit protocol and host.
 const urlSchema = z
   .string()
@@ -154,7 +171,7 @@ export type ServerEnv = z.infer<typeof serverEnvSchema>;
 export const webEnvSchema = z.object({
   NODE_ENV: nodeEnvSchema.default('development'),
   WEB_PORT: portSchema.default(3000),
-  APP_BASE_URL: urlSchema.default('http://localhost:3001'),
+  APP_BASE_URL: webUrlSchema.default(''),
   // T37-A/T55-B: fixture-флаги валидируются (boolean) — опечатки и
   // случайное включение в prod-сборке отлавливаются fail-fast ниже.
   NEXT_PUBLIC_USE_RECIPE_FIXTURES: booleanFromString.default(false),
@@ -162,8 +179,9 @@ export const webEnvSchema = z.object({
 
   // Public-side keys. Only NEXT_PUBLIC_* should be passed to the browser
   // via env at runtime; this schema is the entry point for build-time
-  // checks.
-  NEXT_PUBLIC_APP_BASE_URL: urlSchema.default('http://localhost:3001'),
+  // checks. MC-R21: дефолт '' (same-origin) вместо 'http://localhost:3001' —
+  // см. комментарий у webUrlSchema.
+  NEXT_PUBLIC_APP_BASE_URL: webUrlSchema.default(''),
 
   LOG_LEVEL: logLevelSchema.default('info'),
   LOG_FORMAT: logFormatSchema.default('pretty'),
